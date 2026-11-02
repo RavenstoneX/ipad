@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Tilt Hello</title>
 <style>
   :root {
@@ -57,6 +60,11 @@
     transition: opacity .3s; pointer-events: none; max-width: 90vw; text-align: center;
   }
   #status.show { opacity: 1; }
+  #ver {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+    z-index: 3; font-size: 13px; opacity: .55; pointer-events: none;
+  }
   #rotate {
     position: fixed; left: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
     z-index: 4; font: inherit; font-size: 15px; font-weight: 600; color: var(--ink);
@@ -72,6 +80,7 @@
 <body>
 <canvas id="c"></canvas>
 <div id="status"></div>
+<div id="ver"></div>
 <button id="rotate" type="button">Fix direction</button>
 <button id="clear" type="button">Clear circles</button>
 
@@ -116,7 +125,15 @@
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  var offset = 0;   // manual rotation fix, cycled by the Rotate button
+  var VERSION = 'v3';
+  var offset = 90;  // default turn so gravity points down; the Fix direction button cycles it
+  try {
+    var saved = localStorage.getItem('tiltHelloOffset');
+    if (saved !== null && !isNaN(+saved)) offset = (+saved) % 360;
+  } catch (err) {}
+  var verEl = document.getElementById('ver');
+  function showVer() { verEl.textContent = VERSION + ' · turn ' + offset + '°'; }
+  showVer();
 
   function onMotion(e) {
     var acc = e.accelerationIncludingGravity;
@@ -157,6 +174,8 @@
 
   document.getElementById('rotate').addEventListener('click', function () {
     offset = (offset + 90) % 360;
+    try { localStorage.setItem('tiltHelloOffset', String(offset)); } catch (err) {}
+    showVer();
     say('Gravity rotated by ' + offset + '°', 2000);
   });
 
