@@ -125,7 +125,7 @@
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  var VERSION = 'v3';
+  var VERSION = 'v4';
   var offset = 90;  // default turn so gravity points down; the Fix direction button cycles it
   try {
     var saved = localStorage.getItem('tiltHelloOffset');
@@ -189,6 +189,39 @@
     if (!hello.placed) { hello.x = W / 2; hello.y = H * 0.3; hello.placed = true; }
   }
 
+  /* ---------- Pop sound ---------- */
+  var actx = null;
+  function initAudio() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC && !actx) actx = new AC();
+      if (actx && actx.state === 'suspended') actx.resume();
+    } catch (err) {}
+  }
+  function pop(r) {
+    if (!actx) return;
+    try {
+      if (actx.state === 'suspended') actx.resume();
+      var t = actx.currentTime;
+      var f = 620 - r * 6;                       // smaller ball, higher pop
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(f, t);
+      o.frequency.exponentialRampToValueAtTime(f * 0.22, t + 0.09);
+      g.gain.setValueAtTime(0.6, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      o.connect(g); g.connect(actx.destination);
+      o.start(t); o.stop(t + 0.14);
+      var len = Math.floor(actx.sampleRate * 0.03);
+      var buf = actx.createBuffer(1, len, actx.sampleRate), d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+      var n = actx.createBufferSource(), ng = actx.createGain();
+      n.buffer = buf; ng.gain.value = 0.35;
+      n.connect(ng); ng.connect(actx.destination);
+      n.start(t);
+    } catch (err) {}
+  }
+
   /* ---------- Circles ---------- */
   var circles = [];
   var MAX = 160;
@@ -203,14 +236,33 @@
   }
 
   var pointers = {};
+  var rings = [];
+
+  function hitCircle(x, y) {
+    for (var i = circles.length - 1; i >= 0; i--) {
+      var c = circles[i], dx = x - c.x, dy = y - c.y, rr = c.r + 6;
+      if (dx * dx + dy * dy <= rr * rr) return i;
+    }
+    return -1;
+  }
+
   canvas.addEventListener('pointerdown', function (e) {
     e.preventDefault();
+    var idx = hitCircle(e.clientX, e.clientY);
+    if (idx >= 0) {
+      var c = circles[idx];
+      circles.splice(idx, 1);
+      rings.push({ x: c.x, y: c.y, r: c.r, c: c.c, t: 0 });
+      pop(c.r);
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY, onBall: true };
+      return;
+    }
     pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
     spawn(e.clientX, e.clientY);
   });
   canvas.addEventListener('pointermove', function (e) {
     var p = pointers[e.pointerId];
-    if (!p) return;
+    if (!p || p.onBall) return;
     var dx = e.clientX - p.x, dy = e.clientY - p.y;
     if (dx * dx + dy * dy > 55 * 55) { p.x = e.clientX; p.y = e.clientY; spawn(p.x, p.y); }
   });
@@ -226,6 +278,7 @@
   var REST = 0.45;
 
   function step(dt) {
+    for (var q = rings.length - 1; q >= 0; q--) { rings[q].t += dt; if (rings[q].t > 0.28) rings.splice(q, 1); }
     // smooth the sensor vector
     gravity.x += (target.x - gravity.x) * Math.min(1, dt * 12);
     gravity.y += (target.y - gravity.y) * Math.min(1, dt * 12);
@@ -296,6 +349,12 @@
       ctx.fillStyle = c.c; ctx.globalAlpha = 0.9; ctx.fill();
       ctx.globalAlpha = 1;
     }
+    for (i = 0; i < rings.length; i++) {
+      var rg = rings[i], k = rg.t / 0.28;
+      ctx.beginPath(); ctx.arc(rg.x, rg.y, rg.r * (1 + k * 0.7), 0, Math.PI * 2);
+      ctx.strokeStyle = rg.c; ctx.lineWidth = 5 * (1 - k) + 1;
+      ctx.globalAlpha = 1 - k; ctx.stroke(); ctx.globalAlpha = 1;
+    }
     ctx.save();
     ctx.translate(hello.x, hello.y); ctx.rotate(hello.a);
     ctx.font = '800 ' + hello.fs + 'px "Avenir Next", "Trebuchet MS", system-ui, sans-serif';
@@ -323,10 +382,11 @@
 
   document.getElementById('go').addEventListener('click', function () {
     startEl.style.display = 'none';
+    initAudio();
     startSensors();
     running = true; last = performance.now();
     requestAnimationFrame(frame);
-    say('Tilt the iPad, touch to add circles', 3500);
+    say('Touch to add circles, tap a circle to pop it', 3500);
   });
 })();
 </script>
