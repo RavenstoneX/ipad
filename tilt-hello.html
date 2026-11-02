@@ -65,11 +65,6 @@
     bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
     z-index: 3; font-size: 13px; opacity: .55; pointer-events: none;
   }
-  #rotate {
-    position: fixed; left: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
-    z-index: 4; font: inherit; font-size: 15px; font-weight: 600; color: var(--ink);
-    background: var(--panel); border: 0; border-radius: 999px; padding: 10px 18px;
-  }
   #clear {
     position: fixed; right: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
     z-index: 4; font: inherit; font-size: 15px; font-weight: 600; color: var(--ink);
@@ -81,7 +76,6 @@
 <canvas id="c"></canvas>
 <div id="status"></div>
 <div id="ver"></div>
-<button id="rotate" type="button">Fix direction</button>
 <button id="clear" type="button">Clear circles</button>
 
 <div id="start">
@@ -125,15 +119,10 @@
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  var VERSION = 'v4';
-  var offset = 90;  // default turn so gravity points down; the Fix direction button cycles it
-  try {
-    var saved = localStorage.getItem('tiltHelloOffset');
-    if (saved !== null && !isNaN(+saved)) offset = (+saved) % 360;
-  } catch (err) {}
+  var VERSION = 'v5';
+  var offset = 90;  // fixed turn so gravity points down on the iPad
   var verEl = document.getElementById('ver');
-  function showVer() { verEl.textContent = VERSION + ' · turn ' + offset + '°'; }
-  showVer();
+  verEl.textContent = VERSION;
 
   function onMotion(e) {
     var acc = e.accelerationIncludingGravity;
@@ -171,13 +160,6 @@
       attach();
     }
   }
-
-  document.getElementById('rotate').addEventListener('click', function () {
-    offset = (offset + 90) % 360;
-    try { localStorage.setItem('tiltHelloOffset', String(offset)); } catch (err) {}
-    showVer();
-    say('Gravity rotated by ' + offset + '°', 2000);
-  });
 
   /* ---------- Hello text body ---------- */
   var hello = { x: 0, y: 0, vx: 0, vy: 0, a: 0, va: 0, hw: 100, hh: 50, fs: 100 };
@@ -230,43 +212,57 @@
 
   function spawn(x, y) {
     var r = 24 + Math.random() * 22;
-    circles.push({ x: x, y: y, vx: (Math.random() - .5) * 120, vy: (Math.random() - .5) * 120,
-                   r: r, c: palette[colorIdx++ % palette.length] });
+    var c = { x: x, y: y, vx: (Math.random() - .5) * 120, vy: (Math.random() - .5) * 120,
+              r: r, c: palette[colorIdx++ % palette.length] };
+    circles.push(c);
     if (circles.length > MAX) circles.shift();
+    return c;
   }
 
   var pointers = {};
   var rings = [];
 
-  function hitCircle(x, y) {
+  // pop the top circle under (x, y); circles owned by this pointer's own trail are skipped
+  function popAt(x, y, pid) {
     for (var i = circles.length - 1; i >= 0; i--) {
       var c = circles[i], dx = x - c.x, dy = y - c.y, rr = c.r + 6;
-      if (dx * dx + dy * dy <= rr * rr) return i;
+      if (c.owner === pid) continue;
+      if (dx * dx + dy * dy <= rr * rr) {
+        circles.splice(i, 1);
+        rings.push({ x: c.x, y: c.y, r: c.r, c: c.c, t: 0 });
+        pop(c.r);
+        return true;
+      }
     }
-    return -1;
+    return false;
   }
 
   canvas.addEventListener('pointerdown', function (e) {
     e.preventDefault();
-    var idx = hitCircle(e.clientX, e.clientY);
-    if (idx >= 0) {
-      var c = circles[idx];
-      circles.splice(idx, 1);
-      rings.push({ x: c.x, y: c.y, r: c.r, c: c.c, t: 0 });
-      pop(c.r);
-      pointers[e.pointerId] = { x: e.clientX, y: e.clientY, onBall: true };
-      return;
-    }
-    pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-    spawn(e.clientX, e.clientY);
+    var p = { x: e.clientX, y: e.clientY, onBall: false, lx: e.clientX, ly: e.clientY };
+    pointers[e.pointerId] = p;
+    if (popAt(e.clientX, e.clientY, e.pointerId)) { p.onBall = true; return; }
+    spawn(e.clientX, e.clientY).owner = e.pointerId;
   });
   canvas.addEventListener('pointermove', function (e) {
     var p = pointers[e.pointerId];
-    if (!p || p.onBall) return;
-    var dx = e.clientX - p.x, dy = e.clientY - p.y;
-    if (dx * dx + dy * dy > 55 * 55) { p.x = e.clientX; p.y = e.clientY; spawn(p.x, p.y); }
+    if (!p) return;
+    // walk along the finger's path so fast drags don't skip circles
+    var dx = e.clientX - p.lx, dy = e.clientY - p.ly;
+    var n = Math.max(1, Math.ceil(Math.hypot(dx, dy) / 12)), k, popped = false;
+    for (k = 1; k <= n; k++) {
+      if (popAt(p.lx + dx * k / n, p.ly + dy * k / n, e.pointerId)) popped = true;
+    }
+    p.lx = e.clientX; p.ly = e.clientY;
+    if (popped) p.onBall = true;
+    if (p.onBall) return;
+    var sx = e.clientX - p.x, sy = e.clientY - p.y;
+    if (sx * sx + sy * sy > 55 * 55) { p.x = e.clientX; p.y = e.clientY; spawn(p.x, p.y).owner = e.pointerId; }
   });
-  function up(e) { delete pointers[e.pointerId]; }
+  function up(e) {
+    delete pointers[e.pointerId];
+    for (var i = 0; i < circles.length; i++) if (circles[i].owner === e.pointerId) delete circles[i].owner;
+  }
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', up);
   document.getElementById('clear').addEventListener('click', function () { circles.length = 0; });
@@ -386,7 +382,7 @@
     startSensors();
     running = true; last = performance.now();
     requestAnimationFrame(frame);
-    say('Touch to add circles, tap a circle to pop it', 3500);
+    say('Touch to add circles, tap or drag over them to pop', 3500);
   });
 })();
 </script>
