@@ -57,6 +57,11 @@
     transition: opacity .3s; pointer-events: none; max-width: 90vw; text-align: center;
   }
   #status.show { opacity: 1; }
+  #rotate {
+    position: fixed; left: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+    z-index: 4; font: inherit; font-size: 15px; font-weight: 600; color: var(--ink);
+    background: var(--panel); border: 0; border-radius: 999px; padding: 10px 18px;
+  }
   #clear {
     position: fixed; right: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
     z-index: 4; font: inherit; font-size: 15px; font-weight: 600; color: var(--ink);
@@ -67,6 +72,7 @@
 <body>
 <canvas id="c"></canvas>
 <div id="status"></div>
+<button id="rotate" type="button">Fix direction</button>
 <button id="clear" type="button">Clear circles</button>
 
 <div id="start">
@@ -108,14 +114,19 @@
     return 0;
   }
 
-  function onOrientation(e) {
-    if (e.beta == null || e.gamma == null) return;
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var offset = 0;   // manual rotation fix, cycled by the Rotate button
+
+  function onMotion(e) {
+    var acc = e.accelerationIncludingGravity;
+    if (!acc || acc.x == null || acc.y == null) return;
     gotSensor = true;
-    var b = e.beta * Math.PI / 180, g = e.gamma * Math.PI / 180;
-    // gravity direction expressed in device frame (x right, y up)
-    var dx = Math.cos(b) * Math.sin(g);
-    var dy = -Math.sin(b);
-    var a = (screenAngle() + 360) % 360, sx, sy;
+    // iOS reports the gravity direction itself, Android reports the opposite
+    var sign = isIOS ? 1 : -1;
+    var dx = sign * acc.x / 9.81;      // device frame: x right, y up
+    var dy = sign * acc.y / 9.81;
+    var a = (screenAngle() + offset + 360) % 360, sx, sy;
     if (a === 90)       { sx = -dy; sy = -dx; }
     else if (a === 180) { sx = -dx; sy =  dy; }
     else if (a === 270) { sx =  dy; sy =  dx; }
@@ -124,16 +135,16 @@
   }
 
   function startSensors() {
-    var needsPermission = typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof DeviceOrientationEvent.requestPermission === 'function';
+    var needsPermission = typeof DeviceMotionEvent !== 'undefined' &&
+      typeof DeviceMotionEvent.requestPermission === 'function';
     function attach() {
-      window.addEventListener('deviceorientation', onOrientation, true);
+      window.addEventListener('devicemotion', onMotion, true);
       setTimeout(function () {
         if (!gotSensor) say('No motion sensor data. Check Settings › Safari › Motion & Orientation Access.', 7000);
       }, 1800);
     }
     if (needsPermission) {
-      DeviceOrientationEvent.requestPermission().then(function (r) {
+      DeviceMotionEvent.requestPermission().then(function (r) {
         if (r === 'granted') attach();
         else say('Motion access was denied. Reload the page to try again.', 7000);
       }).catch(function () {
@@ -143,6 +154,11 @@
       attach();
     }
   }
+
+  document.getElementById('rotate').addEventListener('click', function () {
+    offset = (offset + 90) % 360;
+    say('Gravity rotated by ' + offset + '°', 2000);
+  });
 
   /* ---------- Hello text body ---------- */
   var hello = { x: 0, y: 0, vx: 0, vy: 0, a: 0, va: 0, hw: 100, hh: 50, fs: 100 };
