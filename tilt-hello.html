@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Tilt Hello</title>
+<style>
+  :root {
+    --bg: #f3efe6;
+    --ink: #1d2433;
+    --panel: rgba(255,255,255,.88);
+    --accent: #2b5cff;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151d;
+      --ink: #f1ede4;
+      --panel: rgba(30,34,46,.9);
+      --accent: #7f9cff;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151d; --ink: #f1ede4; --panel: rgba(30,34,46,.9); --accent: #7f9cff; color-scheme: dark;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font-family: "Avenir Next", "Trebuchet MS", system-ui, sans-serif;
+    touch-action: none; overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+  }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #start {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px;
+    background: var(--bg); z-index: 5; text-align: center; padding: 24px;
+  }
+  #start h1 { margin: 0; font-size: clamp(40px, 9vw, 88px); font-weight: 800; letter-spacing: -.02em; }
+  #start p { margin: 0; max-width: 30ch; font-size: 18px; line-height: 1.45; opacity: .75; }
+  #go {
+    font: inherit; font-size: 20px; font-weight: 700; color: #fff; background: var(--accent);
+    border: 0; border-radius: 999px; padding: 16px 36px; margin-top: 8px;
+  }
+  #go:active { transform: scale(.97); }
+  #status {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    top: calc(env(safe-area-inset-top, 0px) + 10px);
+    background: var(--panel); color: var(--ink); font-size: 14px;
+    padding: 8px 14px; border-radius: 999px; z-index: 4; opacity: 0;
+    transition: opacity .3s; pointer-events: none; max-width: 90vw; text-align: center;
+  }
+  #status.show { opacity: 1; }
+  #clear {
+    position: fixed; right: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+    z-index: 4; font: inherit; font-size: 15px; font-weight: 600; color: var(--ink);
+    background: var(--panel); border: 0; border-radius: 999px; padding: 10px 18px;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="status"></div>
+<button id="clear" type="button">Clear circles</button>
+
+<div id="start">
+  <h1>Tilt Hello</h1>
+  <p>Tilt your iPad to make “Hello” fall. Touch the screen to drop circles.</p>
+  <button id="go" type="button">Start</button>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById('c');
+  var ctx = canvas.getContext('2d');
+  var statusEl = document.getElementById('status');
+  var startEl = document.getElementById('start');
+  var W = 0, H = 0, DPR = 1;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    layoutText();
+  }
+
+  function say(msg, ms) {
+    statusEl.textContent = msg; statusEl.classList.add('show');
+    clearTimeout(say.t);
+    if (ms) say.t = setTimeout(function () { statusEl.classList.remove('show'); }, ms);
+  }
+
+  /* ---------- Gravity from sensors ---------- */
+  var gravity = { x: 0, y: 1 };          // unit-ish vector in screen space (y down)
+  var target = { x: 0, y: 1 };
+  var gotSensor = false;
+
+  function screenAngle() {
+    if (screen.orientation && typeof screen.orientation.angle === 'number') return screen.orientation.angle;
+    if (typeof window.orientation === 'number') return (window.orientation + 360) % 360;
+    return 0;
+  }
+
+  function onOrientation(e) {
+    if (e.beta == null || e.gamma == null) return;
+    gotSensor = true;
+    var b = e.beta * Math.PI / 180, g = e.gamma * Math.PI / 180;
+    // gravity direction expressed in device frame (x right, y up)
+    var dx = Math.cos(b) * Math.sin(g);
+    var dy = -Math.sin(b);
+    var a = (screenAngle() + 360) % 360, sx, sy;
+    if (a === 90)       { sx = -dy; sy = -dx; }
+    else if (a === 180) { sx = -dx; sy =  dy; }
+    else if (a === 270) { sx =  dy; sy =  dx; }
+    else                { sx =  dx; sy = -dy; }
+    target.x = sx; target.y = sy;
+  }
+
+  function startSensors() {
+    var needsPermission = typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function';
+    function attach() {
+      window.addEventListener('deviceorientation', onOrientation, true);
+      setTimeout(function () {
+        if (!gotSensor) say('No motion sensor data. Check Settings › Safari › Motion & Orientation Access.', 7000);
+      }, 1800);
+    }
+    if (needsPermission) {
+      DeviceOrientationEvent.requestPermission().then(function (r) {
+        if (r === 'granted') attach();
+        else say('Motion access was denied. Reload the page to try again.', 7000);
+      }).catch(function () {
+        say('Could not get motion access here.', 6000);
+      });
+    } else {
+      attach();
+    }
+  }
+
+  /* ---------- Hello text body ---------- */
+  var hello = { x: 0, y: 0, vx: 0, vy: 0, a: 0, va: 0, hw: 100, hh: 50, fs: 100 };
+  function layoutText() {
+    hello.fs = Math.max(70, Math.min(W, H) * 0.2);
+    ctx.font = '800 ' + hello.fs + 'px "Avenir Next", "Trebuchet MS", system-ui, sans-serif';
+    hello.hw = ctx.measureText('Hello').width / 2;
+    hello.hh = hello.fs * 0.5;
+    if (!hello.placed) { hello.x = W / 2; hello.y = H * 0.3; hello.placed = true; }
+  }
+
+  /* ---------- Circles ---------- */
+  var circles = [];
+  var MAX = 160;
+  var palette = ['#ff5a4f', '#ffb020', '#2fbf71', '#2b8cff', '#8a5cff', '#ff4fa0', '#14b8c4'];
+  var colorIdx = 0;
+
+  function spawn(x, y) {
+    var r = 24 + Math.random() * 22;
+    circles.push({ x: x, y: y, vx: (Math.random() - .5) * 120, vy: (Math.random() - .5) * 120,
+                   r: r, c: palette[colorIdx++ % palette.length] });
+    if (circles.length > MAX) circles.shift();
+  }
+
+  var pointers = {};
+  canvas.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+    spawn(e.clientX, e.clientY);
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    var p = pointers[e.pointerId];
+    if (!p) return;
+    var dx = e.clientX - p.x, dy = e.clientY - p.y;
+    if (dx * dx + dy * dy > 55 * 55) { p.x = e.clientX; p.y = e.clientY; spawn(p.x, p.y); }
+  });
+  function up(e) { delete pointers[e.pointerId]; }
+  canvas.addEventListener('pointerup', up);
+  canvas.addEventListener('pointercancel', up);
+  document.getElementById('clear').addEventListener('click', function () { circles.length = 0; });
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+  document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+
+  /* ---------- Physics ---------- */
+  var G = 2600;        // px/s²
+  var REST = 0.45;
+
+  function step(dt) {
+    // smooth the sensor vector
+    gravity.x += (target.x - gravity.x) * Math.min(1, dt * 12);
+    gravity.y += (target.y - gravity.y) * Math.min(1, dt * 12);
+    var gx = gravity.x * G, gy = gravity.y * G;
+
+    // circles
+    var i, j, c, d, dx, dy, dist, min, nx, ny, overlap, rel, imp;
+    for (i = 0; i < circles.length; i++) {
+      c = circles[i];
+      c.vx += gx * dt; c.vy += gy * dt;
+      c.vx *= 0.9985; c.vy *= 0.9985;
+      c.x += c.vx * dt; c.y += c.vy * dt;
+      if (c.x < c.r)     { c.x = c.r;     c.vx = -c.vx * REST; }
+      if (c.x > W - c.r) { c.x = W - c.r; c.vx = -c.vx * REST; }
+      if (c.y < c.r)     { c.y = c.r;     c.vy = -c.vy * REST; }
+      if (c.y > H - c.r) { c.y = H - c.r; c.vy = -c.vy * REST; }
+    }
+    for (i = 0; i < circles.length; i++) {
+      for (j = i + 1; j < circles.length; j++) {
+        var a = circles[i], b = circles[j];
+        dx = b.x - a.x; dy = b.y - a.y; min = a.r + b.r;
+        if (dx * dx + dy * dy < min * min) {
+          dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
+          nx = dx / dist; ny = dy / dist; overlap = (min - dist) / 2;
+          a.x -= nx * overlap; a.y -= ny * overlap;
+          b.x += nx * overlap; b.y += ny * overlap;
+          rel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          if (rel < 0) {
+            imp = -(1 + REST) * rel / 2;
+            a.vx -= imp * nx; a.vy -= imp * ny;
+            b.vx += imp * nx; b.vy += imp * ny;
+          }
+        }
+      }
+    }
+
+    // Hello: falls, bounces off walls, and turns so its feet point along gravity
+    var h = hello;
+    h.vx += gx * dt; h.vy += gy * dt;
+    h.vx *= 0.999; h.vy *= 0.999;
+    h.x += h.vx * dt; h.y += h.vy * dt;
+
+    var gl = Math.hypot(gravity.x, gravity.y) || 1;
+    var want = Math.atan2(-gravity.x / gl, gravity.y / gl);
+    var diff = want - h.a;
+    while (diff > Math.PI) diff -= 2 * Math.PI;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
+    h.va += (diff * 60 - h.va * 5.5) * dt;
+    h.a += h.va * dt;
+
+    var ca = Math.abs(Math.cos(h.a)), sa = Math.abs(Math.sin(h.a));
+    var ex = ca * h.hw + sa * h.hh, ey = sa * h.hw + ca * h.hh;
+    var hit = 0;
+    if (h.x < ex)     { h.x = ex;     hit = Math.abs(h.vx); h.vx = -h.vx * REST; }
+    if (h.x > W - ex) { h.x = W - ex; hit = Math.abs(h.vx); h.vx = -h.vx * REST; }
+    if (h.y < ey)     { h.y = ey;     hit = Math.abs(h.vy); h.vy = -h.vy * REST; }
+    if (h.y > H - ey) { h.y = H - ey; hit = Math.abs(h.vy); h.vy = -h.vy * REST; }
+    if (hit > 250) h.va += (Math.random() - .5) * Math.min(hit, 1500) * 0.006;
+  }
+
+  /* ---------- Render ---------- */
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var i, c;
+    for (i = 0; i < circles.length; i++) {
+      c = circles[i];
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.fillStyle = c.c; ctx.globalAlpha = 0.9; ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.save();
+    ctx.translate(hello.x, hello.y); ctx.rotate(hello.a);
+    ctx.font = '800 ' + hello.fs + 'px "Avenir Next", "Trebuchet MS", system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#1d2433';
+    ctx.fillText('Hello', 0, hello.fs * 0.04);
+    ctx.restore();
+  }
+
+  var last = 0, running = false;
+  function frame(t) {
+    if (!running) return;
+    var dt = Math.min(0.033, (t - last) / 1000 || 0.016);
+    last = t;
+    var n = 2, k;
+    for (k = 0; k < n; k++) step(dt / n);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function () { setTimeout(resize, 200); });
+  resize();
+  draw();
+
+  document.getElementById('go').addEventListener('click', function () {
+    startEl.style.display = 'none';
+    startSensors();
+    running = true; last = performance.now();
+    requestAnimationFrame(frame);
+    say('Tilt the iPad, touch to add circles', 3500);
+  });
+})();
+</script>
+</body>
+</html>
