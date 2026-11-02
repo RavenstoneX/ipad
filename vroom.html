@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Vroom">
+<meta name="theme-color" content="#bfe8ff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<title>Vroom – Build &amp; Drive</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:#e3f5ff;touch-action:manipulation;font-family:-apple-system,"SF Pro Rounded",system-ui,sans-serif}
+button{font:inherit;border:0;cursor:pointer;padding:0;background:none}
+#app{position:fixed;inset:0;display:grid;grid-template-rows:minmax(0,1fr) auto}
+#top{position:absolute;left:0;right:0;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;
+  padding:calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 0 calc(16px + env(safe-area-inset-left));pointer-events:none}
+.nav{pointer-events:auto;width:84px;height:84px;border-radius:50%;display:grid;place-items:center;box-shadow:0 6px 0 rgba(0,0,0,.18);transition:transform .08s,opacity .2s}
+.nav svg{width:46px;height:46px}
+.nav:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+#prev{background:#ff9f2e}#next{background:#2fb85a}
+.nav.dim{opacity:.3}
+.nav.go{animation:go .7s ease-in-out infinite alternate}
+@keyframes go{to{transform:scale(1.15)}}
+#dots{display:flex;gap:12px}
+#dots i{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.75);display:grid;place-items:center;font-style:normal;font-size:26px;opacity:.55;transition:.2s}
+#dots i.on{opacity:1;background:#fff;transform:scale(1.25);box-shadow:0 4px 0 rgba(0,0,0,.12)}
+#prog{display:none;position:relative;width:min(46vw,520px);height:26px;border-radius:13px;background:rgba(255,255,255,.85);box-shadow:0 4px 0 rgba(0,0,0,.12)}
+#bar{position:absolute;left:4px;top:4px;bottom:4px;border-radius:9px;background:#ffd93d;width:0}
+#mk{position:absolute;top:-16px;font-size:34px;transform:translateX(-50%) scaleX(-1)}
+#fl{position:absolute;right:-14px;top:-18px;font-size:36px}
+#main{position:relative;min-height:0}
+#main>*{position:absolute;inset:0;width:100%;height:100%;display:none}
+#stage,#drive{touch-action:none}
+#pick{padding:calc(118px + env(safe-area-inset-top)) 24px 24px;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:22px;
+  background:linear-gradient(#bfe8ff,#e3f5ff)}
+@media (orientation:portrait){#pick{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(3,1fr)}}
+.card{background:#fff;border-radius:34px;box-shadow:0 7px 0 rgba(0,0,0,.12);padding:14px;border:6px solid transparent;min-height:0;transition:transform .1s}
+.card:active{transform:scale(.96)}
+.card.on{border-color:#ffb21a;background:#fff6db}
+.card svg{width:100%;height:100%;pointer-events:none}
+#panel{background:#fff8e1;border-radius:32px 32px 0 0;box-shadow:0 -6px 20px rgba(0,0,0,.14);z-index:2;
+  padding:14px 18px calc(14px + env(safe-area-inset-bottom));min-height:176px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+#panel.hide{display:none}
+.item{width:190px;height:146px;border-radius:28px;background:#fff;box-shadow:0 5px 0 rgba(0,0,0,.14);padding:12px;border:5px solid transparent}
+.item.sel{border-color:#2fb85a;background:#e9fbe9}
+.item:active{transform:translateY(3px)}
+.hint{font-size:76px;animation:bob .7s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(-16px)}}
+.sw{width:66px;height:66px;border-radius:50%;border:6px solid #fff;box-shadow:0 0 0 3px rgba(0,0,0,.18),0 5px 0 rgba(0,0,0,.14);transition:transform .12s}
+.sw.on{transform:scale(1.22);box-shadow:0 0 0 6px #2b2b2b,0 5px 0 rgba(0,0,0,.2)}
+#fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:60}
+#touch{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);font-size:90px;pointer-events:none;z-index:4;display:none;animation:bob .6s ease-in-out infinite alternate}
+#win{position:absolute;left:50%;top:13%;transform:translate(-50%,0);font-size:130px;pointer-events:none;z-index:4;display:none;filter:drop-shadow(0 10px 8px rgba(0,0,0,.25))}
+#win.show{display:block;animation:winpop .8s cubic-bezier(.3,1.7,.5,1)}
+@keyframes winpop{from{transform:translate(-50%,0) scale(0) rotate(-30deg)}}
+/* parts & ghosts */
+.gp *{stroke:#8593a4!important;stroke-dasharray:14 10;stroke-width:6px!important;fill:rgba(255,255,255,.55)!important}
+.gp [fill="none"]{fill:none!important}
+.gp [stroke-width="32"]{stroke:rgba(255,255,255,.7)!important;stroke-width:22px!important;stroke-dasharray:none}
+.gp circle[fill="#2b2b2b"]{fill:#8593a4!important;stroke:none!important}
+.gp.hot *{stroke:#ff8a00!important}
+.gp.hot{animation:pulse .7s infinite alternate}
+@keyframes pulse{to{opacity:.4}}
+.gp{cursor:pointer}
+.pop{transform-box:fill-box;transform-origin:center bottom;animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{0%{transform:scale(.3) translateY(-120px);opacity:0}100%{transform:none;opacity:1}}
+.selp{transform-box:fill-box;transform-origin:center bottom;animation:wig .9s ease-in-out infinite alternate}
+@keyframes wig{from{transform:rotate(-1.5deg)}to{transform:rotate(1.5deg) translateY(-6px)}}
+#meas{position:absolute;width:10px;height:10px;left:-50px;top:-50px;visibility:hidden}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div id="pick"></div>
+    <svg id="stage" xmlns="http://www.w3.org/2000/svg" viewBox="150 60 1300 840" preserveAspectRatio="xMidYMid meet"></svg>
+    <svg id="drive" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"></svg>
+  </div>
+  <div id="panel"></div>
+  <div id="top">
+    <button class="nav" id="prev" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 4 L7 12 L15 20" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div id="dots"><i>🚙</i><i>🔧</i><i>🎨</i><i>🏁</i></div>
+    <div id="prog"><div id="bar"></div><span id="mk">🚙</span><span id="fl">🏁</span></div>
+    <button class="nav" id="next" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M9 4 L17 12 L9 20" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+</div>
+<div id="touch">👆</div>
+<div id="win">🏆</div>
+<div id="fx"></div>
+<svg id="meas" xmlns="http://www.w3.org/2000/svg"></svg>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const K='#2b2b2b';
+const PALETTE=['#ff4b4b','#ff9f2e','#ffd93d','#9ed84a','#2fb85a','#27c4b0','#4db8ff','#3a6df0','#8a5cf0','#ff7ab8','#a8693a','#3a3a3a','#b9bec7','#ffffff'];
+const KEY='vroom-builder-v1';
+
+/* ================= art helpers ================= */
+let ctx={parts:{},colors:{},preset:null};
+function col(s,r){const k=s+'.'+r;if(ctx.colors[k])return ctx.colors[k];if(ctx.preset)return ctx.preset(s,r);
+  return r==='glass'?'#e8f7ff':r==='head'?'#ffe2c4':'#ffffff';}
+const F=(s,r,w=8)=>`data-s="${s}" data-r="${r}" class="reg" fill="${col(s,r)}" stroke="${K}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+const D=(w=8)=>`fill="none" stroke="${K}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"`;
+const n1=x=>+x.toFixed(1);
+const dot=(x,y,r)=>`<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(r)}" fill="${K}" pointer-events="none"/>`;
+const rect=(s,r,x,y,w,h,rx=0)=>`<rect ${F(s,r)} x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}"/>`;
+const path=(s,r,d)=>`<path ${F(s,r)} d="${d}"/>`;
+const circ=(s,r,cx,cy,R)=>`<circle ${F(s,r)} cx="${cx}" cy="${cy}" r="${n1(R)}"/>`;
+const ell=(s,r,cx,cy,rx,ry)=>`<ellipse ${F(s,r)} cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/>`;
+const deco=(d,w=6)=>`<path d="${d}" ${D(w)}/>`;
+const TUBE=(s,r,d)=>`<path d="${d}" fill="none" stroke="${K}" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/><path data-s="${s}" data-r="${r}" class="reg" d="${d}" fill="none" stroke="${col(s,r)}" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>`;
+function star(cx,cy,ro,ri,n){const p=[];for(let i=0;i<n*2;i++){const r=i%2?ri:ro,a=-Math.PI/2+i*Math.PI/n;p.push(n1(cx+Math.cos(a)*r)+','+n1(cy+Math.sin(a)*r));}return p.join(' ');}
+
+function wheel(sl,cx,cy,R,v){
+  let s=`<g class="spin" data-c="${cx},${cy},${R}">`+circ(sl,'tire',cx,cy,R);
+  if(v===0){
+    for(let i=0;i<14;i++){const a=i*Math.PI/7,c=Math.cos(a),n=Math.sin(a);
+      s+=`<line x1="${n1(cx+c*R*.76)}" y1="${n1(cy+n*R*.76)}" x2="${n1(cx+c*R*.9)}" y2="${n1(cy+n*R*.9)}" ${D(6)}/>`;}
+    s+=circ(sl,'rim',cx,cy,R*.55)+circ(sl,'hub',cx,cy,R*.22);
+    for(let i=0;i<5;i++){const a=i*2*Math.PI/5;s+=dot(cx+Math.cos(a)*R*.39,cy+Math.sin(a)*R*.39,R*.045);}
+  }else if(v===1){
+    s+=circ(sl,'rim',cx,cy,R*.7)+circ(sl,'hub',cx,cy,R*.4)+dot(cx,cy,R*.08)+dot(cx+R*.56,cy,R*.06);
+  }else{
+    s+=circ(sl,'rim',cx,cy,R*.64)+`<polygon ${F(sl,'hub')} points="${star(cx,cy,R*.52,R*.26,6)}"/>`+dot(cx,cy,R*.08);
+  }
+  return s+'</g>';
+}
+const wheels=(sl,list,R,v)=>list.map(([x,y])=>wheel(sl,x,y,R,v)).join('');
+
+function EXH(v,x,y,h){const s='exhaust';
+  if(v===0)return rect(s,'pipe',x-22,y-h,44,h,8)+rect(s,'cap',x-35,y-h-18,70,34,12);
+  if(v===1){const t=y-h*.6;return path(s,'pipe',`M${x-38} ${y} L${x-25} ${t} L${x+25} ${t} L${x+38} ${y} Z`)+ell(s,'cap',x,t,38,15);}
+  const t=y-h;
+  return path(s,'pipe',`M${x+22} ${y} L${x+22} ${t+40} Q${x+22} ${t} ${x-16} ${t} L${x-62} ${t} L${x-62} ${t+36} L${x-26} ${t+36} Q${x-22} ${t+36} ${x-22} ${t+46} L${x-22} ${y} Z`)+rect(s,'cap',x-92,t-14,30,64,12);
+}
+const EXTOP=(v,x,y,h)=>v===0?[x,y-h-18]:v===1?[x,y-h*.6-12]:[x-92,y-h+18];
+function TAIL(v,x,y){const s='exhaust';
+  if(v===0)return rect(s,'pipe',x-46,y-11,80,22,10)+ell(s,'cap',x-46,y,8,11);
+  if(v===1)return rect(s,'pipe',x-46,y-26,80,20,10)+rect(s,'pipe',x-46,y+4,80,20,10)+ell(s,'cap',x-46,y-16,7,10)+ell(s,'cap',x-46,y+14,7,10);
+  return path(s,'pipe',`M${x+34} ${y-12} L${x-30} ${y-12} L${x-62} ${y-26} L${x-62} ${y+26} L${x-30} ${y+12} L${x+34} ${y+12} Z`)+ell(s,'cap',x-62,y,10,26);
+}
+const TAILTOP=(v,x,y)=>[v===2?x-62:x-46,y];
+function TOP(v,x,y){const s='topper';
+  if(v===0)return rect(s,'base',x-30,y-24,60,26,8)+path(s,'dome',`M${x-24} ${y-24} Q${x-24} ${y-72} ${x} ${y-72} Q${x+24} ${y-72} ${x+24} ${y-24} Z`);
+  if(v===1)return rect(s,'base',x-6,y-98,12,100,6)+path(s,'flag',`M${x-6} ${y-92} L${x-84} ${y-66} L${x-6} ${y-40} Z`);
+  return rect(s,'base',x-6,y-48,12,50,6)+`<polygon ${F(s,'dome')} points="${star(x,y-74,44,20,5)}"/>`;
+}
+const pv=(sl,def=0)=>ctx.parts[sl]??def;
+
+/* ================= vehicles ================= */
+/* --- tractor (drawn facing left, mirrored) --- */
+const T_CH=()=>rect('body','frame',415,640,640,68,26)+rect('body','frame',385,630,50,86,18);
+const T_SL=(xs,y,w,h)=>xs.map(x=>rect('body','grille',x,y,w,h,Math.min(w,h)/2)).join('');
+const TRACTOR={mirror:true,ground:810,contact:[610,1040],
+  order:['exhaust','cab','body','rear','front','topper'],
+  slots:{
+    body:[
+      ()=>T_CH()+path('body','main','M430 690 L430 545 Q430 470 505 470 L715 470 Q762 470 762 515 L762 690 Z')+path('body','stripe','M430 595 L762 595 L762 640 L430 640 Z')+circ('body','light',452,530,24)+T_SL([560,600,640,680],498,22,64),
+      ()=>T_CH()+path('body','main','M440 690 L440 505 L762 505 L762 690 Z')+rect('body','stripe',425,470,352,46,14)+rect('body','light',452,552,30,52,12)+[560,598,636].map(y=>rect('body','grille',540,y,190,22,11)).join(''),
+      ()=>T_CH()+path('body','main','M420 690 L424 610 Q434 535 515 505 L762 468 L762 690 Z')+path('body','stripe','M424 640 L762 640 L762 690 L420 690 Z')+ell('body','light',456,590,20,27)+T_SL([545,595,645,695],540,22,60)
+    ],
+    cab:[
+      ()=>path('cab','frame','M785 650 L795 275 Q797 255 817 255 L1053 255 Q1073 255 1077 275 L1100 650 Z')+rect('cab','glass',825,298,235,215,26)+rect('cab','roof',750,212,385,52,26),
+      ()=>rect('cab','frame',790,250,26,400,12)+rect('cab','frame',1060,250,26,400,12)+path('cab','glass','M816 262 H1060 V306 q-30.5 30 -61 0 q-30.5 30 -61 0 q-30.5 30 -61 0 q-30.5 30 -61 0 Z')+rect('cab','roof',750,212,385,52,26),
+      ()=>path('cab','frame','M780 650 L780 430 Q780 235 940 235 Q1100 235 1100 430 L1100 650 Z')+path('cab','glass','M815 460 Q815 285 940 285 Q1065 285 1065 460 L1065 580 L815 580 Z')+ell('cab','roof',940,236,66,22)
+    ],
+    rear:[0,1,2].map(v=>()=>wheel('rear',990,650,160,v)),
+    front:[0,1,2].map(v=>()=>wheel('front',560,710,100,v)),
+    exhaust:[
+      ()=>rect('exhaust','pipe',525,300,44,230,8)+rect('exhaust','cap',512,282,70,34,12),
+      ()=>path('exhaust','pipe','M512 530 L525 390 L575 390 L588 530 Z')+ell('exhaust','cap',550,388,38,15),
+      ()=>path('exhaust','pipe','M525 530 L525 360 Q525 322 563 322 L610 322 L610 358 L578 358 Q568 358 568 368 L568 530 Z')+rect('exhaust','cap',598,308,30,62,12)
+    ],
+    topper:[
+      ()=>rect('topper','base',900,188,60,26,8)+path('topper','dome','M906 188 Q906 140 930 140 Q954 140 954 188 Z'),
+      ()=>rect('topper','base',925,120,12,94,6)+path('topper','flag','M937 126 L1012 152 L937 180 Z'),
+      ()=>rect('topper','base',924,168,12,46,6)+`<polygon ${F('topper','dome')} points="${star(930,140,46,21,5)}"/>`
+    ]
+  },
+  smoke:p=>[[1053,282],[1050,376],[986,300]][p.exhaust]
+};
+
+/* --- bulldozer --- */
+function roller(cx,cy,R){return `<g class="spin" data-c="${cx},${cy},${R}">${circ('tracks','wheel',cx,cy,R)}${circ('tracks','hub',cx,cy,R*.45)}${dot(cx+R*.66,cy,R*.1)}</g>`;}
+const STAD='M540 800 L980 800 A60 60 0 0 0 980 680 L540 680 A60 60 0 0 0 540 800 Z';
+const CLEAT=`<path d="M560 800 L960 800 M560 680 L960 680" ${D(12)} stroke-dasharray="1 34"/>`;
+const HULL=()=>rect('body','main',505,598,530,96,20);
+const DOZER={ground:800,contact:[540,980],
+  order:['exhaust','cab','body','tracks','blade','topper'],
+  slots:{
+    tracks:[
+      ()=>path('tracks','track',STAD)+CLEAT+[[540,740,44],[980,740,44],[690,756,30],[830,756,30]].map(a=>roller(...a)).join(''),
+      ()=>path('tracks','track',STAD)+CLEAT+[545,655,765,875,985].map(x=>roller(x,740,38)).join(''),
+      ()=>path('tracks','track','M520 800 L1000 800 Q1045 800 1045 755 Q1045 720 1010 712 L640 640 Q580 630 560 670 L495 750 Q480 800 520 800 Z')+`<path d="M540 800 L990 800" ${D(12)} stroke-dasharray="1 34"/>`+[[600,690,40],[700,758,32],[830,758,32],[960,758,32]].map(a=>roller(...a)).join('')
+    ],
+    body:[
+      ()=>HULL()+rect('body','stripe',505,632,530,28,14)+rect('body','main',780,505,235,100,16)+[830,870,910].map(x=>rect('body','grille',x,525,22,60,11)).join('')+circ('body','light',990,555,15),
+      ()=>HULL()+rect('body','stripe',505,632,530,28,14)+path('body','main','M780 600 L780 525 Q780 505 800 505 L950 505 L1015 565 L1015 600 Z')+rect('body','grille',805,530,110,18,9)+rect('body','grille',805,562,110,18,9)+circ('body','light',990,584,13),
+      ()=>HULL()+rect('body','main',760,480,255,122,30)+rect('body','stripe',760,480,255,36,18)+[815,865,915].map(x=>circ('body','grille',x,560,18)).join('')+rect('body','light',985,535,18,40,9)
+    ],
+    cab:[
+      ()=>path('cab','frame','M560 600 L575 362 Q577 340 597 340 L745 340 Q765 340 767 362 L780 600 Z')+rect('cab','glass',600,375,150,150,20)+rect('cab','roof',540,310,250,44,22),
+      ()=>rect('cab','frame',568,340,22,260,11)+rect('cab','frame',748,340,22,260,11)+path('cab','glass','M590 352 H748 V392 q-19.75 26 -39.5 0 q-19.75 26 -39.5 0 q-19.75 26 -39.5 0 q-19.75 26 -39.5 0 Z')+rect('cab','roof',540,310,250,44,22),
+      ()=>path('cab','frame','M560 600 L560 460 Q560 330 665 330 Q770 330 770 460 L770 600 Z')+path('cab','glass','M592 470 Q592 365 665 365 Q738 365 738 470 L738 540 L592 540 Z')+ell('cab','roof',665,330,50,18)
+    ],
+    blade:[
+      ()=>path('blade','arm','M1000 615 L1100 590 L1105 635 L1005 668 Z')+path('blade','blade','M1090 530 L1150 530 Q1190 650 1165 800 L1090 800 Q1118 665 1090 530 Z'),
+      ()=>path('blade','arm','M1000 615 L1100 590 L1105 635 L1005 668 Z')+rect('blade','blade',1090,515,55,285,14)+dot(1117,560,6)+dot(1117,750,6),
+      ()=>path('blade','arm','M1000 615 L1100 590 L1105 635 L1005 668 Z')+[640,690,740].map(y=>`<polygon ${F('blade','arm')} points="1186,${y} 1220,${y+14} 1186,${y+28}"/>`).join('')+path('blade','blade','M1085 560 L1188 595 L1192 770 L1150 800 L1085 800 Z')
+    ],
+    exhaust:[0,1,2].map(v=>()=>EXH(v,880,540,180)),
+    topper:[0,1,2].map(v=>()=>TOP(v,665,312))
+  },
+  smoke:p=>EXTOP(p.exhaust,880,540,180)
+};
+
+/* --- truck --- */
+const TRUCK={ground:800,contact:[560,1060],
+  base:()=>rect('base','frame',430,688,770,48,18),
+  order:['exhaust','cargo','cab','wheels','topper'],
+  slots:{
+    cab:[
+      ()=>path('cab','main','M940 720 L940 430 Q940 410 960 410 L1080 410 Q1110 410 1125 440 L1180 560 L1195 570 Q1205 575 1205 590 L1205 700 Q1205 720 1185 720 Z')+path('cab','glass','M970 440 L1075 440 Q1090 440 1098 455 L1145 555 L970 555 Z')+circ('cab','light',1188,632,15)+rect('cab','stripe',1175,688,44,44,10)+deco('M955 590 L1010 590'),
+      ()=>rect('cab','main',940,400,262,320,30)+rect('cab','glass',1065,430,112,130,18)+rect('cab','glass',965,430,80,110,16)+rect('cab','light',1185,610,22,44,8)+rect('cab','stripe',1175,688,44,44,10)+deco('M965 600 L1015 600'),
+      ()=>path('cab','main','M940 720 L940 420 Q940 400 960 400 L1060 400 Q1110 400 1120 470 L1130 520 Q1210 530 1210 600 L1210 700 Q1210 720 1190 720 Z')+path('cab','glass','M965 430 L1060 430 Q1088 430 1095 470 L1103 520 L965 520 Z')+circ('cab','light',1194,600,13)+rect('cab','stripe',1175,688,44,44,10)
+    ],
+    cargo:[
+      ()=>rect('cargo','main',420,420,500,272,18)+path('cargo','stripe','M420 540 L920 540 L920 584 L420 584 Z')+deco('M670 432 L670 530 M670 594 L670 680'),
+      ()=>path('cargo','stripe','M440 530 Q520 430 600 500 Q690 410 790 490 Q870 440 905 530 Z')+path('cargo','main','M430 690 L410 520 L930 520 L912 690 Z')+deco('M540 532 L540 680 M670 532 L670 680 M800 532 L800 680'),
+      ()=>rect('cargo','stripe',640,440,70,40,10)+rect('cargo','main',420,470,500,215,105)+rect('cargo','stripe',560,470,28,215,0)+rect('cargo','stripe',752,470,28,215,0)
+    ],
+    wheels:[0,1,2].map(v=>()=>wheels('wheels',[[560,730],[720,730],[1060,730]],70,v)),
+    exhaust:[0,1,2].map(v=>()=>EXH(v,925,640,330)),
+    topper:[0,1,2].map(v=>()=>TOP(v,1035,[410,400,400][pv('cab')]))
+  },
+  thumbs:{wheels:v=>wheel('wheels',560,730,70,v)},
+  smoke:p=>EXTOP(p.exhaust,925,640,330)
+};
+
+/* --- car --- */
+const ROOFTOP=[410,400,360];
+const CAR={ground:800,contact:[560,1050],
+  order:['exhaust','roof','body','wheels','extra'],
+  slots:{
+    body:[
+      ()=>path('body','main','M425 740 Q400 740 400 712 L400 640 Q400 600 440 596 L560 586 L1080 586 Q1180 592 1205 650 L1210 712 Q1210 740 1185 740 Z')+rect('body','stripe',420,652,770,22,11)+ell('body','light',1192,630,13,18)+rect('body','light',398,612,18,34,8)+deco('M800 600 L800 728')+deco('M840 630 L880 630',8),
+      ()=>path('body','main','M435 740 Q395 740 400 700 Q410 598 520 590 L1080 590 Q1202 600 1210 700 Q1212 740 1180 740 Z')+circ('body','stripe',800,665,34)+ell('body','light',1196,650,12,18)+deco('M700 600 Q690 670 700 728'),
+      ()=>path('body','main','M410 740 L410 596 L1150 596 Q1205 598 1210 650 L1210 740 Z')+rect('body','stripe',410,688,800,24,0)+rect('body','light',1188,612,18,34,8)+deco('M700 606 L700 680 M930 606 L930 680')
+    ],
+    roof:[
+      ()=>path('roof','roof','M560 596 L630 440 Q645 410 680 410 L900 410 Q930 410 950 435 L1060 596 Z')+path('roof','glass','M612 582 L662 456 Q670 440 687 440 L782 440 L782 582 Z')+path('roof','glass','M812 582 L812 440 L895 440 Q915 440 928 458 L1008 582 Z'),
+      ()=>path('roof','roof','M560 596 Q600 400 805 400 Q1005 400 1050 596 Z')+path('roof','glass','M612 582 Q645 440 805 440 Q965 440 998 582 Z')+deco('M805 444 L805 580',8),
+      ()=>path('roof','roof','M520 596 L520 380 Q520 360 540 360 L950 360 Q980 360 1000 390 L1080 596 Z')+rect('roof','glass',550,395,180,150,16)+rect('roof','glass',760,395,160,150,16)+path('roof','glass','M950 395 L1040 560 L950 560 Z')
+    ],
+    wheels:[0,1,2].map(v=>()=>wheels('wheels',[[560,730],[1050,730]],70,v)),
+    extra:[
+      ()=>{const t=ROOFTOP[pv('roof')];return rect('extra','accent',630,t-12,330,14,7)+path('extra','main',`M650 ${t-10} L650 ${t-48} Q650 ${t-70} 690 ${t-70} L900 ${t-70} Q940 ${t-70} 940 ${t-48} L940 ${t-10} Z`);},
+      ()=>{const t=ROOFTOP[pv('roof')];return rect('extra','accent',640,t-16,22,18,6)+rect('extra','accent',920,t-16,22,18,6)+path('extra','main',`M610 ${t-36} L985 ${t-36} Q1015 ${t-36} 1025 ${t-64} L1037 ${t-58} Q1027 ${t-18} 990 ${t-18} L610 ${t-18} Z`);},
+      ()=>{const t=ROOFTOP[pv('roof')];return rect('extra','accent',660,t-18,22,20,6)+rect('extra','accent',910,t-18,22,20,6)+ell('extra','main',795,t-34,210,22)+deco(`M610 ${t-34} L980 ${t-34}`,5);}
+    ],
+    exhaust:[0,1,2].map(v=>()=>TAIL(v,412,722))
+  },
+  thumbs:{wheels:v=>wheel('wheels',560,730,70,v)},
+  smoke:p=>TAILTOP(p.exhaust,412,722)
+};
+
+/* --- sports car --- */
+const SPORT={ground:800,contact:[560,1060],
+  order:['exhaust','cockpit','spoiler','body','wheels'],
+  slots:{
+    body:[
+      ()=>path('body','main','M405 740 L398 655 Q398 622 432 616 L700 590 Q800 562 905 586 L1150 648 Q1215 664 1215 702 L1210 740 Z')+path('body','stripe','M430 664 L1180 684 L1180 704 L430 688 Z')+ell('body','light',1188,672,18,9)+circ('body','accent',790,676,30),
+      ()=>path('body','main','M410 740 Q392 640 462 616 L722 588 Q822 562 942 592 L1132 640 Q1217 660 1215 715 L1205 740 Z')+rect('body','stripe',440,690,750,22,11)+ell('body','light',1186,664,16,10)+circ('body','accent',800,650,28),
+      ()=>path('body','main','M400 740 L400 672 L600 642 L760 602 L900 602 L1100 652 L1220 690 L1220 740 Z')+path('body','stripe','M410 700 L1210 700 L1210 718 L410 718 Z')+rect('body','light',1192,676,20,14,6)+circ('body','accent',820,668,28)
+    ],
+    cockpit:[
+      ()=>path('cockpit','glass','M680 600 Q715 480 830 480 Q925 480 965 600 Z')+circ('cockpit','roof',825,560,32),
+      ()=>circ('cockpit','roof',790,548,44)+path('cockpit','glass','M880 600 L900 552 L935 552 L938 600 Z')+deco('M795 532 L834 532',10),
+      ()=>path('cockpit','roof','M680 600 L740 500 L880 500 L965 600 Z')+path('cockpit','glass','M712 590 L756 516 L866 516 L928 590 Z')
+    ],
+    spoiler:[
+      ()=>rect('spoiler','accent',430,536,16,96,6)+rect('spoiler','accent',485,536,16,86,6)+rect('spoiler','main',375,512,160,28,12),
+      ()=>path('spoiler','main','M398 650 Q408 592 532 596 L540 622 L420 640 Z'),
+      ()=>rect('spoiler','accent',448,512,22,120,8)+rect('spoiler','accent',360,466,24,80,8)+rect('spoiler','accent',540,466,24,80,8)+rect('spoiler','main',372,486,180,30,10)
+    ],
+    wheels:[0,1,2].map(v=>()=>wheels('wheels',[[560,728],[1060,728]],72,v)),
+    exhaust:[0,1,2].map(v=>()=>TAIL(v,414,712))
+  },
+  thumbs:{wheels:v=>wheel('wheels',560,728,72,v)},
+  smoke:p=>TAILTOP(p.exhaust,414,712)
+};
+
+/* --- buggy --- */
+const DRIVER=()=>path('body','seat','M640 576 L640 470 Q640 450 660 450 L700 450 Q715 450 715 470 L715 576 Z')+circ('body','head',770,500,42)+dot(786,494,5.5)+dot(804,494,5.5)+deco('M778 514 Q793 528 808 514',5);
+const CAGETOP=[410,380,390];
+const BUGGY={ground:800,contact:[540,1060],
+  order:['exhaust','frame','body','wheels','topper'],
+  slots:{
+    body:[
+      ()=>DRIVER()+path('body','main','M460 690 L470 600 Q480 572 520 572 L900 572 L1120 620 Q1150 630 1150 660 L1145 690 Z')+rect('body','stripe',520,610,500,22,11),
+      ()=>DRIVER()+path('body','main','M470 690 Q450 580 560 576 L1000 576 Q1150 590 1150 690 Z')+circ('body','stripe',900,630,28),
+      ()=>DRIVER()+path('body','main','M460 690 L480 590 L620 562 L960 562 L1150 640 L1150 690 Z')+path('body','stripe','M620 600 L960 600 L1080 650 L620 650 Z')
+    ],
+    frame:[
+      ()=>TUBE('frame','tube','M560 580 L610 410 L860 410 L960 585 M735 410 L735 580'),
+      ()=>TUBE('frame','tube','M560 580 Q600 380 760 380 Q920 380 960 585'),
+      ()=>TUBE('frame','tube','M560 580 L580 390 L900 390 L980 585')+[650,740,830].map(x=>circ('frame','light',x,368,18)).join('')
+    ],
+    wheels:[0,1,2].map(v=>()=>wheels('wheels',[[540,705],[1060,705]],95,v)),
+    exhaust:[0,1,2].map(v=>()=>EXH(v,505,640,170)),
+    topper:[0,1,2].map(v=>()=>TOP(v,760,CAGETOP[pv('frame')]-([0,0,22][pv('frame')])))
+  },
+  thumbs:{wheels:v=>wheel('wheels',540,705,95,v)},
+  smoke:p=>EXTOP(p.exhaust,505,640,170)
+};
+
+const V={bulldozer:DOZER,truck:TRUCK,tractor:TRACTOR,car:CAR,sport:SPORT,buggy:BUGGY};
+const VIDS=['bulldozer','truck','tractor','car','sport','buggy'];
+const PRE={tractor:['#ff4b4b','#2fb85a'],bulldozer:['#ffd93d','#3a3a3a'],truck:['#3a6df0','#ff9f2e'],car:['#ff7ab8','#8a5cf0'],sport:['#ff4b4b','#ffd93d'],buggy:['#9ed84a','#ff9f2e']};
+function presetFor(vid){const[a,b]=PRE[vid];
+  return (s,r)=>({tire:'#3a3a3a',track:'#3a3a3a',wheel:'#b9bec7',rim:b==='#3a3a3a'?'#ffd93d':b,hub:a,glass:'#bfe9ff',light:'#fff3a0',pipe:'#b9bec7',cap:'#3a3a3a',
+    seat:'#3a3a3a',head:'#ffe2c4',stripe:b,accent:b,roof:b,flag:'#ff4b4b',dome:'#ff9f2e',base:'#3a3a3a',grille:'#3a3a3a',arm:b,tube:b,
+    frame:s==='base'?'#3a3a3a':a,main:a,blade:a}[r]||a);}
+
+const wrap=(vid,s)=>V[vid].mirror?`<g transform="matrix(-1 0 0 1 1600 0)">${s}</g>`:s;
+
+/* bbox measuring for thumbnails */
+const meas=$('#meas'),bcache={};
+function measure(key,svg){if(bcache[key])return bcache[key];meas.innerHTML=`<g>${svg}</g>`;const b=meas.firstChild.getBBox();meas.innerHTML='';return bcache[key]={x:b.x,y:b.y,w:b.width,h:b.height};}
+function fitSVG(key,inner,pad=14){const b=measure(key,inner);return `<svg viewBox="${n1(b.x-pad)} ${n1(b.y-pad)} ${n1(b.w+pad*2)} ${n1(b.h+pad*2)}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;pointer-events:none">${inner}</svg>`;}
+
+/* ================= state ================= */
+let S={step:1,vid:'tractor',data:{},sel:null,color:PALETTE[0]};
+try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(o){S.vid=V[o.vid]?o.vid:'tractor';S.data=o.data||{};S.color=o.color||S.color;}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({vid:S.vid,data:S.data,color:S.color}))}catch(e){}};
+const cur=()=>S.data[S.vid]||(S.data[S.vid]={parts:{},colors:{}});
+const slotList=vid=>Object.keys(V[vid].slots);
+let popSlot=null;const done={};
+
+function vehicleSVG(vid,parts,colors,{ghosts=false,sel=null,pop=null,preset=null}={}){
+  ctx={parts,colors,preset};const VD=V[vid];let s=VD.base?VD.base():'';
+  for(const sl of VD.order){const i=parts[sl];
+    if(i!=null)s+=`<g class="part${pop===sl?' pop':''}${sel===sl?' selp':''}" data-p="${sl}">${VD.slots[sl][i]()}</g>`;
+    else if(ghosts)s+=`<g class="gp${sel===sl?' hot':''}" data-g="${sl}">${VD.slots[sl][0]()}</g>`;}
+  return wrap(vid,s);
+}
+function partThumb(vid,sl,v){
+  const c=cur();ctx={parts:c.parts,colors:c.colors,preset:null};const VD=V[vid];
+  const art=VD.thumbs&&VD.thumbs[sl]?VD.thumbs[sl](v):VD.slots[sl][v]();
+  return fitSVG(`${vid}|${sl}|${v}|${JSON.stringify(c.parts)}`,wrap(vid,art));
+}
+function fullParts(vid){const p={};slotList(vid).forEach(sl=>p[sl]=0);return p;}
+
+/* ================= sound ================= */
+let AC;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC;}
+function tone(f,d=.12,type='sine',v=.18,to,when=0){const c=ac();if(!c)return;const t=c.currentTime+when,o=c.createOscillator(),g=c.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+d);
+  g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.03);}
+const sfx={
+  pop:()=>{tone(300,.16,'sine',.25,800);tone(600,.12,'triangle',.12,1200,.08);},
+  tap:()=>tone(520,.08,'triangle',.15,700),
+  nav:()=>tone(440,.1,'triangle',.15,660),
+  paint:()=>tone(700+Math.random()*300,.09,'sine',.1,1200),
+  toot:()=>{tone(196,.22,'square',.1);tone(247,.4,'square',.1,undefined,.22);},
+  win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.25,'triangle',.18,undefined,i*.12)),
+  fanfare:()=>[523,523,523,659,784,659,784,1047].forEach((f,i)=>tone(f,i===7?.6:.18,'square',.09,undefined,[0,.15,.3,.45,.7,.95,1.1,1.3][i]))
+};
+let eng=null;
+function engineStart(){const c=ac();if(!c||eng)return;const o=c.createOscillator(),f=c.createBiquadFilter(),g=c.createGain();
+  o.type='sawtooth';o.frequency.value=55;f.type='lowpass';f.frequency.value=420;g.gain.value=.0001;
+  o.connect(f);f.connect(g);g.connect(c.destination);o.start();g.gain.setTargetAtTime(.05,c.currentTime,.2);eng={o,g,c};}
+function engineSet(v,thr){if(eng)eng.o.frequency.setTargetAtTime(45+v*.08+(thr?14:0),eng.c.currentTime,.08);}
+function engineStop(){if(!eng)return;const{o,g,c}=eng;g.gain.setTargetAtTime(.0001,c.currentTime,.08);o.stop(c.currentTime+.6);eng=null;}
+
+function confetti(n=28){
+  const f=$('#fx'),em=['⭐','🎉','🌟','✨','🌼','🎈'];
+  for(let i=0;i<n;i++){const s=document.createElement('span');s.textContent=em[i%em.length];
+    s.style.cssText=`position:absolute;left:${Math.random()*96}%;top:-60px;font-size:${28+Math.random()*30}px`;f.appendChild(s);
+    const a=s.animate([{transform:'translateY(0) rotate(0)'},{transform:`translateY(${innerHeight+100}px) rotate(${Math.random()*720-360}deg)`}],{duration:1800+Math.random()*1400,delay:Math.random()*600,easing:'ease-in',fill:'both'});
+    a.onfinish=()=>s.remove();}
+}
+
+/* ================= rendering ================= */
+const stage=$('#stage'),panel=$('#panel');
+function stageBg(){return `<rect x="-500" y="-500" width="2600" height="2000" fill="#e3f5ff"/>`+
+  `<circle cx="1330" cy="190" r="58" fill="#fff3b0" stroke="${K}" stroke-width="8"/>`+
+  `<path d="M-500 800 L0 800 Q400 785 800 800 T1600 800 L2100 800 L2100 1500 L-500 1500 Z" fill="#c9ecab" stroke="${K}" stroke-width="8"/>`;}
+function renderTop(){
+  $('#prev').classList.toggle('dim',S.step===1);
+  [...$('#dots').children].forEach((d,i)=>d.classList.toggle('on',i===S.step-1));
+  $('#dots').style.display=S.step===4?'none':'flex';$('#prog').style.display=S.step===4?'block':'none';
+  const c=cur();const complete=slotList(S.vid).every(k=>c.parts[k]!=null);
+  $('#next').classList.toggle('go',(S.step===2&&complete)||(S.step===4&&DR&&DR.won));
+}
+function renderPick(){
+  $('#pick').innerHTML=VIDS.map(id=>{const inner=vehicleSVG(id,fullParts(id),{},{preset:presetFor(id)});
+    return `<button class="card${S.vid===id?' on':''}" data-v="${id}">${fitSVG('veh|'+id,inner,30)}</button>`;}).join('');
+}
+function renderStage(){const c=cur();
+  stage.innerHTML=stageBg()+vehicleSVG(S.vid,c.parts,c.colors,{ghosts:S.step===2,sel:S.step===2?S.sel:null,pop:popSlot});}
+function renderPanel(){
+  if(S.step===2){
+    panel.innerHTML=S.sel?[0,1,2].map(i=>`<button class="item${cur().parts[S.sel]===i?' sel':''}" data-i="${i}">${partThumb(S.vid,S.sel,i)}</button>`).join(''):'<div class="hint">👆</div>';
+  }else if(S.step===3){
+    panel.innerHTML=PALETTE.map(c=>`<button class="sw${c===S.color?' on':''}" data-c="${c}" style="background:${c}" aria-label="color"></button>`).join('');
+  }
+}
+function render(){
+  const show=id=>['pick','stage','drive'].forEach(k=>$('#'+k).style.display=k===id?(k==='pick'?'grid':'block'):'none');
+  if(S.step===1){show('pick');renderPick();}
+  else if(S.step===4){show('drive');}
+  else{show('stage');renderStage();}
+  panel.classList.toggle('hide',S.step===1||S.step===4);
+  renderPanel();renderTop();save();
+}
+
+/* ================= navigation ================= */
+function goStep(n){
+  if(n<1)return;
+  if(S.step===4)stopDrive();
+  if(n>4)n=1;
+  if(n>=3){const c=cur();slotList(S.vid).forEach(sl=>{if(c.parts[sl]==null)c.parts[sl]=0;});}
+  if(n===2&&!S.sel){S.sel=slotList(S.vid).find(k=>cur().parts[k]==null)||null;}
+  S.step=n;popSlot=null;render();
+  if(n===4)startDrive();
+}
+$('#prev').addEventListener('click',()=>{ac();if(S.step>1){sfx.nav();goStep(S.step-1);}});
+$('#next').addEventListener('click',()=>{ac();sfx.nav();goStep(S.step+1);});
+
+/* step 1 */
+$('#pick').addEventListener('click',e=>{const c=e.target.closest('.card');if(!c)return;ac();
+  if(S.vid!==c.dataset.v){S.vid=c.dataset.v;S.sel=null;}sfx.pop();goStep(2);});
+
+/* step 2 */
+stage.addEventListener('click',e=>{
+  if(S.step!==2)return;ac();
+  const g=e.target.closest&&(e.target.closest('[data-g]')||e.target.closest('.part'));
+  if(!g)return;S.sel=g.dataset.g||g.dataset.p;sfx.tap();renderStage();renderPanel();
+});
+function setPart(i){
+  const c=cur(),sl=S.sel;if(!sl)return;
+  c.parts[sl]=i;popSlot=sl;renderStage();renderPanel();renderTop();save();sfx.pop();
+  setTimeout(()=>{popSlot=null;const g=stage.querySelector(`.part[data-p="${sl}"]`);if(g)g.classList.remove('pop');},600);
+  const complete=slotList(S.vid).every(k=>c.parts[k]!=null);
+  if(complete){if(!done[S.vid]){done[S.vid]=1;setTimeout(()=>{sfx.win();confetti();},350);}}
+  else{done[S.vid]=0;setTimeout(()=>{if(S.step!==2||S.sel!==sl)return;S.sel=slotList(S.vid).find(k=>c.parts[k]==null);renderStage();renderPanel();},750);}
+}
+
+/* step 3 painting */
+let painting=false,strokeN=0,lastSfx=0;
+function paintAt(x,y){
+  const el=document.elementFromPoint(x,y),reg=el&&el.closest&&el.closest('#stage .reg');if(!reg)return;
+  const s=reg.dataset.s,r=reg.dataset.r,c=cur();ctx={parts:c.parts,colors:c.colors,preset:null};
+  if(col(s,r).toLowerCase()===S.color.toLowerCase())return;
+  c.colors[s+'.'+r]=S.color;renderStage();save();
+  const n=performance.now();if(n-lastSfx>90){sfx.paint();lastSfx=n;}
+}
+stage.addEventListener('pointerdown',e=>{if(S.step!==3)return;ac();painting=true;paintAt(e.clientX,e.clientY);});
+stage.addEventListener('pointermove',e=>{if(painting&&S.step===3)paintAt(e.clientX,e.clientY);});
+window.addEventListener('pointerup',()=>painting=false);
+window.addEventListener('pointercancel',()=>painting=false);
+
+panel.addEventListener('click',e=>{
+  ac();
+  const it=e.target.closest('.item');if(it&&S.step===2){setPart(+it.dataset.i);return;}
+  const sw=e.target.closest('.sw');if(sw){S.color=sw.dataset.c;sfx.paint();renderPanel();save();}
+});
+
+/* ================= step 4: drive ================= */
+const dsvg=$('#drive');
+let DR=null,raf=0;
+const SC=.42;
+const H=x=>760-(70*Math.sin(x*.0021)+40*Math.sin(x*.0057+1.3)+18*Math.sin(x*.013+.5))*Math.min(1,Math.max(0,x/700));
+const hs=k=>{const x=Math.sin(k*127.1+311.7)*43758.5453;return x-Math.floor(x);};
+const EMO=['🌳','🌲','🌻','🌷','🍄','🐄','🐑','🌼','🐓','🏡','🌳','🌸','🐰','🌲','🐴','🌻'];
+const CLOUD='M570 300A40 40 0 0 1 570 220A55 55 0 0 1 670 190A50 50 0 0 1 760 230A40 40 0 0 1 750 300Z';
+
+function startDrive(){
+  const c=cur();const VD=V[S.vid];
+  let sky=`<defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd3ff"/><stop offset="1" stop-color="#e6f7ff"/></linearGradient></defs>`+
+    `<rect x="-200" y="-200" width="2000" height="1400" fill="url(#sk)"/>`;
+  let sun='<g transform="translate(1080 150)">';
+  for(let i=0;i<12;i++){const a=i*Math.PI/6;sun+=`<line x1="${n1(Math.cos(a)*86)}" y1="${n1(Math.sin(a)*86)}" x2="${n1(Math.cos(a)*120)}" y2="${n1(Math.sin(a)*120)}" ${D(10)}/>`;}
+  sun+=`<circle r="70" fill="#ffd93d" stroke="${K}" stroke-width="8"/>${dot(-24,-12,8)}${dot(24,-12,8)}<circle cx="-40" cy="14" r="11" fill="#ff9fb5"/><circle cx="40" cy="14" r="11" fill="#ff9fb5"/>${deco('M-26 18 Q0 46 26 18',7)}</g>`;
+  let clouds='';for(let i=0;i<5;i++)clouds+=`<path d="${CLOUD}" fill="#fff" stroke="${K}" stroke-width="${n1(8/(.55+i*.08))}" id="cl${i}"/>`;
+  dsvg.innerHTML=sky+sun+`<g>${clouds}</g>`+
+    `<path id="hFar" fill="#cbb6ff" stroke="${K}" stroke-width="7"/><path id="hMid" fill="#8fdc8f" stroke="${K}" stroke-width="7"/>`+
+    `<g id="world"><g id="wGround"></g><g id="wDeco"></g><g id="wFinish"></g></g><g id="smoke"></g>`+
+    `<g id="veh">${vehicleSVG(S.vid,c.parts,c.colors)}</g>`;
+  const mirror=!!VD.mirror,[c0,c1]=VD.contact;
+  DR={x:0,v:140,t:0,thr:false,finishX:null,won:false,stopped:false,last:0,spawn:0,puffs:[],chunk:null,touched:false,winT:0,
+      cx:(c0+c1)/2,half:(c1-c0)/2,G:VD.ground,smokeP:VD.smoke(c.parts),mirror,
+      wheels:[...dsvg.querySelectorAll('#veh .spin')].map(el=>{const[a,b,r]=el.dataset.c.split(',').map(Number);return{el,a,b,r,ang:0};})};
+  $('#touch').style.display='block';$('#win').classList.remove('show');$('#win').style.display='none';
+  engineStart();sfx.toot();
+  DR.last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+}
+function stopDrive(){cancelAnimationFrame(raf);raf=0;engineStop();DR=null;$('#touch').style.display='none';$('#win').classList.remove('show');$('#win').style.display='none';}
+
+function buildChunk(w0){
+  const w1=w0+3400;const pts=[];for(let x=w0;x<=w1;x+=20)pts.push([x,H(x)]);
+  const top=pts.map(([x,y])=>`${x} ${n1(y-28)}`).join(' L');
+  const road=pts.map(([x,y])=>`${x} ${n1(y+20)}`).join(' L');
+  let dash='';for(let x=Math.ceil(w0/90)*90;x<w1-50;x+=90)dash+=`M${x} ${n1(H(x)+20)} L${x+45} ${n1(H(x+45)+20)}`;
+  $('#wGround').innerHTML=`<path d="M${w0} 1300 L${top} L${w1} 1300 Z" fill="#7bd35a" stroke="${K}" stroke-width="8"/>`+
+    `<path d="M${road}" fill="none" stroke="${K}" stroke-width="52" stroke-linejoin="round"/>`+
+    `<path d="M${road}" fill="none" stroke="#9c8a7c" stroke-width="38" stroke-linejoin="round"/>`+
+    `<path d="${dash}" fill="none" stroke="#ffe14d" stroke-width="7" stroke-linecap="round"/>`+
+    `<path d="M${w0} 1000 L${w1} 1000" fill="none" stroke="#5fb540" stroke-width="140" stroke-dasharray="6 70" opacity=".5"/>`;
+  let d='';
+  for(let k=Math.ceil(w0/150);k<=Math.floor(w1/150);k++){const r=hs(k);if(r<.22)continue;
+    const x=k*150+hs(k+7)*60,e=EMO[Math.floor(hs(k+99)*EMO.length)],fs=Math.round(62+hs(k+3)*56);
+    d+=`<text x="${n1(x)}" y="${n1(H(x)-22)}" font-size="${fs}" text-anchor="middle">${e}</text>`;}
+  $('#wDeco').innerHTML=d;
+}
+function hillPath(par,base,a1,f1,a2,f2,ph){
+  let p=`M-100 1100`;for(let sx=-100;sx<=1700;sx+=40){const x=sx+DR.x*par;p+=` L${sx} ${n1(base-a1*Math.sin(x*f1+ph)-a2*Math.sin(x*f2+ph*2.3))}`;}
+  return p+' L1700 1100 Z';
+}
+function loop(now){
+  if(!DR)return;
+  const dt=Math.min(.05,(now-DR.last)/1000);DR.last=now;
+  const R=DR;
+  // physics
+  const xr=R.x-R.half*SC,xf=R.x+R.half*SC,yr=H(xr),yf=H(xf);
+  const ang=Math.atan2(yf-yr,xf-xr);           // + = downhill (screen y down)
+  if(!R.won){
+    R.t+=dt;
+    if(R.thr)R.v+=560*dt;else R.v-=230*dt;
+    R.v+=Math.sin(ang)*260*dt;
+    R.v=Math.max(110,Math.min(1150,R.v));
+    if(R.t>=20&&R.finishX==null){R.finishX=R.x+1400;drawFinish();}
+    if(R.finishX!=null&&R.x+R.v*R.v/1800>=R.finishX+200){R.won=true;sfx.fanfare();}
+  }else{
+    R.v=Math.max(0,R.v-900*dt);
+    if(R.v===0&&!R.stopped){R.stopped=true;R.winT=now;$('#win').style.display='block';$('#win').classList.add('show');confetti(40);renderTop();}
+  }
+  R.x+=R.v*dt;
+  // world
+  const w0=Math.floor((R.x-1000)/800)*800;if(w0!==R.chunk){R.chunk=w0;buildChunk(w0);}
+  $('#world').setAttribute('transform',`translate(${n1(800-R.x)} 0)`);
+  $('#hFar').setAttribute('d',hillPath(.2,560,90,.0038,35,.0105,1));
+  $('#hMid').setAttribute('d',hillPath(.45,650,70,.0055,25,.014,2.2));
+  for(let i=0;i<5;i++){const s=.55+i*.08,x=((i*430+180-R.x*.12)%2300+2300)%2300-350,y=110+(i%3)*85;
+    $('#cl'+i).setAttribute('transform',`translate(${n1(x)} ${y}) scale(${s}) translate(-665 -245)`);}
+  // vehicle
+  let y=(yr+yf)/2;
+  if(!R.stopped)y+=Math.sin(now/45)*Math.min(R.v/500,1)*2.2;
+  else{const tt=(now-R.winT)/1000;if(tt<3)y-=Math.abs(Math.sin(tt*5))*55*(1-tt/3);}
+  const deg=ang*180/Math.PI;
+  $('#veh').setAttribute('transform',`translate(800 ${n1(y)}) rotate(${n1(deg)}) scale(${SC}) translate(${-R.cx} ${-R.G})`);
+  const dir=R.mirror?-1:1;
+  for(const w of R.wheels){w.ang+=dir*(R.v*dt/SC)/w.r*57.2958;w.el.setAttribute('transform',`rotate(${n1(w.ang%360)} ${w.a} ${w.b})`);}
+  // smoke
+  R.spawn-=dt;
+  if(R.smokeP&&R.v>20&&R.spawn<=0){
+    R.spawn=Math.max(.05,.2-R.v/7000)-(R.thr?.04:0);
+    const dx=(R.smokeP[0]-R.cx)*SC,dy=(R.smokeP[1]-R.G)*SC,c=Math.cos(ang),s=Math.sin(ang);
+    const px=800+dx*c-dy*s,py=y+dx*s+dy*c;
+    const el=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    el.setAttribute('fill',R.thr?'#f2f2f2':'#ffffff');el.setAttribute('stroke','#555');el.setAttribute('stroke-width','4');
+    $('#smoke').appendChild(el);R.puffs.push({el,x:px,y:py,r:7,age:0,life:1.1+Math.random()*.5,vy:-70-Math.random()*40});
+  }
+  R.puffs=R.puffs.filter(p=>{p.age+=dt;if(p.age>=p.life){p.el.remove();return false;}
+    p.x-=(R.v*.85+40)*dt;p.y+=p.vy*dt;p.r+=30*dt;
+    p.el.setAttribute('cx',n1(p.x));p.el.setAttribute('cy',n1(p.y));p.el.setAttribute('r',n1(p.r));p.el.setAttribute('opacity',n1(1-p.age/p.life));return true;});
+  // sound + hud
+  engineSet(R.won?R.v*.5:R.v,R.thr&&!R.won);
+  if(R.stopped&&eng)engineStop();
+  let pct=R.finishX==null?Math.min(R.t/20,1)*.88:.88+.12*Math.min(1,Math.max(0,1-(R.finishX-R.x)/1400));
+  if(R.won)pct=1;
+  $('#bar').style.width=`calc(${pct*100}% - ${pct*8}px)`;$('#mk').style.left=(pct*100)+'%';
+  raf=requestAnimationFrame(loop);
+}
+function drawFinish(){
+  const x=DR.finishX,y=H(x);let chk='';
+  for(let i=0;i<10;i++)for(let j=0;j<2;j++)chk+=`<rect x="${x-150+i*30}" y="${n1(y-340+j*30)}" width="30" height="30" fill="${(i+j)%2?'#fff':K}"/>`;
+  $('#wFinish').innerHTML=`<rect x="${x-170}" y="${n1(y-360)}" width="22" height="380" rx="8" fill="#ff4b4b" stroke="${K}" stroke-width="7"/>`+
+    `<rect x="${x+148}" y="${n1(y-360)}" width="22" height="380" rx="8" fill="#ff4b4b" stroke="${K}" stroke-width="7"/>`+chk+
+    `<rect x="${x-150}" y="${n1(y-340)}" width="300" height="60" fill="none" stroke="${K}" stroke-width="7"/>`+
+    `<text x="${x-159}" y="${n1(y-372)}" font-size="70" text-anchor="middle">🎈</text><text x="${x+159}" y="${n1(y-372)}" font-size="70" text-anchor="middle">🎈</text>`;
+  const mk=$('#mk');mk.textContent='🚙';
+}
+dsvg.addEventListener('pointerdown',e=>{if(!DR)return;ac();DR.thr=true;if(!DR.touched){DR.touched=true;$('#touch').style.display='none';}});
+const off=()=>{if(DR)DR.thr=false;};
+window.addEventListener('pointerup',off);window.addEventListener('pointercancel',off);
+window.addEventListener('keydown',e=>{if(e.code==='Space'&&DR){DR.thr=true;$('#touch').style.display='none';}});
+window.addEventListener('keyup',e=>{if(e.code==='Space')off();});
+
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&DR)DR.thr=false;});
+
+render();
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+})();
+</script>
+</body>
+</html>
