@@ -103,7 +103,7 @@ input{font:900 20px var(--body);color:var(--ink);background:#fff;border:0;border
 #addons i svg{width:76%;height:76%}
 #addons i.hl{background:linear-gradient(180deg,#ffe58a,#ffc21f);border:3px solid #ffd23f;transform:scale(1.12);box-shadow:0 0 22px 6px rgba(255,210,63,.9);animation:pulse .3s infinite alternate}
 #addons i.on{background:linear-gradient(180deg,#5aa2ff,#2563eb);border:3px solid #fff;box-shadow:0 0 12px rgba(59,130,246,.8)}
-#addons i.hl.on{background:linear-gradient(180deg,#ffe58a,#ffc21f);border:4px solid #2563eb;animation:none;transform:none}
+#addons i.hl.on{background:linear-gradient(180deg,#5aa2ff,#2563eb);border:4px solid #ffd23f;box-shadow:0 0 22px 6px rgba(255,210,63,.9);animation:none;transform:scale(1.08)}
 .ver{align-self:flex-end;font-family:var(--disp);font-size:13px;letter-spacing:.08em;color:var(--mute);opacity:.8;margin-top:-6px}
 #bAct{width:min(13vw,96px);height:min(13vw,96px);flex-direction:column;gap:0;background:rgba(255,190,40,.55);display:flex;align-items:center;justify-content:center}
 #bAct .ai{width:46%;height:46%;display:grid;place-items:center}#bAct .ai svg{width:100%;height:100%}
@@ -184,7 +184,7 @@ input{font:900 20px var(--body);color:var(--ink);background:#fff;border:0;border
     <div class="join"><input id="code" placeholder="ABC" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false"><button id="btnJoin" class="btn">Join</button></div>
     <button id="btnSolo" class="btn ghost">Practice vs CPU</button>
     <p id="menuErr" class="err" role="status"></p>
-    <div class="ver">v8.1</div>
+    <div class="ver">v8.2</div>
   </div>
 </div>
 
@@ -907,12 +907,12 @@ function ramHit(id,amt,dx,dz){
 function hazardHit(h,k,id,now){
   const age=(now-h.born)/1000,me=k===car;
   if(h.k==='spike'){
-    if(h.o===id&&age<2.5)return;if(h.y>3.4||Math.hypot(k.x-h.x,k.z-h.z)>3.0)return;
+    if(h.o===id&&age<2.5)return;if(h.y>3.0||Math.hypot(k.x-h.x,k.z-h.z)>2.6)return;
     if((h.cd[id]||0)>now)return;h.cd[id]=now+700;
     if(!(k.add&8)){addDmg(k,15);k.v*=0.4;k.burn=false;k.sup=false;}
     let dx=h.x-k.x,dz=h.z-k.z,d=Math.hypot(dx,dz)||1;dx/=d;dz/=d;const fx=Math.cos(k.a),fz=Math.sin(k.a);
     const kx=dx*0.6+fx*0.4,kz=dz*0.6+fz*0.4,kl=Math.hypot(kx,kz)||1,sp=Math.abs(k.v/0.4)*0.8+7;
-    h.x=k.x+dx*3.1;h.z=k.z+dz*3.1;h.vx=kx/kl*sp+(Math.random()-.5)*3;h.vz=kz/kl*sp+(Math.random()-.5)*3;h.vy=7+Math.random()*3;h.spin=(Math.random()-.5)*14;
+    h.x=k.x+dx*2.7;h.z=k.z+dz*2.7;h.vx=kx/kl*sp+(Math.random()-.5)*3;h.vz=kz/kl*sp+(Math.random()-.5)*3;h.vy=7+Math.random()*3;h.spin=(Math.random()-.5)*14;
     kickSend(h);if(me){bonk();if(!(k.add&8)){crash();shake=0.5;}}burst(h.x,1,h.z,0xffd23f,8);return;}
   if(h.o===id&&age<(h.k==='ball'?1:0.8))return;
   if(Math.hypot(k.x-h.x,k.z-h.z)>(h.k==='ball'?2.0:h.k==='oil'?2.4:2.1))return;
@@ -970,7 +970,7 @@ function botsStep(dt){
         if(it==='nitro')use=r.nitro<60;
         else for(const o of karts){if(o.id===id||!o.k)continue;const dx=o.k.x-r.x,dz=o.k.z-r.z,dd=Math.hypot(dx,dz),fw=(dx*fx+dz*fz)/(dd||1);
           if(it==='ball'&&dd>6&&dd<70&&fw>0.85){use=true;break;}if((it==='oil'||it==='flask')&&dd<22&&fw<-0.6){use=true;break;}
-          if(it==='spike'&&dd<25&&fw<-0.5){use=true;break;}}
+          if(it==='spike'&&dd<45&&fw>0.8){use=true;break;}}
         if(it==='hook')use=!!hookTarget(r,id);
         if(!use&&it!=='hook'&&Math.random()<0.02)use=true;
         if(use){r.inv.shift();if(it==='nitro')r.nitro=Math.min(100,r.nitro+50);else if(it==='hook')fireHook(r,id);else fireItem(r,id,it);}}
@@ -990,7 +990,7 @@ function fireItem(k,ownerId,kind){
   const id=String(ownerId).slice(-5)+'-'+(++hzSeq);
   let h;
   if(kind==='oil'||kind==='flask'){const[x,z]=toWorld(k.x,k.z,k.a,-2.8,0);h={id,k:kind,o:ownerId,x,z};}
-  else if(kind==='spike'){const sp=Math.max(0,k.v)*0.3;h={id,k:'spike',o:ownerId,s:[k.x,3.8,k.z,Math.cos(k.a)*sp,2.5,Math.sin(k.a)*sp]};}
+  else if(kind==='spike'){const sp=Math.max(0,k.v)+12,[x,z]=toWorld(k.x,k.z,k.a,2.8,0);h={id,k:'spike',o:ownerId,s:[x,2.6,z,Math.cos(k.a)*sp,7,Math.sin(k.a)*sp]};}
   else{h={id,k:'ball',o:ownerId,s0:L[k.idx]+2,off:lateral(k.x,k.z,k.idx)};}
   addHazard(h);
   if(role==='host')broadcast({t:'hz',h});else if(role==='client')send({t:'hz',h});
@@ -1031,7 +1031,7 @@ function makeSpike(){const g=new THREE.Group(),b=new THREE.Mesh(new THREE.BoxGeo
     const sp=new THREE.Mesh(spikeGeo,toon(0xd7dbe6));sp.quaternion.setFromUnitVectors(up,v);
     const t1=Math.abs(v.x)?new THREE.Vector3(0,a,b2):Math.abs(v.y)?new THREE.Vector3(a,0,b2):new THREE.Vector3(a,b2,0);
     sp.position.copy(v).multiplyScalar(0.95).add(t1);g.add(sp);}
-  g.scale.setScalar(1.6);castAll(g,true,false);return g;}
+  g.scale.setScalar(1.25);castAll(g,true,false);return g;}
 // ---- hook: grab the nearest kart ahead (within ~60 m) and drag it back next to you ----
 const HOOK_RANGE=120;
 function kartById(id){return id===myId?car:remote[id];}
@@ -1039,8 +1039,10 @@ function hookTarget(k,id){let best=null,bd=1e9;const all=[[myId,car]].concat(Obj
   for(const[oid,o]of all){if(oid===id||!o||o.fin)continue;const ap=oid===myId?o.prog:(o.p!=null?o.p:o.prog),mp=k===car?k.prog:(k.p!=null?k.p:k.prog),dp=ap-mp;
     const d=Math.hypot(o.x-k.x,o.z-k.z);if(dp>0&&dp<56&&d<HOOK_RANGE&&d<bd){bd=d;best=oid;}}return best;}
 function fireHook(k,id){const to=hookTarget(k,id);if(!to)return;
-  const side=lateral(k.x,k.z,k.idx)>0?-1:1,lead=Math.max(0,k.v)*0.6,i=k.idx;
-  const m={t:'hook',from:id,to,x:+(k.x+Math.cos(k.a)*lead+NRM[i][0]*side*3.6).toFixed(2),z:+(k.z+Math.sin(k.a)*lead+NRM[i][1]*side*3.6).toFixed(2),a:+k.a.toFixed(3),v:+Math.max(0,k.v).toFixed(1)};
+  const o=kartById(to),d=((o.idx-k.idx)%N+N)%N,mid=(k.idx+Math.floor(d/2))%N;
+  const lh=Math.max(-6,Math.min(6,lateral(k.x,k.z,k.idx))),lt=lh>0?lh-4:lh+4,P=(lat)=>[+(T[mid][0]+NRM[mid][0]*lat).toFixed(2),+(T[mid][1]+NRM[mid][1]*lat).toFixed(2)];
+  const[hx,hz]=P(lh),[x,z]=P(lt);
+  const m={t:'hook',from:id,to,x,z,hx,hz,a:+angAt(mid).toFixed(3),v:+Math.max(0,k.v).toFixed(1)};
   onHook(m);if(role==='host')broadcast(m);else if(role==='client')send(m);}
 const hooks=[];const chainMat=new THREE.MeshBasicMaterial({color:0x5b6170}),chainGeo=new THREE.CylinderGeometry(0.09,0.09,1,6).rotateX(Math.PI/2);
 const clawGeo=new THREE.TorusGeometry(0.45,0.12,6,12,Math.PI*1.3);
@@ -1048,6 +1050,8 @@ function onHook(m){const k=kartById(m.to);
   if(k&&(m.to===myId||k.bot)){ // the owner of the hooked kart moves it
     k.pull={t:0,sx:k.x,sz:k.z,tx:+m.x,tz:+m.z,a:+m.a,v:+m.v};k.burn=false;k.sup=false;k.slipT=0;k.spinT=0;
     if(m.to===myId){banner('HOOKED!',false,900);shake=0.4;}}
+  const f=kartById(m.from);
+  if(f&&m.hx!=null&&(m.from===myId||f.bot)){f.pull={t:0,sx:f.x,sz:f.z,tx:+m.hx,tz:+m.hz,a:+m.a,v:+m.v};f.slipT=0;f.spinT=0;}
   const chain=new THREE.Mesh(chainGeo,chainMat),claw=new THREE.Mesh(clawGeo,toon(0x9aa3b5,null,0.4,0.8));scene.add(chain,claw);
   hooks.push({from:m.from,to:m.to,t0:performance.now(),chain,claw});noise(0.5,2500,600,0.4);}
 function updHooks(now){for(let i=hooks.length-1;i>=0;i--){const h=hooks[i],a=kartById(h.from),b=kartById(h.to),age=(now-h.t0)/1000;
@@ -1080,8 +1084,8 @@ function updHazard(h,now){const age=(now-h.born)/1000;
   if(h.k==='spike'){let dt=Math.min(0.1,(now-h.lt)/1000);h.lt=now;
     while(dt>0){const e=Math.min(dt,1/120);dt-=e;
       h.vy-=28*e;h.x+=h.vx*e;h.y+=h.vy*e;h.z+=h.vz*e;
-      if(h.y<1.25){h.y=1.25;if(h.vy<-3){h.vy=-h.vy*0.35;h.vx*=0.85;h.vz*=0.85;h.spin*=0.7;}else h.vy=0;}
-      if(h.y<=1.26){const fr=Math.exp(-3.2*e);h.vx*=fr;h.vz*=fr;h.spin*=Math.exp(-4*e);}
+      if(h.y<1.0){h.y=1.0;if(h.vy<-3){h.vy=-h.vy*0.35;h.vx*=0.85;h.vz*=0.85;h.spin*=0.7;}else h.vy=0;}
+      if(h.y<=1.01){const fr=Math.exp(-3.2*e);h.vx*=fr;h.vz*=fr;h.spin*=Math.exp(-4*e);}
       const n=nearest(h.x,h.z,h.idx<0?null:h.idx);h.idx=n.i;const l=lateral(h.x,h.z,n.i);
       const LIM=HALF+0.6;if(Math.abs(l)>LIM){const sg=Math.sign(l),nx=NRM[n.i][0],nz=NRM[n.i][1];h.x-=nx*sg*(Math.abs(l)-LIM);h.z-=nz*sg*(Math.abs(l)-LIM);
         const vn=(h.vx*nx+h.vz*nz)*sg;if(vn>0){h.vx-=1.5*vn*nx*sg;h.vz-=1.5*vn*nz*sg;}}}
