@@ -186,7 +186,7 @@ input{font:900 20px var(--body);color:var(--ink);background:#fff;border:0;border
     <div class="join"><input id="code" placeholder="ABC" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false"><button id="btnJoin" class="btn">Join</button></div>
     <button id="btnSolo" class="btn ghost">Practice vs CPU</button>
     <p id="menuErr" class="err" role="status"></p>
-    <div class="ver">v9.1</div>
+    <div class="ver">v9.2</div>
   </div>
 </div>
 
@@ -977,10 +977,11 @@ function hazardHit(h,k,id,now){
   if(h.k==='spike'){
     if(h.o===id&&age<2.5)return;if(h.y>3.0||Math.hypot(k.x-h.x,k.z-h.z)>2.6)return;
     if((h.cd[id]||0)>now)return;h.cd[id]=now+700;
-    if(!(k.add&8)){addDmg(k,15);k.v*=0.4;k.burn=false;k.sup=false;}
+    const preV=Math.abs(k.v),dz8=!!(k.add&8);
+    if(!dz8){addDmg(k,25);k.v*=0.15;k.pvx=k.pvx||0;k.pvz=k.pvz||0;k.burn=false;k.sup=false;}
     let dx=h.x-k.x,dz=h.z-k.z,d=Math.hypot(dx,dz)||1;dx/=d;dz/=d;const fx=Math.cos(k.a),fz=Math.sin(k.a);
-    const kx=dx*0.6+fx*0.4,kz=dz*0.6+fz*0.4,kl=Math.hypot(kx,kz)||1,sp=Math.abs(k.v/0.4)*0.8+7;
-    h.x=k.x+dx*2.7;h.z=k.z+dz*2.7;h.vx=kx/kl*sp+(Math.random()-.5)*3;h.vz=kz/kl*sp+(Math.random()-.5)*3;h.vy=7+Math.random()*3;h.spin=(Math.random()-.5)*14;
+    const kx=dx*0.6+fx*0.4,kz=dz*0.6+fz*0.4,kl=Math.hypot(kx,kz)||1,sp=preV*(dz8?0.35:0.25)+2; // heavy box: only nudged a few metres
+    h.x=k.x+dx*2.7;h.z=k.z+dz*2.7;h.vx=kx/kl*sp+(Math.random()-.5);h.vz=kz/kl*sp+(Math.random()-.5);h.vy=2.5+Math.random()*1.5;h.spin=(Math.random()-.5)*6;
     kickSend(h);if(me){bonk();if(!(k.add&8)){crash();shake=0.5;}}burst(h.x,1,h.z,0xffd23f,8);return;}
   if(h.o===id&&age<(h.k==='ball'?1:0.8))return;
   if(Math.hypot(k.x-h.x,k.z-h.z)>(h.k==='ball'?2.0:h.k==='oil'?2.4:2.1))return;
