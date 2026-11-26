@@ -16,50 +16,65 @@
     touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
     overscroll-behavior: none;
   }
+  button { font-family: inherit; cursor: pointer; }
   #stage { position: fixed; left: 0; top: 0; }
   #gl, #ov { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
   #ov { pointer-events: none; }
 
-  #toolbar {
-    position: fixed; z-index: 10; display: flex; gap: 10px; padding: 10px;
-    background: rgba(25, 30, 45, .55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px; box-shadow: 0 6px 24px rgba(0,0,0,.3);
+  /* ---------- toolbar ---------- */
+  .glass {
+    background: rgba(25, 30, 45, .58); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px; box-shadow: 0 6px 24px rgba(0,0,0,.3);
   }
+  #toolbar { position: fixed; z-index: 10; display: grid; gap: 8px; padding: 9px; }
   @media (orientation: landscape) {
-    #toolbar { left: calc(env(safe-area-inset-left) + 12px); top: 50%; transform: translateY(-50%); flex-direction: column; }
+    #toolbar { left: calc(env(safe-area-inset-left) + 10px); top: 50%; transform: translateY(-50%); grid-template-columns: repeat(2, 56px); }
   }
   @media (orientation: portrait) {
-    #toolbar { bottom: calc(env(safe-area-inset-bottom) + 12px); left: 50%; transform: translateX(-50%); flex-direction: row; }
+    #toolbar { bottom: calc(env(safe-area-inset-bottom) + 10px); left: 50%; transform: translateX(-50%); grid-auto-flow: column; grid-template-rows: repeat(2, 56px); }
   }
-  .sep { width: 100%; height: 2px; background: rgba(255,255,255,.15); border-radius: 1px; }
-  @media (orientation: portrait) { .sep { width: 2px; height: auto; } }
   .tb {
-    width: 62px; height: 62px; border-radius: 20px; border: none; padding: 0;
-    background: rgba(255,255,255,.92); color: #223; font-size: 30px; line-height: 1;
+    width: 56px; height: 56px; border-radius: 17px; border: none; padding: 0;
+    background: rgba(255,255,255,.93); color: #223; font-size: 25px; line-height: 1;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     box-shadow: 0 3px 0 rgba(0,0,0,.25); transition: transform .08s, background .15s;
-    font-family: inherit; cursor: pointer;
   }
-  .tb small { font-size: 9.5px; font-weight: 700; margin-top: 3px; letter-spacing: .3px; text-transform: uppercase; color: #556; }
-  .tb:active { transform: scale(.92); }
+  .tb small { font-size: 8.5px; font-weight: 800; margin-top: 3px; letter-spacing: .2px; text-transform: uppercase; color: #556; }
+  .tb svg { width: 27px; height: 27px; }
+  .tb:active, .chip:active { transform: scale(.92); }
   .tb.on { background: #ffd23f; box-shadow: 0 3px 0 #b8901a, 0 0 0 3px #fff; }
   .tb.on small { color: #6a4c00; }
   .tb.toggle.on { background: #5be37d; box-shadow: 0 3px 0 #2b9a48, 0 0 0 3px #fff; }
   .tb.toggle.on small { color: #10551f; }
 
+  #flyout { position: fixed; z-index: 10; display: flex; gap: 10px; padding: 9px; }
+  #flyout:empty { display: none; }
+  @media (orientation: landscape) { #flyout { flex-direction: column; } }
+  .fgroup { display: flex; gap: 7px; flex-wrap: wrap; max-width: 300px; }
+  .chip {
+    min-width: 52px; height: 52px; border-radius: 15px; border: none; padding: 0 6px;
+    background: rgba(255,255,255,.9); color: #223; font-size: 22px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 2px 0 rgba(0,0,0,.25);
+  }
+  .chip small { font-size: 8.5px; font-weight: 800; text-transform: uppercase; color: #556; margin-top: 2px; }
+  .chip.on { background: #7fd3ff; box-shadow: 0 2px 0 #3a8fbd, 0 0 0 2.5px #fff; }
+  .dot { border-radius: 50%; background: #334; }
+
   #hint {
     position: fixed; z-index: 11; top: calc(env(safe-area-inset-top) + 36px); left: 50%;
     transform: translateX(-50%); padding: 10px 20px; border-radius: 22px;
-    background: rgba(25,30,45,.8); font-size: 17px; font-weight: 600; pointer-events: none;
+    background: rgba(25,30,45,.82); font-size: 17px; font-weight: 600; pointer-events: none;
     opacity: 0; transition: opacity .35s; white-space: nowrap;
   }
   #hint.show { opacity: 1; }
   #stats {
     position: fixed; z-index: 11; right: calc(env(safe-area-inset-right) + 10px); top: calc(env(safe-area-inset-top) + 8px);
-    font: 11px ui-monospace, Menlo, monospace; color: rgba(0,0,0,.45); pointer-events: none;
-    background: rgba(255,255,255,.5); padding: 3px 7px; border-radius: 8px;
+    font: 11px ui-monospace, Menlo, monospace; color: rgba(0,0,0,.5); pointer-events: none;
+    background: rgba(255,255,255,.55); padding: 3px 7px; border-radius: 8px;
   }
 
+  /* ---------- full screens ---------- */
   .screen { position: fixed; inset: 0; z-index: 20; background: #000; }
   .hidden { display: none !important; }
   #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -72,24 +87,49 @@
   #shutter { width: 88px; height: 88px; border-radius: 50%; border: 6px solid #fff; background: #ff5a5a; box-shadow: 0 0 0 4px rgba(0,0,0,.35); }
   #shutter:active { transform: scale(.92); }
   .pill {
-    min-width: 64px; height: 56px; border-radius: 28px; border: none; padding: 0 20px;
-    background: rgba(255,255,255,.9); color: #223; font-size: 18px; font-weight: 700; font-family: inherit;
-    box-shadow: 0 3px 0 rgba(0,0,0,.3);
+    min-width: 56px; height: 52px; border-radius: 26px; border: none; padding: 0 18px;
+    background: rgba(255,255,255,.92); color: #223; font-size: 17px; font-weight: 700;
+    box-shadow: 0 3px 0 rgba(0,0,0,.3); white-space: nowrap;
   }
   .pill:active { transform: scale(.94); }
-  .pill.go { background: #5be37d; color: #0c3d18; font-size: 22px; padding: 0 30px; }
+  .pill.go { background: #5be37d; color: #0c3d18; font-size: 20px; padding: 0 26px; }
+  .pill.big { font-size: 24px; padding: 0 14px; }
 
-  #review { background: #1d2230; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  #reviewCanvas { max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.5); }
-  #reviewWrap { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; padding: 14px; padding-top: calc(env(safe-area-inset-top) + 14px); }
-  #reviewPanel {
-    width: 100%; display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center; justify-content: center;
-    padding: 12px 18px calc(env(safe-area-inset-bottom) + 14px); background: rgba(0,0,0,.25);
+  .editScreen { background: #1d2230; display: flex; flex-direction: column; }
+  .canvasWrap { flex: 1; min-height: 0; width: 100%; position: relative; }
+  .canvasWrap canvas { position: absolute; left: 0; top: 0; }
+  #reviewWrap { display: flex; align-items: center; justify-content: center; padding: 14px; padding-top: calc(env(safe-area-inset-top) + 14px); }
+  #reviewCanvas { position: static !important; max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+  .panel {
+    width: 100%; display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; justify-content: center;
+    padding: 12px 18px calc(env(safe-area-inset-bottom) + 14px); background: rgba(0,0,0,.28);
   }
   .slider { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; color: #cfd6ea; }
-  .slider input { width: 190px; height: 32px; accent-color: #ffd23f; }
+  .slider input { width: 170px; height: 30px; accent-color: #ffd23f; }
+  .slider b { color: #fff; font-weight: 800; }
   .legend { font-size: 13px; color: #cfd6ea; }
   .legend b { color: #ff6b6b; }
+  .title { font-size: 15px; font-weight: 800; color: #fff; opacity: .85; }
+  #edPreview { width: 120px; height: 80px; border-radius: 6px; background: #000; }
+
+  /* ---------- settings ---------- */
+  #settings { background: rgba(10,14,24,.82); display: flex; align-items: center; justify-content: center; }
+  #setBox {
+    width: min(680px, 94vw); max-height: 88vh; display: flex; flex-direction: column;
+    background: #252b3d; border-radius: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.5); overflow: hidden;
+  }
+  #setHead { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #2e3550; }
+  #setHead h2 { margin: 0; font-size: 20px; }
+  #setList { overflow-y: auto; padding: 6px 20px 20px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+  #setList h3 { margin: 18px 0 6px; font-size: 13px; letter-spacing: .6px; text-transform: uppercase; color: #ffd23f; }
+  .srow { display: grid; grid-template-columns: 1fr 64px; align-items: center; gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .srow label { font-size: 14px; color: #dfe5f5; }
+  .srow span { text-align: right; font: 13px ui-monospace, Menlo, monospace; color: #9fb0d8; }
+  .srow input[type=range] { grid-column: 1 / 3; width: 100%; height: 28px; accent-color: #7fd3ff; touch-action: pan-x; }
+  .srow input[type=checkbox] { width: 26px; height: 26px; justify-self: end; accent-color: #5be37d; }
+  .srow .note { grid-column: 1 / 3; font-size: 11px; color: #8a93ad; }
+  .setBtns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .setBtns .pill { height: 44px; font-size: 15px; }
   #nogl { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px; font-size: 20px; }
 </style>
 </head>
@@ -97,21 +137,31 @@
 
 <div id="stage"><canvas id="gl"></canvas><canvas id="ov"></canvas></div>
 
-<div id="toolbar">
+<div id="toolbar" class="glass">
   <button class="tb" id="bPhoto"><span>📷</span><small>Photo</small></button>
-  <div class="sep"></div>
-  <button class="tb mode on" data-mode="water"><span>💧</span><small>Water</small></button>
+  <button class="tb" id="bEdit"><span>🖼️</span><small>Edit</small></button>
+  <button class="tb mode on" data-mode="pour"><span>💧</span><small>Pour</small></button>
   <button class="tb mode" data-mode="pipe"><span>🚰</span><small>Pipe</small></button>
   <button class="tb mode" data-mode="sewer"><span>🕳️</span><small>Sewer</small></button>
+  <button class="tb mode" data-mode="mill">
+    <svg viewBox="-16 -16 32 32"><g stroke="#333" stroke-width="1">
+      <path d="M0 0L0-14A8 8 0 0 1 8-7Z" fill="#ff5a5a"/><path d="M0 0L14 0A8 8 0 0 1 7 8Z" fill="#ffd23f"/>
+      <path d="M0 0L0 14A8 8 0 0 1-8 7Z" fill="#3fa9ff"/><path d="M0 0L-14 0A8 8 0 0 1-7-8Z" fill="#5be37d"/></g>
+      <circle r="2.6" fill="#fff" stroke="#333"/></svg><small>Mill</small></button>
+  <button class="tb mode" data-mode="wall"><span>✏️</span><small>Wall</small></button>
+  <button class="tb mode" data-mode="wind"><span>🌬️</span><small>Wind</small></button>
+  <button class="tb mode" data-mode="fish"><span>🐠</span><small>Fish</small></button>
   <button class="tb mode" data-mode="erase"><span>🧽</span><small>Erase</small></button>
-  <div class="sep"></div>
   <button class="tb toggle" id="bTilt"><span>📱</span><small>Tilt</small></button>
   <button class="tb" id="bColor"><span>🎨</span><small>Color</small></button>
   <button class="tb" id="bClear"><span>🧹</span><small>Clear</small></button>
+  <button class="tb" id="bSettings"><span>⚙️</span><small>Setup</small></button>
 </div>
+<div id="flyout" class="glass"></div>
 <div id="hint"></div>
 <div id="stats"></div>
 
+<!-- camera -->
 <div id="camera" class="screen hidden">
   <video id="video" playsinline muted autoplay></video>
   <div id="camFrame"></div>
@@ -123,15 +173,43 @@
   </div>
 </div>
 
-<div id="review" class="screen hidden">
-  <div id="reviewWrap"><canvas id="reviewCanvas"></canvas></div>
-  <div id="reviewPanel">
-    <button class="pill" id="rvRetake">↩ Retake</button>
+<!-- photo editor: crop / rotate / stretch -->
+<div id="editor" class="screen editScreen hidden">
+  <div class="canvasWrap" id="edWrap"><canvas id="edCanvas"></canvas></div>
+  <div class="panel">
+    <button class="pill" id="edCancel">✕</button>
+    <span class="title">Drag the corners to crop</span>
+    <button class="pill big" id="edRotL">↺</button>
+    <button class="pill big" id="edRotR">↻</button>
+    <label class="slider">Straighten <b id="edAngleV">0°</b><input type="range" id="edAngle" min="-30" max="30" step="0.5" value="0"></label>
+    <label class="slider">Width <b id="edWV">100%</b><input type="range" id="edW" min="25" max="300" value="100"></label>
+    <label class="slider">Height <b id="edHV">100%</b><input type="range" id="edH" min="25" max="300" value="100"></label>
+    <button class="pill" id="edFill">⤢ Fill screen</button>
+    <button class="pill" id="edReset">Reset</button>
+    <canvas id="edPreview"></canvas>
+    <button class="pill go" id="edNext">Next ›</button>
+  </div>
+</div>
+
+<!-- wall detection review -->
+<div id="review" class="screen editScreen hidden">
+  <div class="canvasWrap" id="reviewWrap"><canvas id="reviewCanvas"></canvas></div>
+  <div class="panel">
+    <button class="pill" id="rvBack">‹ Back</button>
+    <button class="pill" id="rvRetake">📷 Retake</button>
     <div class="legend"><b>Red</b> = walls for the water</div>
-    <label class="slider">Pencil sensitivity<input type="range" id="sSens" min="0" max="100" value="55"></label>
-    <label class="slider">Wall thickness<input type="range" id="sThick" min="0" max="5" value="1"></label>
-    <label class="slider">Ignore small dots<input type="range" id="sDots" min="0" max="300" value="40"></label>
+    <label class="slider">Pencil sensitivity <b id="sSensV"></b><input type="range" id="sSens" min="0" max="100" value="55"></label>
+    <label class="slider">Wall thickness <b id="sThickV"></b><input type="range" id="sThick" min="0" max="5" value="1"></label>
+    <label class="slider">Ignore small dots <b id="sDotsV"></b><input type="range" id="sDots" min="0" max="300" value="40"></label>
     <button class="pill go" id="rvPlay">✓ Play!</button>
+  </div>
+</div>
+
+<!-- settings -->
+<div id="settings" class="screen hidden">
+  <div id="setBox">
+    <div id="setHead"><h2>⚙️ Setup</h2><button class="pill go" id="setClose">Done</button></div>
+    <div id="setList"></div>
   </div>
 </div>
 
@@ -140,36 +218,93 @@
 <script>
 'use strict';
 /* =====================================================================
-   Paper Splash — photo a pencil drawing, play with particle water on it.
-   - Walls: Sauvola local threshold (integral images, O(1)/px)
-   - Water: FLIP (PIC/FLIP hybrid) on a MAC grid + particle separation,
-            sub-pixel SDF collisions against the drawn walls
-   - Render: WebGL2 additive metaball splats -> refractive water shader
+   Paper Splash — photograph a pencil drawing, play with particle water.
+   - Walls: Sauvola local threshold (integral images), cleanup, dilation
+   - Liquids: FLIP on a MAC grid; water / oil / foam particle types
+   - Sub-pixel SDF collisions; local SDF + grid updates for drawn walls
+   - Wind lines (velocity field), water mills (two-way coupled rotors)
+   - Creatures swimming in the flow, rendered under the water surface
+   - WebGL2: metaball splats -> refractive water / oil / foam shader
    ===================================================================== */
 
-const CFG = {
-  maskLong: 800,          // sim/mask resolution (long side, px)
-  cell: 5,                // FLIP grid cell size in mask px
-  maxParticles: 20000,
-  gravity: 1100,          // mask px / s^2
-  flipRatio: 0.9,
-  pressureIters: 32,
-  overRelax: 1.9,
-  separateIters: 2,
-  driftK: 0.35,           // density drift compensation strength
-  vmax: 1500,
-  pipeSpeed: 280,
-  pipeWidth: 15,
-  sewerRadius: 17,
-  brushRadius: 24,
-  simDt: 1 / 60,
+/* ---------------------------------------------------------------------
+   Settings (persisted). Lengths & speeds are in "800-px units": they are
+   scaled by world.U so changing the sim resolution keeps the feel.
+   --------------------------------------------------------------------- */
+const DEFAULTS = {
+  maskLong: 800, cell: 5, maxParticles: 20000,
+  pressureIters: 32, separateIters: 2, flipRatio: 0.9, driftK: 0.35,
+  gravity: 1100, vmax: 1500, timeScale: 1,
+  oilLift: 1.8, oilFlip: 0.6, foamLift: 2.6, foamLife: 12,
+  brushRadius: 24, pipeSpeed: 280, pipeWidth: 15, sewerRadius: 17, sewerPull: 2200,
+  wallS: 2, wallM: 4, wallL: 8,
+  windSpeed: 420, windAccel: 3000, windWidth: 20,
+  millSize: 34, millFriction: 0.6, millMass: 2500,
+  maxCreatures: 40, creatureSize: 28, creatureSwim: 60,
+  dprCap: 2, denScale: 1, blobSize: 3.9, showStats: 1,
 };
+const CFG = Object.assign({}, DEFAULTS);
+try {
+  const saved = JSON.parse(localStorage.getItem('paperSplash.cfg') || '{}');
+  for (const k in saved) if (k in DEFAULTS && typeof saved[k] === 'number') CFG[k] = saved[k];
+} catch (e) {}
+function saveCfg() { try { localStorage.setItem('paperSplash.cfg', JSON.stringify(CFG)); } catch (e) {} }
+
+const SETTINGS = [
+  { g: 'Water simulation' },
+  { k: 'maxParticles', l: 'Max drops', min: 2000, max: 40000, step: 1000, rebuild: 1 },
+  { k: 'cell', l: 'Grid cell size (px) – smaller is finer but slower', min: 3, max: 8, step: 1, rebuild: 1 },
+  { k: 'maskLong', l: 'Simulation resolution (px)', min: 400, max: 1200, step: 50, rebuild: 2 },
+  { k: 'pressureIters', l: 'Pressure iterations', min: 5, max: 100, step: 1 },
+  { k: 'separateIters', l: 'Drop separation iterations', min: 0, max: 4, step: 1 },
+  { k: 'flipRatio', l: 'Splashiness (FLIP ratio)', min: 0.5, max: 0.99, step: 0.01 },
+  { k: 'driftK', l: 'Volume keeping', min: 0, max: 1, step: 0.05 },
+  { k: 'gravity', l: 'Gravity', min: 100, max: 3000, step: 50 },
+  { k: 'vmax', l: 'Max speed', min: 300, max: 3000, step: 50 },
+  { k: 'timeScale', l: 'Simulation speed (slow motion < 1)', min: 0.2, max: 2, step: 0.05 },
+  { g: 'Oil & foam' },
+  { k: 'oilLift', l: 'Oil floats up (buoyancy)', min: 0, max: 4, step: 0.1 },
+  { k: 'oilFlip', l: 'Oil runniness', min: 0.2, max: 0.99, step: 0.01 },
+  { k: 'foamLift', l: 'Foam floats up', min: 0, max: 5, step: 0.1 },
+  { k: 'foamLife', l: 'Foam lifetime (s)', min: 1, max: 60, step: 1 },
+  { g: 'Tools' },
+  { k: 'brushRadius', l: 'Pour / erase brush size', min: 8, max: 60, step: 1 },
+  { k: 'pipeSpeed', l: 'Pipe flow speed', min: 40, max: 900, step: 10 },
+  { k: 'pipeWidth', l: 'Pipe width', min: 5, max: 45, step: 1 },
+  { k: 'sewerRadius', l: 'Sewer size', min: 6, max: 50, step: 1 },
+  { k: 'sewerPull', l: 'Sewer suction', min: 0, max: 8000, step: 100 },
+  { k: 'wallS', l: 'Wall pen: small radius', min: 1, max: 12, step: 0.5 },
+  { k: 'wallM', l: 'Wall pen: medium radius', min: 1.5, max: 20, step: 0.5 },
+  { k: 'wallL', l: 'Wall pen: large radius', min: 2, max: 40, step: 0.5 },
+  { k: 'windSpeed', l: 'Wind speed', min: 50, max: 1500, step: 10, wind: 1 },
+  { k: 'windAccel', l: 'Wind strength', min: 200, max: 10000, step: 100, wind: 1 },
+  { k: 'windWidth', l: 'Wind width', min: 5, max: 60, step: 1, wind: 1 },
+  { k: 'millSize', l: 'Mill size', min: 14, max: 80, step: 1 },
+  { k: 'millFriction', l: 'Mill friction', min: 0, max: 5, step: 0.05 },
+  { k: 'millMass', l: 'Mill heaviness', min: 200, max: 15000, step: 100 },
+  { g: 'Creatures' },
+  { k: 'maxCreatures', l: 'Max creatures', min: 0, max: 100, step: 1 },
+  { k: 'creatureSize', l: 'Creature size', min: 12, max: 70, step: 1 },
+  { k: 'creatureSwim', l: 'Swimming speed', min: 0, max: 250, step: 5 },
+  { g: 'Display' },
+  { k: 'dprCap', l: 'Screen sharpness (pixel ratio)', min: 1, max: 3, step: 0.5, layout: 1 },
+  { k: 'denScale', l: 'Liquid render resolution', min: 0.3, max: 1.5, step: 0.05, layout: 1 },
+  { k: 'blobSize', l: 'Drop render size (blobbiness)', min: 2.5, max: 6, step: 0.1 },
+  { k: 'showStats', l: 'Show FPS', toggle: 1 },
+];
 
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+const SIZE_MUL = [0.55, 1, 1.8];
+const LIQUIDS = [
+  { name: 'Water', icon: '💧', color: '#3fa9ff' },
+  { name: 'Oil',   icon: '🛢️', color: '#7a4a10' },
+  { name: 'Foam',  icon: '🫧', color: '#ffffff' },
+];
+const SDF_CLAMP = 12;
 
 /* ---------------------------------------------------------------------
-   Distance transform (Felzenszwalb–Huttenlocher), exact Euclidean
+   Distance transforms (Felzenszwalb–Huttenlocher, exact Euclidean)
    --------------------------------------------------------------------- */
 const EDT_INF = 1e20;
 function edt1d(f, n, d, v, z) {
@@ -186,13 +321,13 @@ function edt1d(f, n, d, v, z) {
     d[q] = dq * dq + f[v[k]];
   }
 }
-// returns squared distance to nearest pixel where feature(i) is true
-function edtSq(W, H, isFeature) {
+// squared distance to the nearest pixel where mask[i] === val
+function edtSq(W, H, mask, val) {
   const out = new Float32Array(W * H);
   const n = Math.max(W, H);
   const f = new Float64Array(n), d = new Float64Array(n), v = new Int32Array(n), z = new Float64Array(n + 1);
   for (let x = 0; x < W; x++) {
-    for (let y = 0; y < H; y++) f[y] = isFeature(y * W + x) ? 0 : EDT_INF;
+    for (let y = 0; y < H; y++) f[y] = mask[y * W + x] === val ? 0 : EDT_INF;
     edt1d(f, H, d, v, z);
     for (let y = 0; y < H; y++) out[y * W + x] = d[y];
   }
@@ -204,19 +339,48 @@ function edtSq(W, H, isFeature) {
   }
   return out;
 }
-// signed distance: >0 in free space, <0 inside walls (boundary at 0)
-function computeSDF(wall, W, H) {
-  const dOut = edtSq(W, H, i => wall[i] === 1);
-  const dIn = edtSq(W, H, i => wall[i] === 0);
-  const sdf = new Float32Array(W * H);
-  for (let i = 0; i < W * H; i++) {
-    sdf[i] = wall[i] ? -(Math.sqrt(dIn[i]) - 0.5) : (Math.sqrt(dOut[i]) - 0.5);
+// (re)compute clamped signed distance in a region: >0 free, <0 inside wall
+function sdfRegion(sdf, wall, MW, MH, x0, y0, x1, y1) {
+  const C = SDF_CLAMP;
+  x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(MW, x1); y1 = Math.min(MH, y1);
+  if (x1 <= x0 || y1 <= y0) return;
+  const rx0 = Math.max(0, x0 - C), ry0 = Math.max(0, y0 - C), rx1 = Math.min(MW, x1 + C), ry1 = Math.min(MH, y1 + C);
+  const RW = rx1 - rx0, RH = ry1 - ry0;
+  const sub = new Uint8Array(RW * RH);
+  for (let y = ry0; y < ry1; y++) {
+    const so = (y - ry0) * RW - rx0, wo = y * MW;
+    for (let x = rx0; x < rx1; x++) sub[so + x] = wall[wo + x];
   }
-  return sdf;
+  const dOut = edtSq(RW, RH, sub, 1), dIn = edtSq(RW, RH, sub, 0);
+  for (let y = y0; y < y1; y++) {
+    const so = (y - ry0) * RW - rx0, wo = y * MW;
+    for (let x = x0; x < x1; x++) {
+      const j = so + x;
+      let v = sub[j] ? -(Math.sqrt(dIn[j]) - 0.5) : (Math.sqrt(dOut[j]) - 0.5);
+      sdf[wo + x] = v > C ? C : (v < -C ? -C : v);
+    }
+  }
+}
+// stamp a capsule (thick line segment) into a mask; returns dirty box [x0,y0,x1,y1)
+function paintCapsule(mask, MW, MH, ax, ay, bx, by, rad, val, frame) {
+  const x0 = Math.max(0, Math.floor(Math.min(ax, bx) - rad - 1)), x1 = Math.min(MW - 1, Math.ceil(Math.max(ax, bx) + rad + 1));
+  const y0 = Math.max(0, Math.floor(Math.min(ay, by) - rad - 1)), y1 = Math.min(MH - 1, Math.ceil(Math.max(ay, by) + rad + 1));
+  const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, r2 = rad * rad;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (frame && (x < frame || y < frame || x >= MW - frame || y >= MH - frame)) continue;
+      const px = x + 0.5, py = y + 0.5;
+      let t = L2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / L2 : 0;
+      t = t < 0 ? 0 : (t > 1 ? 1 : t);
+      const qx = ax + dx * t - px, qy = ay + dy * t - py;
+      if (qx * qx + qy * qy <= r2) mask[y * MW + x] = val;
+    }
+  }
+  return [x0, y0, x1 + 1, y1 + 1];
 }
 
 /* ---------------------------------------------------------------------
-   Image pipeline: crop -> gray -> Sauvola -> cleanup -> dilate
+   Image pipeline: edited photo -> gray -> Sauvola -> cleanup -> dilate
    --------------------------------------------------------------------- */
 function coverCrop(sw, sh, aspect) {
   if (sw / sh > aspect) { const w = sh * aspect; return { x: (sw - w) / 2, y: 0, w, h: sh }; }
@@ -226,19 +390,18 @@ function domainSize(aspect) {
   const L = CFG.maskLong, c = CFG.cell;
   let W, H;
   if (aspect >= 1) { W = L; H = L / aspect; } else { H = L; W = L * aspect; }
-  return { W: Math.round(W / c) * c, H: Math.round(H / c) * c };
+  return { W: Math.max(c * 12, Math.round(W / c) * c), H: Math.max(c * 12, Math.round(H / c) * c) };
 }
+function makeCanvas(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
 
-// source: drawable (canvas/img/video/bitmap) with its pixel size
-function prepareCapture(src, sw, sh, aspect) {
+// src: an already edited canvas; domain shape = its aspect
+function prepareCapture(src) {
+  const aspect = src.width / src.height;
   const { W: MW, H: MH } = domainSize(aspect);
-  const crop = coverCrop(sw, sh, aspect);
-
-  // mask-resolution grayscale
-  const c1 = document.createElement('canvas'); c1.width = MW; c1.height = MH;
+  const c1 = makeCanvas(MW, MH);
   const x1 = c1.getContext('2d', { willReadFrequently: true });
   x1.imageSmoothingQuality = 'high';
-  x1.drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, MW, MH);
+  x1.drawImage(src, 0, 0, MW, MH);
   const px = x1.getImageData(0, 0, MW, MH).data;
   const N = MW * MH;
   const gray = new Float32Array(N);
@@ -268,8 +431,7 @@ function prepareCapture(src, sw, sh, aspect) {
       mean[y * MW + x] = m; std[y * MW + x] = Math.sqrt(Math.max(0, v));
     }
   }
-
-  // illumination estimate from paper pixels only (ink excluded) -> no halos around lines
+  // illumination from paper pixels only (ink excluded) -> no halos around lines
   const P = new Float64Array(IW * (MH + 1)), PC = new Float64Array(IW * (MH + 1));
   for (let y = 0; y < MH; y++) {
     let rs = 0, rc = 0;
@@ -290,14 +452,13 @@ function prepareCapture(src, sw, sh, aspect) {
       paper[y * MW + x] = cnt > 20 ? (P[d] - P[b] - P[c] + P[a]) / cnt : mean[y * MW + x];
     }
   }
-
   // high-res background with flattened illumination ("scanned paper" look)
-  const long = Math.min(2048, Math.max(crop.w, crop.h));
+  const long = Math.min(2048, Math.max(src.width, src.height));
   const BW = Math.round(aspect >= 1 ? long : long * aspect), BH = Math.round(aspect >= 1 ? long / aspect : long);
-  const bg = document.createElement('canvas'); bg.width = BW; bg.height = BH;
+  const bg = makeCanvas(BW, BH);
   const bx = bg.getContext('2d', { willReadFrequently: true });
   bx.imageSmoothingQuality = 'high';
-  bx.drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, BW, BH);
+  bx.drawImage(src, 0, 0, BW, BH);
   const bimg = bx.getImageData(0, 0, BW, BH), bd = bimg.data;
   const sx = MW / BW, sy = MH / BH;
   for (let y = 0; y < BH; y++) {
@@ -310,7 +471,7 @@ function prepareCapture(src, sw, sh, aspect) {
       const j = (y * BW + x) * 4;
       for (let k = 0; k < 3; k++) {
         let c = bd[j + k] * f;
-        c = 255 - (255 - c) * 1.25;          // a bit more contrast for pencil
+        c = 255 - (255 - c) * 1.25;
         bd[j + k] = c < 0 ? 0 : (c > 255 ? 255 : c);
       }
     }
@@ -319,20 +480,17 @@ function prepareCapture(src, sw, sh, aspect) {
   return { MW, MH, gray, mean, std, bg };
 }
 
-// params: sens 0..100, thick 0..5, dots (min component area)
 function computeWalls(cap, sens, thick, dots) {
   const { MW, MH, gray, mean, std } = cap, N = MW * MH;
   const k = 0.42 - (sens / 100) * 0.38;        // Sauvola k: lower = more sensitive
-  const R = 128;
-  const minDiff = 14 - sens * 0.1;
+  const R = 128, minDiff = 14 - sens * 0.1;
   let m = new Uint8Array(N);
   for (let i = 0; i < N; i++) {
     const mu = mean[i];
     const T = mu * (1 + k * (std[i] / R - 1));
     m[i] = (gray[i] < T && gray[i] < mu - minDiff) ? 1 : 0;
   }
-  // remove small specks (8-connected components)
-  if (dots > 0) {
+  if (dots > 0) {   // remove small specks (8-connected components)
     const lab = new Int32Array(N), stack = new Int32Array(N), members = new Int32Array(N);
     let id = 0;
     for (let s = 0; s < N; s++) {
@@ -353,9 +511,8 @@ function computeWalls(cap, sens, thick, dots) {
       if (cnt < dots) for (let i = 0; i < cnt; i++) m[members[i]] = 0;
     }
   }
-  // circular dilation via distance transform
-  if (thick > 0) {
-    const d = edtSq(MW, MH, i => m[i] === 1);
+  if (thick > 0) {  // circular dilation via distance transform
+    const d = edtSq(MW, MH, m, 1);
     const t2 = (thick + 0.5) * (thick + 0.5);
     const out = new Uint8Array(N);
     for (let i = 0; i < N; i++) out[i] = d[i] <= t2 ? 1 : 0;
@@ -365,14 +522,127 @@ function computeWalls(cap, sens, thick, dots) {
 }
 
 function maskCanvas(mask, W, H, r, g, b, a) {
-  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const c = makeCanvas(W, H);
   const x = c.getContext('2d'); const img = x.createImageData(W, H), d = img.data;
   for (let i = 0, j = 0; i < W * H; i++, j += 4) if (mask[i]) { d[j] = r; d[j + 1] = g; d[j + 2] = b; d[j + 3] = a; }
   x.putImageData(img, 0, 0); return c;
 }
 
 /* ---------------------------------------------------------------------
-   FLIP water world
+   Creatures (procedural sprite atlas, 4x2 cells, all facing right)
+   --------------------------------------------------------------------- */
+const CREATURES = [
+  { name: 'fish',    cell: 0, swim: 1.0, scale: 1.0,  wiggle: 1 },
+  { name: 'fish',    cell: 1, swim: 1.1, scale: 0.9,  wiggle: 1 },
+  { name: 'fish',    cell: 2, swim: 0.9, scale: 1.05, wiggle: 1 },
+  { name: 'puffer',  cell: 3, swim: 0.5, scale: 0.9,  wiggle: 0.4 },
+  { name: 'jelly',   cell: 4, swim: 0.7, scale: 1.0,  upright: 1, jelly: 1 },
+  { name: 'octopus', cell: 5, swim: 0.6, scale: 1.05, upright: 1, jelly: 1 },
+  { name: 'turtle',  cell: 6, swim: 0.55, scale: 1.25, wiggle: 0.3 },
+  { name: 'duck',    cell: 7, swim: 0.4, scale: 1.1,  upright: 1, duck: 1, over: 1 },
+];
+const CREATURE_CHIPS = [
+  { icon: '🎲', label: 'Mix', kind: -1 }, { icon: '🐟', label: 'Fish', kind: -2 },
+  { icon: '🐡', label: 'Puffer', kind: 3 }, { icon: '🪼', label: 'Jelly', kind: 4 },
+  { icon: '🐙', label: 'Octo', kind: 5 }, { icon: '🐢', label: 'Turtle', kind: 6 },
+  { icon: '🦆', label: 'Duck', kind: 7 },
+];
+
+function makeAtlas() {
+  const S = 128, c = makeCanvas(S * 4, S * 2), x = c.getContext('2d');
+  const cell = (k, fn) => { x.save(); x.translate((k % 4) * S, ((k / 4) | 0) * S); fn(); x.restore(); };
+  const eye = (ex, ey, r) => {
+    x.fillStyle = '#fff'; x.beginPath(); x.arc(ex, ey, r, 0, 7); x.fill();
+    x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 1.5; x.stroke();
+    x.fillStyle = '#151520'; x.beginPath(); x.arc(ex + r * 0.25, ey, r * 0.55, 0, 7); x.fill();
+    x.fillStyle = '#fff'; x.beginPath(); x.arc(ex + r * 0.42, ey - r * 0.25, r * 0.2, 0, 7); x.fill();
+  };
+  const outline = () => { x.strokeStyle = 'rgba(0,0,0,.4)'; x.lineWidth = 2.5; x.stroke(); };
+  const fish = (body, belly, fin, stripe) => () => {
+    x.fillStyle = fin;
+    x.beginPath(); x.moveTo(42, 64); x.lineTo(8, 36); x.quadraticCurveTo(22, 64, 8, 92); x.closePath(); x.fill(); outline();
+    x.beginPath(); x.moveTo(48, 44); x.quadraticCurveTo(66, 14, 90, 42); x.closePath(); x.fill(); outline();
+    x.beginPath(); x.moveTo(62, 86); x.quadraticCurveTo(72, 104, 84, 86); x.closePath(); x.fill();
+    const g = x.createLinearGradient(0, 36, 0, 92); g.addColorStop(0, body); g.addColorStop(1, belly);
+    x.fillStyle = g; x.beginPath(); x.ellipse(72, 64, 46, 28, 0, 0, 7); x.fill();
+    if (stripe) {
+      x.save(); x.clip(); x.fillStyle = stripe;
+      for (const sx of [56, 80]) { x.beginPath(); x.ellipse(sx, 64, 6, 30, 0, 0, 7); x.fill(); }
+      x.restore();
+    }
+    x.beginPath(); x.ellipse(72, 64, 46, 28, 0, 0, 7); outline();
+    x.fillStyle = 'rgba(255,120,150,.45)'; x.beginPath(); x.ellipse(100, 74, 7, 4, 0, 0, 7); x.fill();
+    eye(100, 56, 9.5);
+    x.strokeStyle = 'rgba(0,0,0,.55)'; x.lineWidth = 2.2; x.beginPath(); x.arc(110, 70, 5, 0.2, 1.6); x.stroke();
+  };
+  cell(0, fish('#ff9a2e', '#ffd27a', '#ff6a1a', null));
+  cell(1, fish('#2f8cff', '#9fe3ff', '#ffd23f', null));
+  cell(2, fish('#ff6fb0', '#ffd0e6', '#c64cff', 'rgba(255,255,255,.8)'));
+  cell(3, () => {      // puffer
+    x.fillStyle = '#f2b400';
+    for (let i = 0; i < 16; i++) {
+      const a = i / 16 * Math.PI * 2;
+      x.beginPath(); x.moveTo(64 + Math.cos(a - 0.12) * 38, 64 + Math.sin(a - 0.12) * 38);
+      x.lineTo(64 + Math.cos(a) * 52, 64 + Math.sin(a) * 52);
+      x.lineTo(64 + Math.cos(a + 0.12) * 38, 64 + Math.sin(a + 0.12) * 38); x.fill();
+    }
+    const g = x.createRadialGradient(56, 50, 6, 64, 64, 42); g.addColorStop(0, '#fff3a0'); g.addColorStop(1, '#ffc81a');
+    x.fillStyle = g; x.beginPath(); x.arc(64, 64, 40, 0, 7); x.fill(); outline();
+    x.fillStyle = '#ffa31a'; x.beginPath(); x.moveTo(26, 64); x.lineTo(10, 50); x.lineTo(10, 78); x.closePath(); x.fill();
+    eye(84, 54, 10);
+    x.fillStyle = '#e0607a'; x.beginPath(); x.ellipse(100, 74, 6, 5, 0, 0, 7); x.fill();
+  });
+  cell(4, () => {      // jellyfish
+    x.strokeStyle = 'rgba(200,120,255,.85)'; x.lineWidth = 5; x.lineCap = 'round';
+    for (let i = 0; i < 5; i++) {
+      const sx = 38 + i * 13; x.beginPath(); x.moveTo(sx, 66);
+      x.bezierCurveTo(sx - 10, 84, sx + 10, 96, sx - 4, 120); x.stroke();
+    }
+    const g = x.createRadialGradient(56, 40, 6, 64, 56, 48); g.addColorStop(0, '#f3d6ff'); g.addColorStop(1, '#b45cff');
+    x.fillStyle = g; x.beginPath(); x.moveTo(18, 68); x.bezierCurveTo(18, 6, 110, 6, 110, 68);
+    x.quadraticCurveTo(64, 78, 18, 68); x.fill(); outline();
+    eye(50, 50, 7); eye(78, 50, 7);
+    x.strokeStyle = '#5a2a80'; x.lineWidth = 2.2; x.beginPath(); x.arc(64, 58, 6, 0.3, 2.8); x.stroke();
+  });
+  cell(5, () => {      // octopus
+    x.strokeStyle = '#ff5a6a'; x.lineWidth = 10; x.lineCap = 'round';
+    for (let i = 0; i < 5; i++) {
+      const sx = 34 + i * 15; x.beginPath(); x.moveTo(sx, 70);
+      x.bezierCurveTo(sx - 14, 96, sx + 16, 104, sx + (i - 2) * 6, 118); x.stroke();
+    }
+    const g = x.createRadialGradient(54, 36, 6, 64, 50, 46); g.addColorStop(0, '#ffb0b8'); g.addColorStop(1, '#ff4a5e');
+    x.fillStyle = g; x.beginPath(); x.ellipse(64, 50, 40, 36, 0, 0, 7); x.fill(); outline();
+    eye(50, 52, 8); eye(78, 52, 8);
+    x.fillStyle = 'rgba(255,255,255,.5)'; x.beginPath(); x.ellipse(52, 28, 9, 5, -0.4, 0, 7); x.fill();
+  });
+  cell(6, () => {      // turtle
+    x.fillStyle = '#7cc96a';
+    for (const [fx, fy, a] of [[40, 34, -0.6], [40, 94, 0.6], [86, 32, -0.5], [86, 96, 0.5]]) {
+      x.save(); x.translate(fx, fy); x.rotate(a); x.beginPath(); x.ellipse(0, 0, 16, 8, 0, 0, 7); x.fill(); outline(); x.restore();
+    }
+    x.beginPath(); x.ellipse(110, 64, 15, 13, 0, 0, 7); x.fill(); outline();
+    x.beginPath(); x.moveTo(24, 58); x.lineTo(8, 64); x.lineTo(24, 70); x.fill();
+    const g = x.createRadialGradient(56, 50, 6, 62, 64, 44); g.addColorStop(0, '#5fbf5a'); g.addColorStop(1, '#2f7d36');
+    x.fillStyle = g; x.beginPath(); x.ellipse(62, 64, 42, 32, 0, 0, 7); x.fill(); outline();
+    x.strokeStyle = 'rgba(20,60,20,.6)'; x.lineWidth = 2.5;
+    x.beginPath(); x.moveTo(62, 40); x.lineTo(76, 52); x.lineTo(76, 76); x.lineTo(62, 88); x.lineTo(48, 76); x.lineTo(48, 52); x.closePath(); x.stroke();
+    eye(114, 59, 5.5);
+  });
+  cell(7, () => {      // rubber duck
+    const g = x.createRadialGradient(50, 60, 8, 60, 78, 50); g.addColorStop(0, '#fff7a0'); g.addColorStop(1, '#ffcf1a');
+    x.fillStyle = g;
+    x.beginPath(); x.moveTo(14, 70); x.quadraticCurveTo(10, 50, 26, 58); x.quadraticCurveTo(50, 64, 70, 66);
+    x.quadraticCurveTo(110, 70, 104, 92); x.quadraticCurveTo(96, 112, 56, 110); x.quadraticCurveTo(16, 108, 14, 70); x.fill(); outline();
+    x.beginPath(); x.arc(80, 46, 24, 0, 7); x.fill(); outline();
+    x.fillStyle = '#ff8a1a'; x.beginPath(); x.moveTo(100, 46); x.quadraticCurveTo(122, 44, 118, 56); x.quadraticCurveTo(108, 60, 98, 54); x.fill(); outline();
+    eye(86, 40, 6.5);
+    x.fillStyle = 'rgba(230,170,0,.6)'; x.beginPath(); x.ellipse(52, 82, 20, 10, -0.3, 0, 7); x.fill();
+  });
+  return c;
+}
+
+/* ---------------------------------------------------------------------
+   FLIP world
    --------------------------------------------------------------------- */
 const FLUID = 0, AIR = 1, SOLID = 2;
 
@@ -380,28 +650,51 @@ class World {
   constructor(MW, MH, wallIn) {
     const h = CFG.cell;
     this.MW = MW; this.MH = MH; this.h = h; this.inv = 1 / h; this.r = 0.3 * h;
-    const wall = new Uint8Array(wallIn);
+    this.U = Math.max(MW, MH) / 800;
+    this.frame = h;
+    const wall = this.wall = new Uint8Array(wallIn);
     for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++)
       if (x < h || y < h || x >= MW - h || y >= MH - h) wall[y * MW + x] = 1;
-    this.wall = wall;
-    this.sdf = computeSDF(wall, MW, MH);
+    this.sdf = new Float32Array(MW * MH);
+    sdfRegion(this.sdf, wall, MW, MH, 0, 0, MW, MH);
 
     const NX = this.NX = Math.ceil(MW / h), NY = this.NY = Math.ceil(MH / h), n = NX * NY;
-    this.u = new Float32Array(n); this.v = new Float32Array(n);
-    this.du = new Float32Array(n); this.dv = new Float32Array(n);
-    this.prevU = new Float32Array(n); this.prevV = new Float32Array(n);
-    this.s = new Float32Array(n);
-    this.solid = new Uint8Array(n);
-    this.type = new Uint8Array(n);
+    const F = () => new Float32Array(n);
+    this.u = F(); this.v = F(); this.du = F(); this.dv = F(); this.prevU = F(); this.prevV = F();
+    this.s = F(); this.density = F(); this.denW = F(); this.denO = F();
+    this.windX = F(); this.windY = F();
+    this.solid = new Uint8Array(n); this.type = new Uint8Array(n);
     this.validU = new Uint8Array(n); this.validV = new Uint8Array(n);
     this.fixU = new Uint8Array(n); this.fixV = new Uint8Array(n);
-    this.density = new Float32Array(n);
     this.fluidList = new Int32Array(n);
     this.restDensity = (h * h) / (2 * Math.sqrt(3) * this.r * this.r);
+    this.updateSolidRegion(0, 0, NX - 1, NY - 1);
 
-    // solid cells: border, or wall coverage >= 20%
+    const P = this.maxP = CFG.maxParticles;
+    this.N = 0;
+    this.px = new Float32Array(P); this.py = new Float32Array(P);
+    this.vx = new Float32Array(P); this.vy = new Float32Array(P);
+    this.pt = new Uint8Array(P); this.pl = new Float32Array(P);
+    this.tpx = new Float32Array(P); this.tpy = new Float32Array(P);
+    this.tvx = new Float32Array(P); this.tvy = new Float32Array(P);
+    this.tpt = new Uint8Array(P); this.tpl = new Float32Array(P);
+    this.kill = new Int32Array(P);
+    this.pSpacing = 2.2 * this.r; this.pInv = 1 / this.pSpacing;
+    this.pNX = Math.ceil(MW * this.pInv) + 1; this.pNY = Math.ceil(MH * this.pInv) + 1;
+    this.cellStart = new Int32Array(this.pNX * this.pNY + 1);
+    this.cellEntries = new Int32Array(P);
+
+    this.pipes = []; this.sewers = []; this.mills = []; this.winds = []; this.creatures = [];
+    this.brushes = [];
+    this.stepCount = 0; this.oilCount = 0;
+  }
+
+  /* ---- walls ---- */
+  updateSolidRegion(cx0, cy0, cx1, cy1) {
+    const { NX, NY, h, MW, MH, wall, solid, s, fixU, fixV } = this;
+    cx0 = Math.max(0, cx0); cy0 = Math.max(0, cy0); cx1 = Math.min(NX - 1, cx1); cy1 = Math.min(NY - 1, cy1);
     const thr = 0.2 * h * h;
-    for (let cy = 0; cy < NY; cy++) for (let cx = 0; cx < NX; cx++) {
+    for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
       const c = cy * NX + cx;
       let sol = cx === 0 || cy === 0 || cx === NX - 1 || cy === NY - 1;
       if (!sol) {
@@ -410,30 +703,27 @@ class World {
           cnt += (x >= MW || y >= MH) ? 1 : wall[y * MW + x];
         sol = cnt >= thr;
       }
-      this.solid[c] = sol ? 1 : 0; this.s[c] = sol ? 0 : 1;
+      solid[c] = sol ? 1 : 0; s[c] = sol ? 0 : 1;
     }
-    for (let cy = 0; cy < NY; cy++) for (let cx = 0; cx < NX; cx++) {
+    for (let cy = cy0; cy <= Math.min(NY - 1, cy1 + 1); cy++) for (let cx = cx0; cx <= Math.min(NX - 1, cx1 + 1); cx++) {
       const c = cy * NX + cx;
-      this.fixU[c] = (cx === 0 || this.solid[c] || this.solid[c - 1]) ? 1 : 0;
-      this.fixV[c] = (cy === 0 || this.solid[c] || this.solid[c - NX]) ? 1 : 0;
+      fixU[c] = (cx === 0 || solid[c] || solid[c - 1]) ? 1 : 0;
+      fixV[c] = (cy === 0 || solid[c] || solid[c - NX]) ? 1 : 0;
     }
-
-    // particles (SoA), double-buffered for spatial reordering
-    const P = CFG.maxParticles;
-    this.N = 0;
-    this.px = new Float32Array(P); this.py = new Float32Array(P);
-    this.vx = new Float32Array(P); this.vy = new Float32Array(P);
-    this.tpx = new Float32Array(P); this.tpy = new Float32Array(P);
-    this.tvx = new Float32Array(P); this.tvy = new Float32Array(P);
-    // separation hash
-    this.pSpacing = 2.2 * this.r; this.pInv = 1 / this.pSpacing;
-    this.pNX = Math.ceil(MW * this.pInv) + 1; this.pNY = Math.ceil(MH * this.pInv) + 1;
-    this.cellStart = new Int32Array(this.pNX * this.pNY + 1);
-    this.cellEntries = new Int32Array(P);
-
-    this.pipes = []; this.sewers = [];
-    this.brushes = []; // {x,y,vx,vy,erase}
-    this.stepCount = 0;
+  }
+  paintWall(ax, ay, bx, by, rad, val) {
+    return paintCapsule(this.wall, this.MW, this.MH, ax, ay, bx, by, rad, val, this.frame);
+  }
+  refreshWalls(box) {
+    const [x0, y0, x1, y1] = box, C = SDF_CLAMP, h = this.h;
+    sdfRegion(this.sdf, this.wall, this.MW, this.MH, x0 - C, y0 - C, x1 + C, y1 + C);
+    this.updateSolidRegion(Math.floor(x0 / h), Math.floor(y0 / h), Math.floor((x1 - 1) / h), Math.floor((y1 - 1) / h));
+    // drop liquid buried deep inside a freshly drawn wall
+    for (let i = this.N - 1; i >= 0; i--) {
+      const x = this.px[i], y = this.py[i];
+      if (x < x0 - 2 || x > x1 + 2 || y < y0 - 2 || y > y1 + 2) continue;
+      if (this.sdfAt(x, y) < -1.5) this.removeAt(i);
+    }
   }
 
   sdfAt(x, y) {
@@ -442,43 +732,82 @@ class World {
     const ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy, o = iy * MW + ix, s = this.sdf;
     return (s[o] * (1 - tx) + s[o + 1] * tx) * (1 - ty) + (s[o + MW] * (1 - tx) + s[o + MW + 1] * tx) * ty;
   }
-  densityAt(x, y) {
-    const cx = clamp((x * this.inv) | 0, 0, this.NX - 1), cy = clamp((y * this.inv) | 0, 0, this.NY - 1);
-    return this.density[cy * this.NX + cx];
+  sdfGrad(x, y) {
+    const MW = this.MW, ix = clamp(x | 0, 1, MW - 2), iy = clamp(y | 0, 1, this.MH - 2), o = iy * MW + ix, s = this.sdf;
+    const gx = s[o + 1] - s[o - 1], gy = s[o + MW] - s[o - MW], l = Math.hypot(gx, gy);
+    return l > 1e-5 ? [gx / l, gy / l] : [0, -1];
   }
-  add(x, y, vx, vy) {
-    if (this.N >= CFG.maxParticles) return false;
+  cellOf(x, y) {
+    return clamp((y * this.inv) | 0, 0, this.NY - 1) * this.NX + clamp((x * this.inv) | 0, 0, this.NX - 1);
+  }
+  densityAt(x, y) { return this.density[this.cellOf(x, y)]; }
+  gridVel(x, y) {
+    const c = this.cellOf(x, y);
+    if (this.type[c] !== FLUID) return null;
+    return [(this.u[c] + this.u[c + 1]) * 0.5, (this.v[c] + this.v[c + this.NX]) * 0.5];
+  }
+
+  /* ---- particles ---- */
+  add(x, y, vx, vy, t) {
+    if (this.N >= this.maxP) return false;
     if (this.sdfAt(x, y) < this.r) return false;
     const i = this.N++;
     this.px[i] = x; this.py[i] = y; this.vx[i] = vx; this.vy[i] = vy;
+    this.pt[i] = t; this.pl[i] = t === 2 ? CFG.foamLife * (0.7 + 0.6 * Math.random()) : 0;
     return true;
   }
   removeAt(i) {
     const l = --this.N;
     this.px[i] = this.px[l]; this.py[i] = this.py[l]; this.vx[i] = this.vx[l]; this.vy[i] = this.vy[l];
+    this.pt[i] = this.pt[l]; this.pl[i] = this.pl[l];
   }
-  clearWater() { this.N = 0; this.density.fill(0); }
+  clearLiquids() { this.N = 0; this.density.fill(0); this.denW.fill(0); this.denO.fill(0); }
 
-  /* ---- sources & sinks ---- */
-  emit(dt) {
-    const r = this.r, sp = 2 * r, rowH = Math.sqrt(3) * r;
-    for (const p of this.pipes) {
-      const dx = Math.cos(p.a), dy = Math.sin(p.a), nx = -dy, ny = dx;
-      p.acc += CFG.pipeSpeed * dt / rowH;
-      while (p.acc >= 1) {
-        p.acc -= 1; p.row ^= 1;
-        const off = p.acc * rowH + 2;
-        const half = CFG.pipeWidth / 2 - r;
-        for (let t = -half + (p.row ? r : 0); t <= half; t += sp) {
-          const j = (Math.random() - 0.5) * 0.2;
-          this.add(p.x + dx * off + nx * (t + j), p.y + dy * off + ny * (t + j),
-                   dx * CFG.pipeSpeed, dy * CFG.pipeSpeed);
+  /* ---- wind field (velocity targets on the grid) ---- */
+  rebuildWind() {
+    const { NX, NY, h, windX, windY } = this;
+    windX.fill(0); windY.fill(0);
+    for (const w of this.winds) {
+      const W = CFG.windWidth * this.U * w.mul, pts = w.pts;
+      for (let k = 0; k + 3 < pts.length; k += 2) {
+        const ax = pts[k], ay = pts[k + 1], bx = pts[k + 2], by = pts[k + 3];
+        const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; if (L2 < 1e-6) continue;
+        const L = Math.sqrt(L2), ux = dx / L, uy = dy / L;
+        const cx0 = Math.max(1, Math.floor((Math.min(ax, bx) - W) / h)), cx1 = Math.min(NX - 2, Math.ceil((Math.max(ax, bx) + W) / h));
+        const cy0 = Math.max(1, Math.floor((Math.min(ay, by) - W) / h)), cy1 = Math.min(NY - 2, Math.ceil((Math.max(ay, by) + W) / h));
+        for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
+          const px = (cx + 0.5) * h, py = (cy + 0.5) * h;
+          const t = clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1);
+          const qx = ax + dx * t - px, qy = ay + dy * t - py, d = Math.sqrt(qx * qx + qy * qy);
+          if (d >= W) continue;
+          const f = 1 - (d / W) * (d / W), c = cy * NX + cx;
+          if (f * f > windX[c] * windX[c] + windY[c] * windY[c]) { windX[c] = ux * f; windY[c] = uy * f; }
         }
       }
     }
-    // finger brushes (pour / erase)
+  }
+
+  /* ---- sources ---- */
+  emit(dt) {
+    const r = this.r, sp = 2 * r, rowH = Math.sqrt(3) * r, U = this.U;
+    const speed = CFG.pipeSpeed * U;
+    for (const p of this.pipes) {
+      const dx = Math.cos(p.a), dy = Math.sin(p.a), nx = -dy, ny = dx;
+      p.acc += speed * dt / rowH;
+      let guard = 0;
+      while (p.acc >= 1 && guard++ < 8) {
+        p.acc -= 1; p.row ^= 1;
+        const off = p.acc * rowH + 2;
+        const half = CFG.pipeWidth * U / 2 - r;
+        for (let t = -half + (p.row ? r : 0); t <= half; t += sp) {
+          const j = (Math.random() - 0.5) * 0.2;
+          this.add(p.x + dx * off + nx * (t + j), p.y + dy * off + ny * (t + j), dx * speed, dy * speed, p.type);
+        }
+      }
+      if (p.acc >= 1) p.acc = 0;
+    }
     for (const b of this.brushes) {
-      const R = CFG.brushRadius, R2 = R * R;
+      const R = b.R, R2 = R * R;
       if (b.erase) {
         for (let i = this.N - 1; i >= 0; i--) {
           const dx = this.px[i] - b.x, dy = this.py[i] - b.y;
@@ -493,34 +822,57 @@ class World {
           const dx = x - b.x, dy = y - b.y;
           if (dx * dx + dy * dy > R2) continue;
           if (this.densityAt(x, y) > lim) continue;
-          this.add(x, y, b.vx, b.vy);
+          this.add(x, y, b.vx, b.vy, b.type);
         }
       }
     }
   }
-  drain(dt) {
-    if (!this.sewers.length) return;
-    const R = CFG.sewerRadius, R2 = R * R, P2 = (R * 3) * (R * 3), pull = 2200 * dt;
-    const px = this.px, py = this.py, vx = this.vx, vy = this.vy;
-    for (const s of this.sewers) {
-      for (let i = this.N - 1; i >= 0; i--) {
-        const dx = s.x - px[i], dy = s.y - py[i], d2 = dx * dx + dy * dy;
-        if (d2 < R2) { this.removeAt(i); continue; }
-        if (d2 < P2) { const k = pull / Math.sqrt(d2); vx[i] += dx * k; vy[i] += dy * k; }
-      }
-    }
-  }
 
-  /* ---- particle integration with anti-tunneling ---- */
+  /* ---- integrate: gravity, buoyancy, wind, foam aging, anti-tunneling ---- */
   integrate(dt, gx, gy) {
-    const { px, py, vx, vy, sdf, MW } = this, N = this.N;
-    const vmax = CFG.vmax, vmax2 = vmax * vmax, thr = this.r * 0.5;
+    const { px, py, vx, vy, pt, pl, sdf, MW, NX, NY, inv, denW, denO, windX, windY } = this, N = this.N;
+    const vmax = CFG.vmax * this.U, vmax2 = vmax * vmax, thr = this.r * 0.5;
+    const irest = 1 / this.restDensity, oilLift = CFG.oilLift, foamLift = CFG.foamLift;
+    const wSpeed = CFG.windSpeed * this.U, wAcc = CFG.windAccel * this.U * dt;
+    const hasWind = this.winds.length > 0, hasOil = this.oilCount > 0, fdamp = Math.max(0, 1 - 1.5 * dt);
+    // slip (drift-flux) velocity: lighter liquids move up relative to the mixture
+    const gl = Math.sqrt(gx * gx + gy * gy), ux0 = gl > 1 ? -gx / gl : 0, uy0 = gl > 1 ? -gy / gl : 0;
+    const oilSlip = CFG.oilLift * 60 * this.U * dt * (gl / (CFG.gravity * this.U) || 0);
+    const foamSlip = CFG.foamLift * 45 * this.U * dt * (gl / (CFG.gravity * this.U) || 0);
     for (let i = 0; i < N; i++) {
-      let ux = vx[i] + gx * dt, uy = vy[i] + gy * dt;
+      let x = px[i], y = py[i], ux = vx[i], uy = vy[i];
+      const t = pt[i];
+      let ax = gx, ay = gy;
+      if (t !== 0 || hasWind || hasOil) {
+        let cx = (x * inv) | 0, cy = (y * inv) | 0;
+        if (cx < 0) cx = 0; else if (cx >= NX) cx = NX - 1;
+        if (cy < 0) cy = 0; else if (cy >= NY) cy = NY - 1;
+        const c = cy * NX + cx;
+        if (t === 0) {                       // water sinks where oil is mixed in (counter-flow)
+          if (hasOil) { let f = denO[c] * irest; if (f > 1) f = 1; x -= ux0 * oilSlip * f; y -= uy0 * oilSlip * f; }
+        } else if (t === 1) {                // oil rises through water
+          let f = denW[c] * irest; if (f > 1) f = 1;
+          const k = 1 - f * oilLift; ax = gx * k; ay = gy * k;
+          x += ux0 * oilSlip * f; y += uy0 * oilSlip * f;
+        } else if (t === 2) {                // foam rises through any liquid, dies over time
+          let f = (denW[c] + denO[c]) * irest; if (f > 1) f = 1;
+          const k = f < 0.15 ? 0.45 : 1 - f * foamLift; ax = gx * k; ay = gy * k;
+          ux *= fdamp; uy *= fdamp; pl[i] -= dt;
+          x += ux0 * foamSlip * f; y += uy0 * foamSlip * f;
+        }
+        if (hasWind) {
+          const wx = windX[c], wy = windY[c];
+          if (wx !== 0 || wy !== 0) {
+            const f = Math.sqrt(wx * wx + wy * wy), dx = wx / f, dy = wy / f;
+            const vt = ux * dx + uy * dy, target = wSpeed * f;
+            if (vt < target) { const inc = Math.min(wAcc * f, target - vt); ux += dx * inc; uy += dy * inc; }
+          }
+        }
+      }
+      ux += ax * dt; uy += ay * dt;
       const s2 = ux * ux + uy * uy;
       if (s2 > vmax2) { const k = vmax / Math.sqrt(s2); ux *= k; uy *= k; }
       vx[i] = ux; vy[i] = uy;
-      let x = px[i], y = py[i];
       const dx = ux * dt, dy = uy * dt;
       const len = (dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy);
       if (len > 1.2) {
@@ -537,8 +889,9 @@ class World {
 
   /* ---- push particles out of the walls (SDF) ---- */
   collide() {
-    const { px, py, vx, vy, sdf, MW, MH } = this, N = this.N, r = this.r;
+    const { px, py, vx, vy, sdf, MW, MH, kill } = this, N = this.N, r = this.r;
     const xmax = MW - 2, ymax = MH - 2;
+    let nk = 0;
     for (let i = 0; i < N; i++) {
       let x = px[i], y = py[i];
       if (x < 1) x = 1; else if (x > xmax) x = xmax;
@@ -557,13 +910,14 @@ class World {
           x += gx * push; y += gy * push;
           const vn = vx[i] * gx + vy[i] * gy;
           if (vn < 0) { vx[i] -= vn * gx; vy[i] -= vn * gy; }
-        }
+        } else if (d < -1) kill[nk++] = i;   // stuck deep inside a thick wall
       }
       px[i] = x; py[i] = y;
     }
+    for (let k = nk - 1; k >= 0; k--) this.removeAt(kill[k]);
   }
 
-  /* ---- particle separation (spatial hash, counting sort) ---- */
+  /* ---- particle separation: half-stencil sweep over a counting-sorted hash ---- */
   separate() {
     const N = this.N; if (!N) return;
     const { pNX, pNY, pInv, cellStart, cellEntries } = this;
@@ -579,22 +933,18 @@ class World {
     cellStart[nc] = first;
     for (let i = 0; i < N; i++) {
       const xi = clamp((px[i] * pInv) | 0, 0, pNX - 1), yi = clamp((py[i] * pInv) | 0, 0, pNY - 1);
-      const c = yi * pNX + xi;
-      cellEntries[--cellStart[c]] = i;
+      cellEntries[--cellStart[yi * pNX + xi]] = i;
     }
-    // periodically reorder particles in memory by cell -> cache-friendly neighbor loops
-    if ((this.stepCount & 31) === 0) {
-      const { tpx, tpy, tvx, tvy, vx, vy } = this;
+    if ((this.stepCount & 31) === 0) {     // reorder in memory by cell for cache locality
+      const { tpx, tpy, tvx, tvy, tpt, tpl, vx, vy, pt, pl } = this;
       for (let k = 0; k < N; k++) {
         const j = cellEntries[k];
-        tpx[k] = px[j]; tpy[k] = py[j]; tvx[k] = vx[j]; tvy[k] = vy[j];
+        tpx[k] = px[j]; tpy[k] = py[j]; tvx[k] = vx[j]; tvy[k] = vy[j]; tpt[k] = pt[j]; tpl[k] = pl[j];
         cellEntries[k] = k;
       }
-      this.tpx = px; this.tpy = py; this.tvx = vx; this.tvy = vy;
-      this.px = px = tpx; this.py = py = tpy; this.vx = tvx; this.vy = tvy;
+      this.tpx = px; this.tpy = py; this.tvx = vx; this.tvy = vy; this.tpt = pt; this.tpl = pl;
+      this.px = px = tpx; this.py = py = tpy; this.vx = tvx; this.vy = tvy; this.pt = tpt; this.pl = tpl;
     }
-    // half-stencil sweep over cells: every pair handled exactly once per iteration,
-    // particle i kept in registers while its neighbors are visited
     const minDist = 2 * this.r, minDist2 = minDist * minDist;
     for (let it = 0; it < CFG.separateIters; it++) {
       for (let cy = 0; cy < pNY; cy++) {
@@ -605,14 +955,13 @@ class World {
           for (let k = cs; k < ce; k++) {
             const i = cellEntries[k];
             let xi = px[i], yi = py[i];
-            // neighbor ranges: rest of own cell, right cell, and the 3 cells below
             for (let nb = 0; nb < 5; nb++) {
               let a, e;
               if (nb === 0) { a = k + 1; e = ce; }
               else if (nb === 1) { if (!hasR) continue; a = cellStart[c + 1]; e = cellStart[c + 2]; }
               else {
                 if (!hasD) break;
-                const dc = nb === 2 ? -1 : (nb === 3 ? 0 : 1);
+                const dc = nb - 3;
                 if ((dc === -1 && !hasL) || (dc === 1 && !hasR)) continue;
                 const cc = c + pNX + dc; a = cellStart[cc]; e = cellStart[cc + 1];
               }
@@ -633,6 +982,70 @@ class World {
     }
   }
 
+  /* ---- water mills: blades push liquid, liquid spins the rotor ---- */
+  stepMills(dt) {
+    if (!this.mills.length) return;
+    const { px, py, vx, vy } = this, N = this.N, r = this.r, U = this.U;
+    for (const m of this.mills) {
+      const R = CFG.millSize * U * m.mul, hub = R * 0.18;
+      const bt0 = Math.max(1.4, 1.2 * U), bt1 = R * 0.16;
+      const reach = R + bt1 + r, reach2 = reach * reach, hubR2 = (hub + r) * (hub + r);
+      const cs = [], sn = [];
+      for (let k = 0; k < 4; k++) { cs.push(Math.cos(m.th + k * Math.PI / 2)); sn.push(Math.sin(m.th + k * Math.PI / 2)); }
+      const w = m.om, mx = m.x, my = m.y;
+      let L = 0;
+      for (let i = 0; i < N; i++) {
+        let rx = px[i] - mx; if (rx > reach || rx < -reach) continue;
+        let ry = py[i] - my; if (ry > reach || ry < -reach) continue;
+        const d2 = rx * rx + ry * ry; if (d2 > reach2) continue;
+        if (d2 < hubR2 && d2 > 1e-6) {           // hub
+          const d = Math.sqrt(d2), nx = rx / d, ny = ry / d, pen = hub + r - d;
+          rx += nx * pen; ry += ny * pen;
+          const vn = (vx[i] + w * ry) * nx + (vy[i] - w * rx) * ny;
+          if (vn < 0) { vx[i] -= vn * nx; vy[i] -= vn * ny; }
+        }
+        for (let k = 0; k < 4; k++) {
+          const bx = cs[k], by = sn[k];
+          const along = rx * bx + ry * by;
+          if (along < 0 || along > R) continue;
+          const perp = bx * ry - by * rx, ap = perp < 0 ? -perp : perp;
+          const bt = bt0 + (bt1 - bt0) * (along / R);
+          if (ap >= bt + r) continue;
+          const sg = perp < 0 ? -1 : 1, nx = -by * sg, ny = bx * sg, pen = bt + r - ap;
+          rx += nx * pen; ry += ny * pen;
+          const vbx = -w * ry, vby = w * rx;
+          const vrn = (vx[i] - vbx) * nx + (vy[i] - vby) * ny;
+          if (vrn < 0) {
+            const dvx = -vrn * nx, dvy = -vrn * ny;
+            vx[i] += dvx; vy[i] += dvy;
+            L -= rx * dvy - ry * dvx;
+          }
+        }
+        px[i] = mx + rx; py[i] = my + ry;
+      }
+      m.om += L / (CFG.millMass * R * R);
+      m.om *= Math.exp(-CFG.millFriction * dt);
+      m.om = clamp(m.om, -30, 30);
+      m.th += m.om * dt;
+    }
+  }
+
+  /* ---- sinks: sewers + dissolving foam ---- */
+  drain(dt) {
+    const { px, py, vx, vy, pt, pl } = this;
+    if (this.sewers.length) {
+      const U = this.U, R = CFG.sewerRadius * U, R2 = R * R, P2 = 9 * R2, pull = CFG.sewerPull * U * dt;
+      for (const s of this.sewers) {
+        for (let i = this.N - 1; i >= 0; i--) {
+          const dx = s.x - px[i], dy = s.y - py[i], d2 = dx * dx + dy * dy;
+          if (d2 < R2) { this.removeAt(i); continue; }
+          if (d2 < P2) { const k = pull / Math.sqrt(d2); vx[i] += dx * k; vy[i] += dy * k; }
+        }
+      }
+    }
+    for (let i = this.N - 1; i >= 0; i--) if (pt[i] === 2 && pl[i] <= 0) this.removeAt(i);
+  }
+
   /* ---- particles -> grid ---- */
   p2g() {
     const { NX, NY, h, inv, u, v, du, dv, type, solid, fixU, fixV, validU, validV, px, py, vx, vy } = this;
@@ -647,7 +1060,6 @@ class World {
     const lo = h, hx = (NX - 1) * h, hy = (NY - 1) * h;
     for (let i = 0; i < N; i++) {
       const x = clamp(px[i], lo, hx), y = clamp(py[i], lo, hy);
-      // u (faces at x = i*h, y = (j+.5)h)
       let fx = x * inv, fy = (y - h2) * inv;
       let x0 = Math.min(fx | 0, NX - 2), y0 = Math.min(fy | 0, NY - 2);
       let tx = fx - x0, ty = fy - y0, sx = 1 - tx, sy = 1 - ty;
@@ -657,7 +1069,6 @@ class World {
       w = tx * sy; u[c + 1] += pu * w; du[c + 1] += w;
       w = sx * ty; u[c + NX] += pu * w; du[c + NX] += w;
       w = tx * ty; u[c + NX + 1] += pu * w; du[c + NX + 1] += w;
-      // v (faces at x = (i+.5)h, y = j*h)
       fx = (x - h2) * inv; fy = y * inv;
       x0 = Math.min(fx | 0, NX - 2); y0 = Math.min(fy | 0, NY - 2);
       tx = fx - x0; ty = fy - y0; sx = 1 - tx; sy = 1 - ty;
@@ -672,24 +1083,29 @@ class World {
       u[c] = (fixU[c] || du[c] === 0) ? 0 : u[c] / du[c];
       v[c] = (fixV[c] || dv[c] === 0) ? 0 : v[c] / dv[c];
       const x = c % NX;
-      // free-slip validity: a face is valid only if it touches a fluid cell
       validU[c] = (type[c] === FLUID || (x > 0 && type[c - 1] === FLUID)) ? 1 : 0;
       validV[c] = (type[c] === FLUID || (c >= NX && type[c - NX] === FLUID)) ? 1 : 0;
     }
   }
 
   computeDensity() {
-    const { NX, NY, h, inv, density, px, py } = this, N = this.N, h2 = h * 0.5;
-    density.fill(0);
-    const lo = h, hx = (NX - 1) * h, hy = (NY - 1) * h;
+    const { NX, h, inv, density, denW, denO, px, py, pt } = this, N = this.N, h2 = h * 0.5;
+    let oil = 0;
+    density.fill(0); denW.fill(0); denO.fill(0);
+    const lo = h, hx = (NX - 1) * h, hy = (this.NY - 1) * h;
     for (let i = 0; i < N; i++) {
       const x = clamp(px[i], lo, hx), y = clamp(py[i], lo, hy);
       const fx = (x - h2) * inv, fy = (y - h2) * inv;
       const x0 = fx | 0, y0 = fy | 0, tx = fx - x0, ty = fy - y0, sx = 1 - tx, sy = 1 - ty;
       const c = y0 * NX + x0;
-      density[c] += sx * sy; density[c + 1] += tx * sy;
-      density[c + NX] += sx * ty; density[c + NX + 1] += tx * ty;
+      const w0 = sx * sy, w1 = tx * sy, w2 = sx * ty, w3 = tx * ty;
+      density[c] += w0; density[c + 1] += w1; density[c + NX] += w2; density[c + NX + 1] += w3;
+      const t = pt[i];
+      const d = t === 0 ? denW : (t === 1 ? denO : null);
+      if (d) { d[c] += w0; d[c + 1] += w1; d[c + NX] += w2; d[c + NX + 1] += w3; }
+      if (t === 1) oil++;
     }
+    this.oilCount = oil;
   }
 
   /* ---- pressure projection (Gauss-Seidel + SOR, drift compensation) ---- */
@@ -698,8 +1114,9 @@ class World {
     let nf = 0;
     for (let c = 0; c < n; c++) if (type[c] === FLUID) fluidList[nf++] = c;
     this.prevU.set(u); this.prevV.set(v);
-    const rest = this.restDensity, kd = CFG.driftK * this.h / dt, omega = CFG.overRelax;
-    for (let it = 0; it < CFG.pressureIters; it++) {
+    const rest = this.restDensity, kd = CFG.driftK * this.h / dt, omega = 1.9;
+    const iters = CFG.pressureIters;
+    for (let it = 0; it < iters; it++) {
       for (let f = 0; f < nf; f++) {
         const c = fluidList[f];
         const sx0 = s[c - 1], sx1 = s[c + 1], sy0 = s[c - NX], sy1 = s[c + NX];
@@ -715,14 +1132,15 @@ class World {
     }
   }
 
-  /* ---- grid -> particles (PIC/FLIP blend) ---- */
+  /* ---- grid -> particles (PIC/FLIP blend per liquid type) ---- */
   g2p() {
-    const { NX, NY, h, inv, u, v, prevU, prevV, validU, validV, px, py, vx, vy } = this;
-    const N = this.N, h2 = h * 0.5, flip = CFG.flipRatio, pic = 1 - flip;
+    const { NX, NY, h, inv, u, v, prevU, prevV, validU, validV, px, py, vx, vy, pt } = this;
+    const N = this.N, h2 = h * 0.5;
+    const FL = [CFG.flipRatio, CFG.oilFlip, 0.4];
     const lo = h, hx = (NX - 1) * h, hy = (NY - 1) * h;
     for (let i = 0; i < N; i++) {
+      const flip = FL[pt[i]], pic = 1 - flip;
       const x = clamp(px[i], lo, hx), y = clamp(py[i], lo, hy);
-      // u
       let fx = x * inv, fy = (y - h2) * inv;
       let x0 = Math.min(fx | 0, NX - 2), y0 = Math.min(fy | 0, NY - 2);
       let tx = fx - x0, ty = fy - y0, sx = 1 - tx, sy = 1 - ty;
@@ -734,7 +1152,6 @@ class World {
         const corr = (w0 * (u[c0] - prevU[c0]) + w1 * (u[c1] - prevU[c1]) + w2 * (u[c2] - prevU[c2]) + w3 * (u[c3] - prevU[c3])) / d;
         vx[i] = pic * picV + flip * (vx[i] + corr);
       }
-      // v
       fx = (x - h2) * inv; fy = y * inv;
       x0 = Math.min(fx | 0, NX - 2); y0 = Math.min(fy | 0, NY - 2);
       tx = fx - x0; ty = fy - y0; sx = 1 - tx; sy = 1 - ty;
@@ -749,25 +1166,112 @@ class World {
     }
   }
 
+  /* ---- creatures ---- */
+  creatureSize(c) { return CFG.creatureSize * this.U * CREATURES[c.kind].scale * c.mul; }
+  spawnCreature(x, y, kind) {
+    if (this.creatures.length >= CFG.maxCreatures) return false;
+    if (kind === -1) kind = (Math.random() * CREATURES.length) | 0;
+    else if (kind === -2) kind = (Math.random() * 3) | 0;
+    const c = { kind, x, y, vx: 0, vy: 0, heading: Math.random() < 0.5 ? 0 : Math.PI, turn: 0,
+      phase: Math.random() * 6, mul: 0.85 + Math.random() * 0.3, wet: 0, angle: 0, tilt: 0, face: 1 };
+    if (this.sdfAt(x, y) < this.creatureSize(c) * 0.3) return false;
+    c.angle = c.heading;
+    this.creatures.push(c);
+    return true;
+  }
+  updateCreatures(dt, gx, gy) {
+    if (!this.creatures.length) return;
+    const gl = Math.hypot(gx, gy), upx = gl > 1 ? -gx / gl : 0, upy = gl > 1 ? -gy / gl : -1;
+    const rest = this.restDensity, MW = this.MW, MH = this.MH, f = this.frame;
+    for (const c of this.creatures) {
+      const T = CREATURES[c.kind], size = this.creatureSize(c), rad = size * 0.3;
+      const den = this.densityAt(c.x, c.y);
+      c.wet += ((den > rest * 0.35 ? 1 : 0) - c.wet) * Math.min(1, dt * 6);
+      const wv = this.gridVel(c.x, c.y);
+      if (T.duck) {
+        const sub = Math.min(1.3, den / rest), k = 1 - 2.2 * sub;
+        c.vx += gx * k * dt; c.vy += gy * k * dt;
+        if (sub > 0.05) {
+          const a = Math.min(1, 2 * dt) * sub;
+          if (wv) { c.vx += (wv[0] - c.vx) * a; c.vy += (wv[1] - c.vy) * a; }
+          c.vx *= 1 - 1.2 * dt; c.vy *= 1 - 1.2 * dt;
+        }
+      } else if (c.wet > 0.5) {
+        c.turn = clamp((c.turn + (Math.random() - 0.5) * dt * 12) * (1 - dt), -2, 2);
+        c.heading += c.turn * dt;
+        // stay under the surface: if there is no liquid above, steer down
+        if (this.densityAt(c.x + upx * size * 0.6, c.y + upy * size * 0.6) < rest * 0.3) {
+          const want = Math.atan2(-upy, -upx);
+          let da = want - c.heading; da = Math.atan2(Math.sin(da), Math.cos(da));
+          c.heading += da * Math.min(1, 3 * dt);
+        }
+        const sw = CFG.creatureSwim * this.U * T.swim;
+        let tx = wv ? wv[0] : 0, ty = wv ? wv[1] : 0;
+        if (T.jelly) {
+          const p = Math.max(0, Math.sin(c.phase * 0.5));
+          tx += (upx * 0.7 + Math.cos(c.heading) * 0.3) * p * sw * 1.6;
+          ty += (upy * 0.7 + Math.sin(c.heading) * 0.3) * p * sw * 1.6;
+        } else { tx += Math.cos(c.heading) * sw; ty += Math.sin(c.heading) * sw; }
+        const a = Math.min(1, 2.5 * dt);
+        c.vx += (tx - c.vx) * a; c.vy += (ty - c.vy) * a;
+      } else {                                   // out of water: fall & flop
+        c.vx += gx * dt; c.vy += gy * dt; c.vx *= 0.997;
+      }
+      let sp = Math.hypot(c.vx, c.vy);
+      const vmax = CFG.vmax * this.U;
+      if (sp > vmax) { c.vx *= vmax / sp; c.vy *= vmax / sp; sp = vmax; }
+      // move with anti-tunneling
+      const dx = c.vx * dt, dy = c.vy * dt, steps = Math.max(1, Math.ceil(Math.abs(dx) + Math.abs(dy)));
+      for (let k = 0; k < steps; k++) {
+        const nx = c.x + dx / steps, ny = c.y + dy / steps;
+        if (this.sdf[(ny | 0) * MW + (nx | 0)] < 1) break;
+        c.x = nx; c.y = ny;
+      }
+      const d = this.sdfAt(c.x, c.y);
+      if (d < rad) {
+        const [nx, ny] = this.sdfGrad(c.x, c.y);
+        c.x += nx * (rad - d); c.y += ny * (rad - d);
+        const vn = c.vx * nx + c.vy * ny;
+        if (vn < 0) { const b = c.wet > 0.5 ? 1 : 1.35; c.vx -= b * vn * nx; c.vy -= b * vn * ny; }
+        const hx = Math.cos(c.heading), hy = Math.sin(c.heading), hn = hx * nx + hy * ny;
+        if (hn < 0) c.heading = Math.atan2(hy - 2 * hn * ny, hx - 2 * hn * nx);
+      }
+      c.x = clamp(c.x, f + 1, MW - f - 1); c.y = clamp(c.y, f + 1, MH - f - 1);
+      // looks
+      c.phase += dt * (c.wet > 0.5 || T.duck ? 5 + sp / (25 * this.U) : 18);
+      if (T.upright) {
+        if (Math.abs(c.vx) > 8 * this.U) c.face = c.vx > 0 ? 1 : -1;
+        const want = T.duck ? Math.sin(c.phase * 0.4) * 0.12 + clamp(c.vx * 0.0006, -0.3, 0.3) : clamp(c.vx * 0.002, -0.5, 0.5);
+        c.tilt += (want - c.tilt) * Math.min(1, 5 * dt);
+      } else if (c.wet > 0.5) {
+        const want = sp > 12 * this.U ? Math.atan2(c.vy, c.vx) : c.heading;
+        let da = want - c.angle; da = Math.atan2(Math.sin(da), Math.cos(da));
+        c.angle += da * Math.min(1, 6 * dt);
+      } else c.angle += Math.sin(c.phase) * 0.06;  // flop
+    }
+  }
+
   step(dt, gx, gy) {
     this.emit(dt);
     this.integrate(dt, gx, gy);
     this.separate();
     this.collide();
+    this.stepMills(dt);
     this.drain(dt);
     this.p2g();
     this.computeDensity();
     this.project(dt);
     this.g2p();
+    this.updateCreatures(dt, gx, gy);
     this.stepCount++;
   }
 
   fillRender(out) {
-    const { px, py, vx, vy } = this, N = this.N, inv = 1 / 650;
-    for (let i = 0, j = 0; i < N; i++, j += 3) {
+    const { px, py, vx, vy, pt } = this, N = this.N, inv = 1 / (650 * this.U);
+    for (let i = 0, j = 0; i < N; i++, j += 4) {
       out[j] = px[i]; out[j + 1] = py[i];
       const s = Math.sqrt(vx[i] * vx[i] + vy[i] * vy[i]) * inv;
-      out[j + 2] = s > 1 ? 1 : s;
+      out[j + 2] = s > 1 ? 1 : s; out[j + 3] = pt[i];
     }
     return N;
   }
@@ -777,26 +1281,28 @@ class World {
    WebGL2 renderer
    --------------------------------------------------------------------- */
 const VS_POINTS = `#version 300 es
-in vec3 aP;
+in vec4 aP;
 uniform vec2 uInvDomain;
 uniform float uSize;
-out float vS;
+out vec2 vST;
 void main(){
   vec2 c = aP.xy * uInvDomain;
   gl_Position = vec4(c.x * 2.0 - 1.0, 1.0 - c.y * 2.0, 0.0, 1.0);
   gl_PointSize = uSize;
-  vS = aP.z;
+  vST = aP.zw;
 }`;
 const FS_POINTS = `#version 300 es
 precision mediump float;
-in float vS;
+in vec2 vST;
+uniform float uW;
 out vec4 o;
 void main(){
   vec2 q = gl_PointCoord * 2.0 - 1.0;
   float r2 = dot(q, q);
   if (r2 > 1.0) discard;
-  float w = 1.0 - r2; w = w * w * w * 0.28;
-  o = vec4(w, w * vS, 0.0, 0.0);
+  float w = 1.0 - r2; w = w * w * w * uW;
+  float oil = step(0.5, vST.y) * step(vST.y, 1.5), foam = step(1.5, vST.y);
+  o = vec4(w, w * vST.x, w * oil, w * foam);
 }`;
 const VS_FULL = `#version 300 es
 out vec2 vUv;
@@ -805,12 +1311,23 @@ void main(){
   vUv = p;
   gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
 }`;
+const FS_BLIT = `#version 300 es
+precision mediump float;
+in vec2 vUv; uniform sampler2D uTex; out vec4 o;
+void main(){ o = vec4(texture(uTex, vec2(vUv.x, 1.0 - vUv.y)).rgb, 1.0); }`;
+const VS_SPRITE = `#version 300 es
+in vec4 aV; out vec2 vT;
+void main(){ gl_Position = vec4(aV.xy, 0.0, 1.0); vT = aV.zw; }`;
+const FS_SPRITE = `#version 300 es
+precision mediump float;
+in vec2 vT; uniform sampler2D uTex; uniform float uAlpha; out vec4 o;
+void main(){ o = texture(uTex, vT) * uAlpha; }`;
 const FS_WATER = `#version 300 es
 precision highp float;
 in vec2 vUv;
 uniform sampler2D uBg, uDen;
-uniform vec2 uTexel;     // density texel size
-uniform float uTime, uAspect;
+uniform vec2 uTexel;
+uniform float uTime, uAspect, uFlipBg;
 uniform vec3 uShallow, uDeep;
 out vec4 o;
 const float T = 0.22;
@@ -821,53 +1338,68 @@ float caustic(vec2 p, float t){
   v += 0.5 * sin((q.x + q.y) * 3.1 + t * 1.7);
   return pow(clamp(1.0 - abs(v), 0.0, 1.0), 7.0);
 }
-vec3 bgAt(vec2 uv){ return texture(uBg, vec2(uv.x, 1.0 - uv.y)).rgb; }
+vec2 hash2(vec2 p){ p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); return fract(sin(p) * 43758.5453); }
+float cells(vec2 p){
+  vec2 i = floor(p), f = fract(p); float m = 8.0;
+  for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+    vec2 g = vec2(float(x), float(y)); vec2 r = g + hash2(i + g) * 0.8 + 0.1 - f; m = min(m, dot(r, r));
+  }
+  return sqrt(m);
+}
+vec3 bgAt(vec2 uv){ return texture(uBg, vec2(uv.x, mix(uv.y, 1.0 - uv.y, uFlipBg))).rgb; }
 void main(){
   vec4 D = texture(uDen, vUv);
   float d = D.r;
   vec3 bg = bgAt(vUv);
-  // soft drop shadow of the water on the paper
   float sh = texture(uDen, vUv + vec2(-uTexel.x * 3.0, uTexel.y * 4.0)).r;
   float shadow = smoothstep(0.05, 0.5, sh) * 0.22;
   if (d < T - 0.06) { o = vec4(bg * (1.0 - shadow), 1.0); return; }
 
-  // wide, diagonal-sampled gradient = smooth normals (no per-particle bumps)
   vec2 o1 = uTexel * 2.5, o2 = vec2(uTexel.x, -uTexel.y) * 2.5;
   float a1 = texture(uDen, vUv + o1).r, b1 = texture(uDen, vUv - o1).r;
   float a2 = texture(uDen, vUv + o2).r, b2 = texture(uDen, vUv - o2).r;
   vec2 g = vec2((a1 - b1) + (a2 - b2), (a1 - b1) - (a2 - b2)) * 0.5;
   float a = smoothstep(T - 0.05, T + 0.03, d);
   float thick = clamp((d - T) * 1.4, 0.0, 1.0);
-  // strong curvature at the edges, calm flat surface in deep water
-  vec3 n = normalize(vec3(-g * mix(2.2, 0.45, thick), 1.0));
+  float oilF = clamp(D.b / d, 0.0, 1.0), foamF = clamp(D.a / d, 0.0, 1.0);
+  vec3 n = normalize(vec3(-g * mix(2.2, 0.45, thick) * (1.0 - oilF * 0.55), 1.0));
 
-  // refraction of the drawing under the water
   vec2 off = n.xy * (0.006 + 0.01 * thick);
   vec3 refr = bgAt(vUv + off);
+  // water
   vec3 tint = mix(uShallow, uDeep, thick);
-  vec3 col = refr * mix(vec3(1.0), tint, 0.55 + 0.35 * thick);
-  col = mix(col, tint, 0.18 + 0.32 * thick);
+  vec3 wcol = refr * mix(vec3(1.0), tint, 0.55 + 0.35 * thick);
+  wcol = mix(wcol, tint, 0.18 + 0.32 * thick);
+  wcol += caustic(vec2((vUv.x + off.x) * uAspect, vUv.y + off.y), uTime) * 0.22 * (1.0 - thick * 0.5);
+  // oil: dark amber body with a thin-film rainbow sheen
+  vec3 oilT = mix(vec3(0.85, 0.58, 0.14), vec3(0.32, 0.17, 0.03), thick);
+  vec3 ocol = mix(refr * vec3(0.85, 0.7, 0.35), oilT, 0.6 + 0.35 * thick);
+  vec3 film = 0.5 + 0.5 * cos(6.2832 * (vec3(0.0, 0.33, 0.67) + dot(n.xy, vec2(1.6, 1.2)) + d * 0.8 + uTime * 0.05));
+  ocol = mix(ocol, film, 0.32 * (1.0 - smoothstep(0.0, 0.5, thick)));
+  vec3 col = mix(wcol, ocol, oilF);
 
-  // caustics
-  float c = caustic(vec2((vUv.x + off.x) * uAspect, vUv.y + off.y), uTime);
-  col += c * 0.22 * (1.0 - thick * 0.5) * a;
-
-  // lighting
   vec3 L = normalize(vec3(-0.45, 0.55, 0.75));
   vec3 H = normalize(L + vec3(0.0, 0.0, 1.0));
-  float spec = pow(max(dot(n, H), 0.0), 70.0);
+  float spec = pow(max(dot(n, H), 0.0), mix(70.0, 120.0, oilF));
   float fres = pow(1.0 - n.z, 2.0);
-  col += spec * 0.85 + fres * 0.35;
+  col += spec * mix(0.85, 1.3, oilF) + fres * 0.35;
 
-  // rim line for a crisp cartoon edge
   float rim = smoothstep(T - 0.05, T + 0.02, d) * (1.0 - smoothstep(T + 0.02, T + 0.13, d));
-  col = mix(col, uDeep * 0.75, rim * 0.45);
+  col = mix(col, mix(uDeep, vec3(0.08, 0.05, 0.0), oilF) * 0.75, rim * 0.45);
 
-  // foam on fast water
-  float sp = D.g / max(d, 1e-4);
-  float foam = smoothstep(0.5, 0.95, sp);
-  col = mix(col, vec3(1.0), foam * 0.65);
+  float sp = D.g / d;
+  col = mix(col, vec3(1.0), smoothstep(0.5, 0.95, sp) * 0.65 * (1.0 - oilF));
 
+  if (foamF > 0.02) {   // foam: bubbly white
+    vec2 fp = vec2(vUv.x * uAspect, vUv.y);
+    float b1c = cells(fp * 70.0 + vec2(0.0, uTime * 0.15));
+    float b2c = cells(fp * 150.0 + 3.7);
+    vec3 fc = vec3(0.98, 0.99, 1.0) * (0.88 + 0.12 * smoothstep(0.15, 0.7, b1c));
+    fc -= (1.0 - smoothstep(0.0, 0.22, b2c)) * 0.04;
+    fc = mix(fc, mix(uShallow, vec3(1.0), 0.6), 0.25 * thick * (1.0 - foamF));
+    fc += spec * 0.25;
+    col = mix(col, fc, smoothstep(0.12, 0.6, foamF));
+  }
   o = vec4(mix(bg * (1.0 - shadow), col, a), 1.0);
 }`;
 
@@ -878,6 +1410,7 @@ const PALETTES = [
   { name: 'Lava',   shallow: [1.0, 0.88, 0.40],  deep: [0.95, 0.30, 0.05] },
   { name: 'Purple', shallow: [0.85, 0.75, 1.0],  deep: [0.45, 0.20, 0.85] },
 ];
+const MAX_SPRITE_FLOATS = 120 * 72;
 
 class Renderer {
   constructor(canvas) {
@@ -888,22 +1421,51 @@ class Renderer {
     this.floatFB = !!gl.getExtension('EXT_color_buffer_float') || !!gl.getExtension('EXT_color_buffer_half_float');
     this.pPoints = this.program(VS_POINTS, FS_POINTS);
     this.pWater = this.program(VS_FULL, FS_WATER);
-    this.uP = this.uniforms(this.pPoints, ['uInvDomain', 'uSize']);
-    this.uW = this.uniforms(this.pWater, ['uBg', 'uDen', 'uTexel', 'uTime', 'uAspect', 'uShallow', 'uDeep']);
-    this.vao = gl.createVertexArray();
-    gl.bindVertexArray(this.vao);
-    this.vbo = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, CFG.maxParticles * 12, gl.DYNAMIC_DRAW);
-    const loc = gl.getAttribLocation(this.pPoints, 'aP');
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 3, gl.FLOAT, false, 12, 0);
+    this.pBlit = this.program(VS_FULL, FS_BLIT);
+    this.pSprite = this.program(VS_SPRITE, FS_SPRITE);
+    this.uP = this.uniforms(this.pPoints, ['uInvDomain', 'uSize', 'uW']);
+    this.uW = this.uniforms(this.pWater, ['uBg', 'uDen', 'uTexel', 'uTime', 'uAspect', 'uShallow', 'uDeep', 'uFlipBg']);
+    this.uB = this.uniforms(this.pBlit, ['uTex']);
+    this.uS = this.uniforms(this.pSprite, ['uTex', 'uAlpha']);
+    this.allocParticles(CFG.maxParticles);
+    // sprites
+    this.sVao = gl.createVertexArray(); gl.bindVertexArray(this.sVao);
+    this.sVbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.sVbo);
+    gl.bufferData(gl.ARRAY_BUFFER, MAX_SPRITE_FLOATS * 4, gl.DYNAMIC_DRAW);
+    const sl = gl.getAttribLocation(this.pSprite, 'aV');
+    gl.enableVertexAttribArray(sl); gl.vertexAttribPointer(sl, 4, gl.FLOAT, false, 16, 0);
     gl.bindVertexArray(null);
+    this.sBuf = new Float32Array(MAX_SPRITE_FLOATS);
     this.emptyVao = gl.createVertexArray();
-    this.buf = new Float32Array(CFG.maxParticles * 3);
-    this.bgTex = gl.createTexture();
+    this.bgTex = this.tex(); this.atlasTex = this.tex();
+    gl.bindTexture(gl.TEXTURE_2D, this.atlasTex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, makeAtlas());
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     this.denTex = null; this.fbo = null; this.dw = 0; this.dh = 0;
+    this.sceneTex = null; this.sceneFbo = null; this.sw = 0; this.sh = 0;
     this.palette = 0;
+    this.bgW = 1; this.bgH = 1;
+  }
+  allocParticles(P) {
+    const gl = this.gl;
+    if (this.vbo) { gl.deleteBuffer(this.vbo); gl.deleteVertexArray(this.vao); }
+    this.vao = gl.createVertexArray(); gl.bindVertexArray(this.vao);
+    this.vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, P * 16, gl.DYNAMIC_DRAW);
+    const loc = gl.getAttribLocation(this.pPoints, 'aP');
+    gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 16, 0);
+    gl.bindVertexArray(null);
+    this.buf = new Float32Array(P * 4); this.capP = P;
+  }
+  tex() {
+    const gl = this.gl, t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return t;
   }
   program(vs, fs) {
     const gl = this.gl;
@@ -919,41 +1481,110 @@ class Renderer {
   setBackground(canvas) {
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.bgTex);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.bgW = canvas.width; this.bgH = canvas.height;
   }
-  resizeDensity(w, h) {
-    if (w === this.dw && h === this.dh) return;
-    const gl = this.gl; this.dw = w; this.dh = h;
-    if (this.denTex) { gl.deleteTexture(this.denTex); gl.deleteFramebuffer(this.fbo); }
-    const make = (internal, type) => {
-      const t = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, t);
-      gl.texImage2D(gl.TEXTURE_2D, 0, internal, w, h, 0, gl.RGBA, type, null);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      const f = gl.createFramebuffer();
-      gl.bindFramebuffer(gl.FRAMEBUFFER, f);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
-      const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
-      if (!ok) { gl.deleteTexture(t); gl.deleteFramebuffer(f); return null; }
-      return [t, f];
-    };
-    let r = this.floatFB ? make(gl.RGBA16F, gl.HALF_FLOAT) : null;
-    if (!r) r = make(gl.RGBA8, gl.UNSIGNED_BYTE);
-    [this.denTex, this.fbo] = r;
+  updateBackgroundRect(canvas, x, y, w, h) {
+    x = Math.max(0, Math.floor(x)); y = Math.max(0, Math.floor(y));
+    w = Math.min(canvas.width - x, Math.ceil(w)); h = Math.min(canvas.height - y, Math.ceil(h));
+    if (w <= 0 || h <= 0) return;
+    const data = canvas.getContext('2d').getImageData(x, y, w, h).data;
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, this.bgTex);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data);
+  }
+  makeTarget(w, h, float) {
+    const gl = this.gl, t = this.tex();
+    if (float) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
+    else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    const f = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    if (!ok) { gl.deleteTexture(t); gl.deleteFramebuffer(f); return null; }
+    return [t, f];
+  }
+  resize(dw, dh) {
+    const gl = this.gl;
+    if (dw !== this.dw || dh !== this.dh) {
+      if (this.denTex) { gl.deleteTexture(this.denTex); gl.deleteFramebuffer(this.fbo); }
+      const r = (this.floatFB && this.makeTarget(dw, dh, true)) || this.makeTarget(dw, dh, false);
+      [this.denTex, this.fbo] = r; this.dw = dw; this.dh = dh;
+    }
+    const cw = this.canvas.width, ch = this.canvas.height;
+    if (cw !== this.sw || ch !== this.sh) {
+      if (this.sceneTex) { gl.deleteTexture(this.sceneTex); gl.deleteFramebuffer(this.sceneFbo); }
+      [this.sceneTex, this.sceneFbo] = this.makeTarget(cw, ch, false);
+      this.sw = cw; this.sh = ch;
+    }
+  }
+  buildSprites(world, over) {
+    const out = this.sBuf, MW = world.MW, MH = world.MH;
+    let k = 0;
+    const put = (x, y, u, v) => { out[k++] = x / MW * 2 - 1; out[k++] = 1 - y / MH * 2; out[k++] = u; out[k++] = v; };
+    for (const c of world.creatures) {
+      const T = CREATURES[c.kind];
+      if (!!T.over !== over) continue;
+      if (k + 72 > out.length) break;
+      const L = world.creatureSize(c);
+      const u0 = (T.cell % 4) * 0.25, v0 = ((T.cell / 4) | 0) * 0.5;
+      let ang, mirV = false, mirH = false;
+      if (T.upright) { ang = c.tilt; mirH = c.face < 0; } else { ang = c.angle; mirV = Math.cos(ang) < 0; }
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      const amp = (T.wiggle || 0) * L * (c.wet > 0.5 ? 0.1 : 0.18);
+      const sq = T.jelly ? 1 + 0.09 * Math.sin(c.phase) : 1;
+      const W = [];
+      for (let j = 0; j < 4; j++) {
+        const s = j / 3, tail = 1 - s;
+        let lx = (s - 0.5) * L / sq;
+        if (mirH) lx = -lx;
+        const wig = amp * Math.sin(c.phase - tail * 2.2) * tail * tail;
+        for (let row = 0; row < 2; row++) {
+          let ly = (row - 0.5) * L * sq + wig;
+          if (mirV) ly = -ly;
+          const wx = c.x + lx * ca - ly * sa, wy = c.y + lx * sa + ly * ca;
+          W.push(wx, wy);
+        }
+      }
+      for (let j = 0; j < 3; j++) {
+        const a = j * 4, b = (j + 1) * 4;
+        const su = u0 + (j / 3) * 0.25, eu = u0 + ((j + 1) / 3) * 0.25, tv = v0 + 0.004, bv = v0 + 0.496;
+        put(W[a], W[a + 1], su, tv); put(W[b], W[b + 1], eu, tv); put(W[b + 2], W[b + 3], eu, bv);
+        put(W[a], W[a + 1], su, tv); put(W[b + 2], W[b + 3], eu, bv); put(W[a + 2], W[a + 3], su, bv);
+      }
+    }
+    return k / 4;
+  }
+  drawSprites(n, alpha) {
+    const gl = this.gl;
+    gl.useProgram(this.pSprite);
+    gl.bindVertexArray(this.sVao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.sVbo);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.sBuf, 0, n * 4);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.atlasTex);
+    gl.uniform1i(this.uS.uTex, 0); gl.uniform1f(this.uS.uAlpha, alpha);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.drawArrays(gl.TRIANGLES, 0, n);
+    gl.disable(gl.BLEND);
   }
   render(world, time) {
     const gl = this.gl, cw = this.canvas.width, ch = this.canvas.height;
+    if (this.capP < world.maxP) this.allocParticles(world.maxP);
     const N = world.fillRender(this.buf);
-    // 1) density splats
+    // 0) creatures under the surface -> scene = background + sprites
+    let bgTex = this.bgTex, flip = 1;
+    const nUnder = this.buildSprites(world, false);
+    if (nUnder > 0 && this.sceneFbo) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.sceneFbo);
+      gl.viewport(0, 0, cw, ch);
+      gl.useProgram(this.pBlit); gl.bindVertexArray(this.emptyVao);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.bgTex); gl.uniform1i(this.uB.uTex, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      this.drawSprites(nUnder, 1);
+      bgTex = this.sceneTex; flip = 0;
+    }
+    // 1) liquid density splats
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.viewport(0, 0, this.dw, this.dh);
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
@@ -961,88 +1592,214 @@ class Renderer {
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
       gl.useProgram(this.pPoints);
       gl.uniform2f(this.uP.uInvDomain, 1 / world.MW, 1 / world.MH);
-      gl.uniform1f(this.uP.uSize, 2 * 3.9 * world.r * this.dw / world.MW);
+      gl.uniform1f(this.uP.uSize, 2 * CFG.blobSize * world.r * this.dw / world.MW);
+      gl.uniform1f(this.uP.uW, 0.28 * (3.9 / CFG.blobSize) * (3.9 / CFG.blobSize));
       gl.bindVertexArray(this.vao);
       gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.buf, 0, N * 3);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.buf, 0, N * 4);
       gl.drawArrays(gl.POINTS, 0, N);
       gl.disable(gl.BLEND);
     }
-    // 2) water composite
+    // 2) composite
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, cw, ch);
     gl.useProgram(this.pWater);
     gl.bindVertexArray(this.emptyVao);
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.bgTex);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, bgTex);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.denTex);
     gl.uniform1i(this.uW.uBg, 0); gl.uniform1i(this.uW.uDen, 1);
     gl.uniform2f(this.uW.uTexel, 1 / this.dw, 1 / this.dh);
     gl.uniform1f(this.uW.uTime, time);
     gl.uniform1f(this.uW.uAspect, world.MW / world.MH);
+    gl.uniform1f(this.uW.uFlipBg, flip);
     const pal = PALETTES[this.palette];
     gl.uniform3fv(this.uW.uShallow, pal.shallow); gl.uniform3fv(this.uW.uDeep, pal.deep);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    // 3) submerged creatures again at partial strength (keeps colors vivid under tint), floaters on top
+    if (nUnder > 0) this.drawSprites(nUnder, 0.55);
+    const nOver = this.buildSprites(world, true);
+    if (nOver > 0) this.drawSprites(nOver, 1);
   }
 }
 
 /* ---------------------------------------------------------------------
-   App state, layout, overlay
+   App state
    --------------------------------------------------------------------- */
 let world = null, renderer = null, bgCanvas = null;
-let mode = 'water';
+let photo = null;          // { src, rot, angle, crop{x,y,w,h}, sx, sy, sens, thick, dots, edited }
+let curCap = null, curMask = null;
+let userStrokes = [];      // drawn walls: { erase, rN, pts:[nx,ny,...] } (normalized to domain)
+let mode = 'pour', liquid = 0;
+const tool = { pour: 1, wall: 1, wallErase: false, wind: 1, mill: 1, fish: -1 };
 let tiltOn = false;
 const grav = { x: 0, y: CFG.gravity }, gravTarget = { x: 0, y: 1 };
 const stage = $('stage'), glc = $('gl'), ov = $('ov'), octx = ov.getContext('2d');
 let view = { x: 0, y: 0, w: 1, h: 1, dpr: 1 };
+let bgDirty = null;
+const INK = '#353844', PAPER = '#f6f4ee';
 
 function layout() {
   if (!world) return;
   const ww = window.innerWidth, wh = window.innerHeight, A = world.MW / world.MH;
   let w, h;
   if (ww / wh > A) { h = wh; w = wh * A; } else { w = ww; h = ww / A; }
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, CFG.dprCap);
   view = { x: (ww - w) / 2, y: (wh - h) / 2, w, h, dpr };
   Object.assign(stage.style, { left: view.x + 'px', top: view.y + 'px', width: w + 'px', height: h + 'px' });
   glc.width = Math.round(w * dpr); glc.height = Math.round(h * dpr);
   ov.width = glc.width; ov.height = glc.height;
-  renderer.resizeDensity(Math.round(w), Math.round(h));
-  drawOverlay();
+  renderer.resize(Math.max(16, Math.round(w * CFG.denScale)), Math.max(16, Math.round(h * CFG.denScale)));
+  placeFlyout();
 }
 
-function drawOverlay() {
+/* ---- background baking: flattened photo + inked walls + drawn walls ---- */
+function bakeBackground(cap, mask) {
+  const c = makeCanvas(cap.bg.width, cap.bg.height);
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(cap.bg, 0, 0);
+  x.globalAlpha = 0.55; x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  x.drawImage(maskCanvas(mask, cap.MW, cap.MH, 38, 40, 58, 255), 0, 0, c.width, c.height);
+  x.globalAlpha = 1;
+  return c;
+}
+function inkStroke(ctx, pts, rad, erase, kx, ky) {   // pts in mask px
+  ctx.strokeStyle = erase ? PAPER : INK; ctx.fillStyle = ctx.strokeStyle;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.lineWidth = 2 * rad * kx * (erase ? 1.12 : 1);
+  ctx.beginPath(); ctx.moveTo(pts[0] * kx, pts[1] * ky);
+  if (pts.length === 2) ctx.lineTo(pts[0] * kx + 0.01, pts[1] * ky);
+  for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i] * kx, pts[i + 1] * ky);
+  ctx.stroke();
+}
+function strokePx(s, MW, MH) { const p = []; for (let i = 0; i < s.pts.length; i += 2) p.push(s.pts[i] * MW, s.pts[i + 1] * MH); return p; }
+function composeMask(mask, MW, MH) {
+  const m = new Uint8Array(mask);
+  for (const s of userStrokes) {
+    const p = strokePx(s, MW, MH), rad = s.rN * MW;
+    if (p.length === 2) paintCapsule(m, MW, MH, p[0], p[1], p[0], p[1], rad, s.erase ? 0 : 1, 0);
+    for (let i = 0; i + 3 < p.length; i += 2) paintCapsule(m, MW, MH, p[i], p[i + 1], p[i + 2], p[i + 3], rad, s.erase ? 0 : 1, 0);
+  }
+  return m;
+}
+
+/* ---- build / rebuild the world, carrying over the scene ---- */
+function rebuildWorld(cap, mask, keep) {   // keep: 'all' | 'creatures' | null
+  const old = world;
+  const nw = new World(cap.MW, cap.MH, composeMask(mask, cap.MW, cap.MH));
+  bgCanvas = bakeBackground(cap, mask);
+  const bctx = bgCanvas.getContext('2d');
+  const kx = bgCanvas.width / cap.MW, ky = bgCanvas.height / cap.MH;
+  for (const s of userStrokes) inkStroke(bctx, strokePx(s, cap.MW, cap.MH), s.rN * cap.MW, s.erase, kx, ky);
+  renderer.setBackground(bgCanvas);
+  if (old && keep) {
+    const sx = nw.MW / old.MW, sy = nw.MH / old.MH;
+    if (keep === 'all') {
+      for (let i = 0; i < old.N && nw.N < nw.maxP; i++) {
+        if (nw.add(old.px[i] * sx, old.py[i] * sy, old.vx[i] * sx, old.vy[i] * sy, old.pt[i])) nw.pl[nw.N - 1] = old.pl[i];
+      }
+      nw.pipes = old.pipes.map(p => ({ ...p, x: p.x * sx, y: p.y * sy }));
+      nw.sewers = old.sewers.map(p => ({ ...p, x: p.x * sx, y: p.y * sy }));
+      nw.mills = old.mills.map(p => ({ ...p, x: p.x * sx, y: p.y * sy }));
+      nw.winds = old.winds.map(w => ({ ...w, pts: w.pts.map((v, i) => v * (i & 1 ? sy : sx)) }));
+      nw.rebuildWind();
+    }
+    for (const c of old.creatures) {
+      const n = { ...c, x: c.x * sx, y: c.y * sy, vx: 0, vy: 0 };
+      if (nw.sdfAt(n.x, n.y) < 2) {          // landed inside a wall -> find free spot
+        for (let t = 0; t < 60; t++) {
+          const x = Math.random() * nw.MW, y = Math.random() * nw.MH;
+          if (nw.sdfAt(x, y) > 10 * nw.U) { n.x = x; n.y = y; break; }
+        }
+      }
+      nw.creatures.push(n);
+    }
+  }
+  world = nw;
+  layout();
+}
+
+/* ---------------------------------------------------------------------
+   Overlay (pipes, sewers, mills, wind) – redrawn every frame
+   --------------------------------------------------------------------- */
+const drawingWinds = new Set();
+function drawOverlay(time) {
   octx.setTransform(1, 0, 0, 1, 0, 0);
   octx.clearRect(0, 0, ov.width, ov.height);
   if (!world) return;
   const k = ov.width / world.MW;
   octx.setTransform(k, 0, 0, k, 0, 0);
+  for (const w of world.winds) drawWind(w, time, false);
+  for (const w of drawingWinds) drawWind(w, time, true);
   for (const s of world.sewers) drawSewer(s);
+  for (const m of world.mills) drawMill(m);
   for (const p of world.pipes) drawPipe(p);
 }
+function drawWind(w, time, preview) {
+  const c = octx, p = w.pts, U = world.U, W = CFG.windWidth * U * w.mul;
+  if (p.length < 4) return;
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  c.beginPath(); c.moveTo(p[0], p[1]); for (let i = 2; i < p.length; i += 2) c.lineTo(p[i], p[i + 1]);
+  c.strokeStyle = preview ? 'rgba(255,255,255,.35)' : 'rgba(150,215,255,.16)'; c.lineWidth = W * 2; c.stroke();
+  c.setLineDash([7 * U, 13 * U]); c.lineDashOffset = -time * 70 * U;
+  c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2.6 * U; c.stroke();
+  c.setLineDash([]);
+  // arrow head
+  const n = p.length, ex = p[n - 2], ey = p[n - 1];
+  let i = n - 4; while (i > 0 && Math.hypot(ex - p[i], ey - p[i + 1]) < 8 * U) i -= 2;
+  const a = Math.atan2(ey - p[i + 1], ex - p[i]), s = 9 * U;
+  c.fillStyle = 'rgba(255,255,255,.9)'; c.strokeStyle = 'rgba(40,90,140,.6)'; c.lineWidth = 1.2 * U;
+  c.beginPath(); c.moveTo(ex + Math.cos(a) * s, ey + Math.sin(a) * s);
+  c.lineTo(ex + Math.cos(a + 2.5) * s, ey + Math.sin(a + 2.5) * s);
+  c.lineTo(ex + Math.cos(a - 2.5) * s, ey + Math.sin(a - 2.5) * s); c.closePath(); c.fill(); c.stroke();
+  c.restore();
+}
 function drawSewer(s) {
-  const R = CFG.sewerRadius + 3, c = octx;
+  const R = CFG.sewerRadius * world.U + 3, c = octx;
   c.save(); c.translate(s.x, s.y);
   c.beginPath(); c.arc(0, 2, R + 3, 0, Math.PI * 2); c.fillStyle = 'rgba(0,0,0,.25)'; c.fill();
   c.beginPath(); c.arc(0, 0, R + 3, 0, Math.PI * 2); c.fillStyle = '#8b95a5'; c.fill();
   c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fillStyle = '#1f2430'; c.fill();
   c.save(); c.clip();
-  c.strokeStyle = '#6c7686'; c.lineWidth = 2.6;
-  for (let x = -R; x <= R; x += 6.5) { c.beginPath(); c.moveTo(x, -R); c.lineTo(x, R); c.stroke(); }
+  c.strokeStyle = '#6c7686'; c.lineWidth = R * 0.14;
+  for (let x = -R; x <= R; x += R * 0.36) { c.beginPath(); c.moveTo(x, -R); c.lineTo(x, R); c.stroke(); }
   c.restore();
   c.beginPath(); c.arc(0, 0, R + 3, 0, Math.PI * 2); c.strokeStyle = '#555f6f'; c.lineWidth = 1.5; c.stroke();
   c.restore();
 }
 function drawPipe(p) {
-  const c = octx, W = CFG.pipeWidth + 6, L = 34;
+  const c = octx, U = world.U, W = CFG.pipeWidth * U + 6, L = 34 * U;
   c.save(); c.translate(p.x, p.y); c.rotate(p.a);
   c.fillStyle = 'rgba(0,0,0,.22)'; c.fillRect(-L + 2, -W / 2 + 3, L, W);
   const g = c.createLinearGradient(0, -W / 2, 0, W / 2);
   g.addColorStop(0, '#ffb15a'); g.addColorStop(0.35, '#ffd9a8'); g.addColorStop(1, '#c4621c');
   c.fillStyle = g; c.fillRect(-L, -W / 2, L, W);
+  c.fillStyle = LIQUIDS[p.type].color; c.fillRect(-L * 0.62, -W / 2, L * 0.16, W);
   const g2 = c.createLinearGradient(0, -W / 2 - 4, 0, W / 2 + 4);
   g2.addColorStop(0, '#ff9a3a'); g2.addColorStop(0.35, '#ffe0b8'); g2.addColorStop(1, '#a94e12');
   c.fillStyle = g2; c.fillRect(-9, -W / 2 - 4, 9, W + 8);
   c.strokeStyle = '#7a3608'; c.lineWidth = 1.4;
   c.strokeRect(-L, -W / 2, L - 9, W); c.strokeRect(-9, -W / 2 - 4, 9, W + 8);
+  c.restore();
+}
+const MILL_COLORS = ['#ff5a5a', '#ffd23f', '#3fa9ff', '#5be37d'];
+function drawMill(m) {
+  const c = octx, U = world.U, R = CFG.millSize * U * m.mul, hub = R * 0.18;
+  const bt0 = Math.max(1.4, 1.2 * U), bt1 = R * 0.16;
+  c.save(); c.translate(m.x, m.y);
+  c.beginPath(); c.arc(1.5, 2.5, R * 0.22, 0, 7); c.fillStyle = 'rgba(0,0,0,.2)'; c.fill();
+  c.rotate(m.th);
+  for (let k = 0; k < 4; k++) {
+    c.save(); c.rotate(k * Math.PI / 2);
+    c.beginPath();
+    c.moveTo(hub * 0.5, -bt0); c.lineTo(R - bt1, -bt1); c.arc(R - bt1, 0, bt1, -Math.PI / 2, Math.PI / 2);
+    c.lineTo(hub * 0.5, bt0); c.closePath();
+    c.fillStyle = MILL_COLORS[k]; c.fill();
+    c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 1.3; c.stroke();
+    c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(hub, -bt0 * 0.6, (R - hub) * 0.7, bt0 * 0.5);
+    c.restore();
+  }
+  c.beginPath(); c.arc(0, 0, hub, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = '#333'; c.lineWidth = 1.5; c.stroke();
+  c.beginPath(); c.arc(0, 0, hub * 0.35, 0, 7); c.fillStyle = '#666'; c.fill();
   c.restore();
 }
 
@@ -1052,11 +1809,60 @@ function hint(text, ms = 2600) {
   clearTimeout(hintTimer); hintTimer = setTimeout(() => h.classList.remove('show'), ms);
 }
 const HINTS = {
-  water: 'Drag your finger to pour water 💧',
+  pour: 'Drag to pour – pick water, oil or foam',
   pipe: 'Tap to place a pipe · drag to aim it',
   sewer: 'Tap to place a drain · drag to move it',
-  erase: 'Rub to remove water · tap pipes & drains to remove',
+  mill: 'Tap to place a water mill · drag to move it',
+  wall: 'Draw new walls – or switch to the wall eraser',
+  wind: 'Draw a line – water gets blown along it',
+  fish: 'Tap to add a fish or a friend!',
+  erase: 'Rub to remove liquid · tap things to remove them',
 };
+
+/* ---------------------------------------------------------------------
+   Flyout (per-tool options)
+   --------------------------------------------------------------------- */
+const flyout = $('flyout');
+function chip(html, on, fn) {
+  const b = document.createElement('button'); b.className = 'chip' + (on ? ' on' : ''); b.innerHTML = html;
+  b.addEventListener('click', () => { fn(); buildFlyout(); });
+  return b;
+}
+function group(chips) { const g = document.createElement('div'); g.className = 'fgroup'; chips.forEach(c => g.appendChild(c)); return g; }
+function sizeChips(key) {
+  return group([0, 1, 2].map(i => chip(`<span class="dot" style="width:${8 + i * 7}px;height:${8 + i * 7}px"></span><small>${'SML'[i]}</small>`,
+    tool[key] === i, () => tool[key] = i)));
+}
+function liquidChips() {
+  return group(LIQUIDS.map((l, i) => chip(`${l.icon}<small>${l.name}</small>`, liquid === i, () => liquid = i)));
+}
+function buildFlyout() {
+  flyout.innerHTML = '';
+  if (mode === 'pour') { flyout.appendChild(liquidChips()); flyout.appendChild(sizeChips('pour')); }
+  else if (mode === 'pipe') flyout.appendChild(liquidChips());
+  else if (mode === 'wall') {
+    flyout.appendChild(group([chip('✏️<small>Draw</small>', !tool.wallErase, () => tool.wallErase = false),
+                              chip('🩹<small>Erase</small>', tool.wallErase, () => tool.wallErase = true)]));
+    flyout.appendChild(sizeChips('wall'));
+  }
+  else if (mode === 'wind') flyout.appendChild(sizeChips('wind'));
+  else if (mode === 'mill') flyout.appendChild(sizeChips('mill'));
+  else if (mode === 'fish') flyout.appendChild(group(CREATURE_CHIPS.map(cc => chip(`${cc.icon}<small>${cc.label}</small>`, tool.fish === cc.kind, () => tool.fish = cc.kind))));
+  placeFlyout();
+}
+function placeFlyout() {
+  if (!flyout.children.length) return;
+  const r = $('toolbar').getBoundingClientRect(), f = flyout.getBoundingClientRect();
+  if (window.innerWidth > window.innerHeight) {
+    const btn = document.querySelector('.tb.mode.on');
+    const by = btn ? btn.getBoundingClientRect().top + 28 : r.top + r.height / 2;
+    flyout.style.left = (r.right + 10) + 'px'; flyout.style.bottom = 'auto';
+    flyout.style.top = clamp(by - f.height / 2, 8, window.innerHeight - f.height - 8) + 'px';
+  } else {
+    flyout.style.top = 'auto'; flyout.style.bottom = (window.innerHeight - r.top + 10) + 'px';
+    flyout.style.left = clamp((window.innerWidth - f.width) / 2, 8, window.innerWidth) + 'px';
+  }
+}
 
 /* ---------------------------------------------------------------------
    Input
@@ -1071,35 +1877,83 @@ function findNear(list, p, R) {
   list.forEach((o, i) => { const d = (o.x - p.x) ** 2 + (o.y - p.y) ** 2; if (d < bd) { bd = d; best = i; } });
   return best;
 }
+function distToPath(pts, p) {
+  let best = 1e9;
+  for (let k = 0; k + 3 < pts.length; k += 2) {
+    const ax = pts[k], ay = pts[k + 1], dx = pts[k + 2] - ax, dy = pts[k + 3] - ay, L2 = dx * dx + dy * dy || 1;
+    const t = clamp(((p.x - ax) * dx + (p.y - ay) * dy) / L2, 0, 1);
+    best = Math.min(best, Math.hypot(ax + dx * t - p.x, ay + dy * t - p.y));
+  }
+  return best;
+}
+function eraseThingAt(p) {
+  const U = world.U;
+  let i = findNear(world.pipes, p, 28 * U); if (i >= 0) { world.pipes.splice(i, 1); return true; }
+  i = findNear(world.sewers, p, 30 * U); if (i >= 0) { world.sewers.splice(i, 1); return true; }
+  i = world.mills.findIndex(m => Math.hypot(m.x - p.x, m.y - p.y) < CFG.millSize * U * m.mul); if (i >= 0) { world.mills.splice(i, 1); return true; }
+  i = world.creatures.findIndex(c => Math.hypot(c.x - p.x, c.y - p.y) < world.creatureSize(c) * 0.6); if (i >= 0) { world.creatures.splice(i, 1); return true; }
+  i = world.winds.findIndex(w => distToPath(w.pts, p) < 14 * U); if (i >= 0) { world.winds.splice(i, 1); world.rebuildWind(); return true; }
+  return false;
+}
+function wallSegment(st, a, b) {
+  const s = st.stroke, rad = s.rN * world.MW;
+  const box = world.paintWall(a.x, a.y, b.x, b.y, rad, s.erase ? 0 : 1);
+  world.refreshWalls(box);
+  const kx = bgCanvas.width / world.MW, ky = bgCanvas.height / world.MH;
+  inkStroke(bgCanvas.getContext('2d'), [a.x, a.y, b.x, b.y], rad, s.erase, kx, ky);
+  const r = [box[0] * kx - 2, box[1] * ky - 2, box[2] * kx + 2, box[3] * ky + 2];
+  bgDirty = bgDirty ? [Math.min(bgDirty[0], r[0]), Math.min(bgDirty[1], r[1]), Math.max(bgDirty[2], r[2]), Math.max(bgDirty[3], r[3])] : r;
+}
+
 glc.addEventListener('pointerdown', e => {
   if (!world) return;
   e.preventDefault();
   try { glc.setPointerCapture(e.pointerId); } catch (_) {}
-  const p = toDomain(e);
-  const st = { start: p, last: p, vx: 0, vy: 0, brush: null, target: null, moved: false };
-  if (mode === 'water' || mode === 'erase') {
-    if (mode === 'erase') {
-      const ip = findNear(world.pipes, p, 30), is = findNear(world.sewers, p, 30);
-      if (ip >= 0) { world.pipes.splice(ip, 1); drawOverlay(); }
-      else if (is >= 0) { world.sewers.splice(is, 1); drawOverlay(); }
+  const p = toDomain(e), U = world.U;
+  const st = { start: p, last: p, vx: 0, vy: 0, moved: false };
+  switch (mode) {
+    case 'pour':
+      st.brush = { x: p.x, y: p.y, vx: 0, vy: 0, erase: false, R: CFG.brushRadius * U * SIZE_MUL[tool.pour], type: liquid };
+      world.brushes.push(st.brush); break;
+    case 'erase':
+      eraseThingAt(p);
+      st.brush = { x: p.x, y: p.y, vx: 0, vy: 0, erase: true, R: CFG.brushRadius * U };
+      world.brushes.push(st.brush); break;
+    case 'pipe': {
+      const i = findNear(world.pipes, p, 28 * U);
+      if (i >= 0) st.target = world.pipes[i];
+      else if (world.pipes.length < 10) { st.target = { x: p.x, y: p.y, a: Math.PI / 2, acc: 0, row: 0, type: liquid }; world.pipes.push(st.target); }
+      else hint('That’s a lot of pipes! Erase one first.');
+      st.aim = true; break;
     }
-    st.brush = { x: p.x, y: p.y, vx: 0, vy: 0, erase: mode === 'erase' };
-    world.brushes.push(st.brush);
-  } else if (mode === 'pipe') {
-    const i = findNear(world.pipes, p, 28);
-    if (i >= 0) st.target = world.pipes[i];
-    else if (world.pipes.length < 8) {
-      st.target = { x: p.x, y: p.y, a: Math.PI / 2, acc: 0, row: 0 };
-      world.pipes.push(st.target);
-    } else hint('That’s a lot of pipes! Erase one first.');
-    st.aim = true;
-    drawOverlay();
-  } else if (mode === 'sewer') {
-    const i = findNear(world.sewers, p, 30);
-    if (i >= 0) st.target = world.sewers[i];
-    else if (world.sewers.length < 8) { st.target = { x: p.x, y: p.y }; world.sewers.push(st.target); }
-    else hint('That’s a lot of drains! Erase one first.');
-    drawOverlay();
+    case 'sewer': {
+      const i = findNear(world.sewers, p, 30 * U);
+      if (i >= 0) st.target = world.sewers[i];
+      else if (world.sewers.length < 10) { st.target = { x: p.x, y: p.y }; world.sewers.push(st.target); }
+      else hint('That’s a lot of drains! Erase one first.');
+      break;
+    }
+    case 'mill': {
+      const i = world.mills.findIndex(m => Math.hypot(m.x - p.x, m.y - p.y) < CFG.millSize * U * m.mul);
+      if (i >= 0) st.target = world.mills[i];
+      else if (world.mills.length < 10) { st.target = { x: p.x, y: p.y, th: 0, om: 0, mul: SIZE_MUL[tool.mill] }; world.mills.push(st.target); }
+      else hint('That’s a lot of mills! Erase one first.');
+      break;
+    }
+    case 'wall': {
+      const rad = [CFG.wallS, CFG.wallM, CFG.wallL][tool.wall] * U;
+      st.stroke = { erase: tool.wallErase, rN: rad / world.MW, pts: [p.x / world.MW, p.y / world.MH] };
+      userStrokes.push(st.stroke);
+      wallSegment(st, p, p);
+      break;
+    }
+    case 'wind':
+      st.wind = { pts: [p.x, p.y], mul: SIZE_MUL[tool.wind] };
+      drawingWinds.add(st.wind); break;
+    case 'fish':
+      if (world.creatures.length >= CFG.maxCreatures) hint('The pond is full! (see Setup)');
+      else if (!world.spawnCreature(p.x, p.y, tool.fish)) hint('Not inside a wall 🙂');
+      break;
   }
   pointers.set(e.pointerId, st);
 });
@@ -1109,45 +1963,61 @@ glc.addEventListener('pointermove', e => {
   const dt = Math.max(1, p.t - st.last.t) / 1000;
   st.vx = st.vx * 0.6 + 0.4 * (p.x - st.last.x) / dt;
   st.vy = st.vy * 0.6 + 0.4 * (p.y - st.last.y) / dt;
-  st.last = p;
+  const prev = st.last; st.last = p;
+  const lim = 500 * world.U;
   if (st.brush) {
     st.brush.x = p.x; st.brush.y = p.y;
-    st.brush.vx = clamp(st.vx * 0.6, -500, 500); st.brush.vy = clamp(st.vy * 0.6, -500, 500);
+    st.brush.vx = clamp(st.vx * 0.6, -lim, lim); st.brush.vy = clamp(st.vy * 0.6, -lim, lim);
   } else if (st.target) {
     const dx = p.x - st.start.x, dy = p.y - st.start.y;
     if (dx * dx + dy * dy > 64) st.moved = true;
     if (st.aim) { if (st.moved) st.target.a = Math.atan2(dy, dx); }
     else { st.target.x = clamp(p.x, 10, world.MW - 10); st.target.y = clamp(p.y, 10, world.MH - 10); }
-    drawOverlay();
+  } else if (st.stroke) {
+    const n = st.stroke.pts.length, lx = st.stroke.pts[n - 2] * world.MW, ly = st.stroke.pts[n - 1] * world.MH;
+    if (Math.hypot(p.x - lx, p.y - ly) > 1.5) {
+      wallSegment(st, { x: lx, y: ly }, p);
+      st.stroke.pts.push(p.x / world.MW, p.y / world.MH);
+    }
+  } else if (st.wind) {
+    const w = st.wind.pts, n = w.length;
+    if (Math.hypot(p.x - w[n - 2], p.y - w[n - 1]) > 8 * world.U) w.push(p.x, p.y);
   }
 });
 function endPointer(e) {
   const st = pointers.get(e.pointerId); if (!st) return;
   if (st.brush && world) { const i = world.brushes.indexOf(st.brush); if (i >= 0) world.brushes.splice(i, 1); }
+  if (st.wind && world) {
+    drawingWinds.delete(st.wind);
+    const p = st.wind.pts; let len = 0;
+    for (let i = 2; i < p.length; i += 2) len += Math.hypot(p[i] - p[i - 2], p[i + 1] - p[i - 1]);
+    if (len > 25 * world.U) { world.winds.push(st.wind); world.rebuildWind(); }
+    else hint('Drag a longer line to make wind 🌬️');
+  }
   pointers.delete(e.pointerId);
 }
 glc.addEventListener('pointerup', endPointer);
 glc.addEventListener('pointercancel', endPointer);
 document.addEventListener('gesturestart', e => e.preventDefault());
-document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+document.addEventListener('touchmove', e => { if (!e.target.closest || !e.target.closest('#setList')) e.preventDefault(); }, { passive: false });
 
 document.querySelectorAll('.tb.mode').forEach(b => b.addEventListener('click', () => {
   mode = b.dataset.mode;
   document.querySelectorAll('.tb.mode').forEach(x => x.classList.toggle('on', x === b));
+  buildFlyout();
   hint(HINTS[mode]);
 }));
-$('bClear').addEventListener('click', () => { if (world) { world.clearWater(); hint('All clean! 🧹', 1400); } });
+$('bClear').addEventListener('click', () => { if (world) { world.clearLiquids(); hint('All clean! 🧹', 1400); } });
 $('bColor').addEventListener('click', () => {
   renderer.palette = (renderer.palette + 1) % PALETTES.length;
   hint(PALETTES[renderer.palette].name + ' water', 1200);
 });
 
-/* ---- tilt (accelerometer via device orientation) ---- */
+/* ---- tilt ---- */
 function onOrientation(e) {
   if (e.beta == null || e.gamma == null) return;
   const D = Math.PI / 180, b = e.beta * D, g = e.gamma * D;
-  // gravity in device frame (x right, y toward top of device)
-  const gx = Math.cos(b) * Math.sin(g), gy = -Math.sin(b);
+  const gx = Math.cos(b) * Math.sin(g), gy = -Math.sin(b);   // device frame (x right, y to top edge)
   const ang = (typeof window.orientation === 'number' ? window.orientation
     : (screen.orientation && screen.orientation.angle) || 0) * D;
   const ca = Math.cos(ang), sa = Math.sin(ang);
@@ -1158,7 +2028,7 @@ $('bTilt').addEventListener('click', async () => {
   if (tiltOn) {
     tiltOn = false; $('bTilt').classList.remove('on');
     window.removeEventListener('deviceorientation', onOrientation);
-    hint('Tilt off – water falls down', 1500); return;
+    hint('Tilt off – things fall down', 1500); return;
   }
   try {
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -1172,12 +2042,10 @@ $('bTilt').addEventListener('click', async () => {
 });
 
 /* ---------------------------------------------------------------------
-   Camera / photo / review flow
+   Camera
    --------------------------------------------------------------------- */
-let stream = null, capture = null;
+let stream = null;
 const video = $('video');
-function stageAspect() { return window.innerWidth / window.innerHeight; }
-
 async function openCamera() {
   $('camera').classList.remove('hidden');
   $('camMsg').textContent = 'Point the camera at your drawing';
@@ -1199,86 +2067,321 @@ function closeCamera() {
   video.srcObject = null;
   $('camera').classList.add('hidden');
 }
+function toSourceCanvas(img, w, h) {        // downscale huge photos once
+  const k = Math.min(1, 2600 / Math.max(w, h));
+  const c = makeCanvas(w * k, h * k), x = c.getContext('2d');
+  x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
 $('bPhoto').addEventListener('click', openCamera);
 $('camCancel').addEventListener('click', closeCamera);
 $('camGallery').addEventListener('click', () => $('fileInput').click());
 $('shutter').addEventListener('click', () => {
   if (!stream || !video.videoWidth) { $('fileInput').click(); return; }
-  const vw = video.videoWidth, vh = video.videoHeight;
-  const c = document.createElement('canvas'); c.width = vw; c.height = vh;
-  c.getContext('2d').drawImage(video, 0, 0);
+  const src = toSourceCanvas(video, video.videoWidth, video.videoHeight);
   closeCamera();
-  startReview(c, vw, vh);
+  newPhoto(src, true);
 });
-$('fileInput').addEventListener('change', async e => {
+$('fileInput').addEventListener('change', e => {
   const f = e.target.files && e.target.files[0]; e.target.value = '';
   if (!f) return;
   const img = new Image();
-  img.onload = () => { closeCamera(); startReview(img, img.naturalWidth, img.naturalHeight); URL.revokeObjectURL(img.src); };
+  img.onload = () => { closeCamera(); newPhoto(toSourceCanvas(img, img.naturalWidth, img.naturalHeight), true); URL.revokeObjectURL(img.src); };
   img.onerror = () => hint('Could not open that picture');
   img.src = URL.createObjectURL(f);
 });
 
-function startReview(src, w, h) {
-  capture = prepareCapture(src, w, h, stageAspect());
+/* ---------------------------------------------------------------------
+   Photo editor: crop / rotate (90° + straighten) / stretch width & height
+   --------------------------------------------------------------------- */
+function screenAspect() { return window.innerWidth / window.innerHeight; }
+function defaultPhoto(src) {
+  const cc = coverCrop(src.width, src.height, screenAspect());
+  return { src, rot: 0, angle: 0, crop: { x: cc.x / src.width, y: cc.y / src.height, w: cc.w / src.width, h: cc.h / src.height },
+           sx: 1, sy: 1, sens: 55, thick: 1, dots: 40, edited: null };
+}
+function paperColor(src) {
+  const c = makeCanvas(24, 24), x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(src, 0, 0, 24, 24);
+  const d = x.getImageData(0, 0, 24, 24).data, px = [];
+  for (let i = 0; i < d.length; i += 4) px.push([d[i] + d[i + 1] + d[i + 2], d[i], d[i + 1], d[i + 2]]);
+  px.sort((a, b) => b[0] - a[0]);
+  let r = 0, g = 0, b = 0; const n = px.length >> 2;
+  for (let i = 0; i < n; i++) { r += px[i][1]; g += px[i][2]; b += px[i][3]; }
+  return `rgb(${r / n | 0},${g / n | 0},${b / n | 0})`;
+}
+function rotatedCanvas(ph, maxLong) {
+  const src = ph.src, th = (ph.rot * 90 + ph.angle) * Math.PI / 180;
+  const c = Math.abs(Math.cos(th)), s = Math.abs(Math.sin(th));
+  const W = src.width * c + src.height * s, H = src.width * s + src.height * c;
+  const k = Math.min(1, maxLong / Math.max(W, H));
+  const out = makeCanvas(W * k, H * k), x = out.getContext('2d');
+  if (!ph.paper) ph.paper = paperColor(src);
+  x.fillStyle = ph.paper; x.fillRect(0, 0, out.width, out.height);
+  x.imageSmoothingQuality = 'high';
+  x.translate(out.width / 2, out.height / 2); x.rotate(th); x.scale(k, k);
+  x.drawImage(src, -src.width / 2, -src.height / 2);
+  return out;
+}
+function makeEdited(ph) {
+  const R = rotatedCanvas(ph, 2600);
+  const cx = ph.crop.x * R.width, cy = ph.crop.y * R.height, cw = ph.crop.w * R.width, ch = ph.crop.h * R.height;
+  let W = cw * ph.sx, H = ch * ph.sy;
+  const k = Math.min(1, 2048 / Math.max(W, H)); W *= k; H *= k;
+  const out = makeCanvas(Math.max(64, W), Math.max(64, H)), x = out.getContext('2d');
+  x.imageSmoothingQuality = 'high';
+  x.drawImage(R, cx, cy, cw, ch, 0, 0, out.width, out.height);
+  return out;
+}
+
+const ED = { rot: null, fit: null, drag: null, fromNew: false, snapshot: null, prevPhoto: null };
+const edCanvas = $('edCanvas'), edCtx = edCanvas.getContext('2d');
+function snapshotPhoto(p) { return { rot: p.rot, angle: p.angle, crop: { ...p.crop }, sx: p.sx, sy: p.sy, sens: p.sens, thick: p.thick, dots: p.dots }; }
+
+function newPhoto(src, fromNew) {
+  ED.prevPhoto = photo;
+  photo = defaultPhoto(src);
+  openEditor(fromNew);
+}
+function openEditor(fromNew) {
+  ED.fromNew = fromNew;
+  ED.snapshot = snapshotPhoto(photo);
+  $('editor').classList.remove('hidden');
+  edSyncControls();
+  edRebuild();
+}
+function edSyncControls() {
+  $('edAngle').value = photo.angle; $('edAngleV').textContent = photo.angle + '°';
+  $('edW').value = Math.round(photo.sx * 100); $('edWV').textContent = Math.round(photo.sx * 100) + '%';
+  $('edH').value = Math.round(photo.sy * 100); $('edHV').textContent = Math.round(photo.sy * 100) + '%';
+}
+function edRebuild() { ED.rot = rotatedCanvas(photo, 1400); edLayout(); }
+function edLayout() {
+  const wrap = $('edWrap'), cw = wrap.clientWidth, ch = wrap.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+  edCanvas.width = cw * dpr; edCanvas.height = ch * dpr;
+  edCanvas.style.width = cw + 'px'; edCanvas.style.height = ch + 'px';
+  const m = 34, s = Math.min((cw - 2 * m) / ED.rot.width, (ch - 2 * m) / ED.rot.height);
+  const w = ED.rot.width * s, h = ED.rot.height * s;
+  ED.fit = { x: (cw - w) / 2, y: (ch - h) / 2, w, h, dpr };
+  edDraw();
+}
+function edDraw() {
+  const f = ED.fit, c = edCtx, cr = photo.crop;
+  c.setTransform(f.dpr, 0, 0, f.dpr, 0, 0);
+  c.clearRect(0, 0, edCanvas.width, edCanvas.height);
+  c.drawImage(ED.rot, f.x, f.y, f.w, f.h);
+  const x = f.x + cr.x * f.w, y = f.y + cr.y * f.h, w = cr.w * f.w, h = cr.h * f.h;
+  c.fillStyle = 'rgba(0,0,0,.55)';
+  c.beginPath(); c.rect(f.x, f.y, f.w, f.h); c.rect(x, y, w, h); c.fill('evenodd');
+  c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1;
+  for (let i = 1; i < 3; i++) {
+    c.beginPath(); c.moveTo(x + w * i / 3, y); c.lineTo(x + w * i / 3, y + h); c.stroke();
+    c.beginPath(); c.moveTo(x, y + h * i / 3); c.lineTo(x + w, y + h * i / 3); c.stroke();
+  }
+  c.strokeStyle = '#fff'; c.lineWidth = 2.5; c.strokeRect(x, y, w, h);
+  for (const [hx, hy] of edHandles()) {
+    c.beginPath(); c.arc(hx, hy, 10, 0, 7); c.fillStyle = '#ffd23f'; c.fill(); c.strokeStyle = '#333'; c.lineWidth = 2; c.stroke();
+  }
+  edPreview();
+}
+function edHandles() {
+  const f = ED.fit, cr = photo.crop;
+  const x0 = f.x + cr.x * f.w, y0 = f.y + cr.y * f.h, x1 = x0 + cr.w * f.w, y1 = y0 + cr.h * f.h, xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
+  return [[x0, y0, 'nw'], [x1, y0, 'ne'], [x0, y1, 'sw'], [x1, y1, 'se'], [xm, y0, 'n'], [xm, y1, 's'], [x0, ym, 'w'], [x1, ym, 'e']];
+}
+function edPreview() {
+  const pc = $('edPreview'), dpr = 2, BW = 120, BH = 80;
+  pc.width = BW * dpr; pc.height = BH * dpr;
+  const x = pc.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  x.fillStyle = '#111'; x.fillRect(0, 0, BW, BH);
+  const R = ED.rot, cr = photo.crop;
+  const ow = cr.w * R.width * photo.sx, oh = cr.h * R.height * photo.sy;
+  const s = Math.min(BW / ow, BH / oh), w = ow * s, h = oh * s;
+  x.drawImage(R, cr.x * R.width, cr.y * R.height, cr.w * R.width, cr.h * R.height, (BW - w) / 2, (BH - h) / 2, w, h);
+  // screen-shape outline for comparison
+  const A = screenAspect(), ss = Math.min(BW / A, BH), sw2 = A * ss;
+  x.strokeStyle = 'rgba(255,210,63,.9)'; x.setLineDash([3, 3]); x.strokeRect((BW - sw2) / 2 + 0.5, (BH - ss) / 2 + 0.5, sw2 - 1, ss - 1);
+}
+edCanvas.addEventListener('pointerdown', e => {
+  const r = edCanvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  let hit = null;
+  for (const [hx, hy, id] of edHandles()) if (Math.hypot(hx - mx, hy - my) < 30) { hit = id; break; }
+  const f = ED.fit, cr = photo.crop;
+  if (!hit) {
+    const x = f.x + cr.x * f.w, y = f.y + cr.y * f.h;
+    if (mx > x && mx < x + cr.w * f.w && my > y && my < y + cr.h * f.h) hit = 'move';
+  }
+  if (!hit) return;
+  try { edCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+  ED.drag = { id: hit, mx, my, crop: { ...cr } };
+});
+edCanvas.addEventListener('pointermove', e => {
+  const d = ED.drag; if (!d) return;
+  const r = edCanvas.getBoundingClientRect(), f = ED.fit;
+  const dx = (e.clientX - r.left - d.mx) / f.w, dy = (e.clientY - r.top - d.my) / f.h;
+  const o = d.crop, MIN = 0.08;
+  let x0 = o.x, y0 = o.y, x1 = o.x + o.w, y1 = o.y + o.h;
+  if (d.id === 'move') {
+    const nx = clamp(o.x + dx, 0, 1 - o.w), ny = clamp(o.y + dy, 0, 1 - o.h);
+    x0 = nx; y0 = ny; x1 = nx + o.w; y1 = ny + o.h;
+  } else {
+    if (d.id.includes('w')) x0 = clamp(o.x + dx, 0, x1 - MIN);
+    if (d.id.includes('e')) x1 = clamp(o.x + o.w + dx, x0 + MIN, 1);
+    if (d.id.includes('n')) y0 = clamp(o.y + dy, 0, y1 - MIN);
+    if (d.id.includes('s')) y1 = clamp(o.y + o.h + dy, y0 + MIN, 1);
+  }
+  photo.crop = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  edDraw();
+});
+edCanvas.addEventListener('pointerup', () => ED.drag = null);
+edCanvas.addEventListener('pointercancel', () => ED.drag = null);
+
+function rotateCrop(cw) {
+  const c = photo.crop;
+  photo.crop = cw ? { x: 1 - c.y - c.h, y: c.x, w: c.h, h: c.w } : { x: c.y, y: 1 - c.x - c.w, w: c.h, h: c.w };
+  const t = photo.sx; photo.sx = photo.sy; photo.sy = t;
+}
+$('edRotR').addEventListener('click', () => { photo.rot = (photo.rot + 1) % 4; rotateCrop(true); edSyncControls(); edRebuild(); });
+$('edRotL').addEventListener('click', () => { photo.rot = (photo.rot + 3) % 4; rotateCrop(false); edSyncControls(); edRebuild(); });
+let edAngleRaf = 0;
+$('edAngle').addEventListener('input', e => {
+  photo.angle = +e.target.value; $('edAngleV').textContent = photo.angle + '°';
+  cancelAnimationFrame(edAngleRaf); edAngleRaf = requestAnimationFrame(edRebuild);
+});
+$('edW').addEventListener('input', e => { photo.sx = e.target.value / 100; edSyncControls(); edPreview(); });
+$('edH').addEventListener('input', e => { photo.sy = e.target.value / 100; edSyncControls(); edPreview(); });
+$('edFill').addEventListener('click', () => {
+  const R = ED.rot, a0 = (photo.crop.w * R.width) / (photo.crop.h * R.height), A = screenAspect();
+  let sx = A / a0, sy = 1;
+  if (sx > 3) { sy = sx / 3; sx = 3; } else if (sx < 0.25) { sy = 0.25 / sx; sx = 0.25; }
+  photo.sx = sx; photo.sy = clamp(sy, 0.25, 3);
+  edSyncControls(); edPreview();
+});
+$('edReset').addEventListener('click', () => {
+  const keep = { sens: photo.sens, thick: photo.thick, dots: photo.dots };
+  photo = Object.assign(defaultPhoto(photo.src), keep);
+  edSyncControls(); edRebuild();
+});
+$('edCancel').addEventListener('click', () => {
+  $('editor').classList.add('hidden');
+  if (ED.fromNew && ED.prevPhoto) photo = ED.prevPhoto;
+  else Object.assign(photo, ED.snapshot);
+});
+$('edNext').addEventListener('click', () => {
+  photo.edited = makeEdited(photo);
+  reviewCap = prepareCapture(photo.edited);
+  $('editor').classList.add('hidden');
+  openReview();
+});
+window.addEventListener('resize', () => { if (!$('editor').classList.contains('hidden')) edLayout(); });
+
+/* ---------------------------------------------------------------------
+   Wall-detection review
+   --------------------------------------------------------------------- */
+let reviewCap = null, reviewMask = null, reviewRaf = 0;
+function openReview() {
+  $('sSens').value = photo.sens; $('sThick').value = photo.thick; $('sDots').value = photo.dots;
   $('review').classList.remove('hidden');
   updateReview();
 }
-let reviewMask = null, reviewPending = 0;
-function readSliders() { return [+$('sSens').value, +$('sThick').value, +$('sDots').value]; }
 function updateReview() {
-  if (!capture) return;
-  reviewMask = computeWalls(capture, ...readSliders());
+  photo.sens = +$('sSens').value; photo.thick = +$('sThick').value; photo.dots = +$('sDots').value;
+  $('sSensV').textContent = photo.sens; $('sThickV').textContent = photo.thick; $('sDotsV').textContent = photo.dots;
+  reviewMask = computeWalls(reviewCap, photo.sens, photo.thick, photo.dots);
   const rc = $('reviewCanvas');
-  rc.width = capture.bg.width; rc.height = capture.bg.height;
+  rc.width = reviewCap.bg.width; rc.height = reviewCap.bg.height;
   const x = rc.getContext('2d');
-  x.drawImage(capture.bg, 0, 0);
+  x.drawImage(reviewCap.bg, 0, 0);
   x.globalAlpha = 0.75; x.imageSmoothingEnabled = false;
-  x.drawImage(maskCanvas(reviewMask, capture.MW, capture.MH, 255, 50, 50, 255), 0, 0, rc.width, rc.height);
+  x.drawImage(maskCanvas(reviewMask, reviewCap.MW, reviewCap.MH, 255, 50, 50, 255), 0, 0, rc.width, rc.height);
   x.globalAlpha = 1;
 }
 ['sSens', 'sThick', 'sDots'].forEach(id => $(id).addEventListener('input', () => {
-  cancelAnimationFrame(reviewPending); reviewPending = requestAnimationFrame(updateReview);
+  cancelAnimationFrame(reviewRaf); reviewRaf = requestAnimationFrame(updateReview);
 }));
-$('rvRetake').addEventListener('click', () => { $('review').classList.add('hidden'); capture = null; openCamera(); });
+$('rvBack').addEventListener('click', () => { $('review').classList.add('hidden'); $('editor').classList.remove('hidden'); edLayout(); });
+$('rvRetake').addEventListener('click', () => {
+  $('review').classList.add('hidden');
+  if (ED.fromNew && ED.prevPhoto) photo = ED.prevPhoto; else if (ED.snapshot) Object.assign(photo, ED.snapshot);
+  openCamera();
+});
 $('rvPlay').addEventListener('click', () => {
   $('review').classList.add('hidden');
-  buildWorld(capture, reviewMask, false);
-  capture = null;
+  curCap = reviewCap; curMask = reviewMask;
+  if (ED.fromNew) { userStrokes = []; rebuildWorld(curCap, curMask, 'creatures'); hint('Have fun! 💧', 1500); }
+  else rebuildWorld(curCap, curMask, 'all');
+});
+$('bEdit').addEventListener('click', () => { if (photo) openEditor(false); });
+
+/* ---------------------------------------------------------------------
+   Settings panel
+   --------------------------------------------------------------------- */
+let setPending = 0, setLayout = false, setWind = false;
+function fmt(v, step) { return step < 1 ? (+v).toFixed(step < 0.1 ? 2 : 1) : String(Math.round(v)); }
+function buildSettings() {
+  const box = $('setList'); box.innerHTML = '';
+  for (const s of SETTINGS) {
+    if (s.g) { const h = document.createElement('h3'); h.textContent = s.g; box.appendChild(h); continue; }
+    const row = document.createElement('div'); row.className = 'srow';
+    const lab = document.createElement('label'); lab.textContent = s.l; row.appendChild(lab);
+    if (s.toggle) {
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!CFG[s.k];
+      cb.addEventListener('change', () => { CFG[s.k] = cb.checked ? 1 : 0; applyLive(); });
+      row.appendChild(cb);
+    } else {
+      const val = document.createElement('span'); val.textContent = fmt(CFG[s.k], s.step); row.appendChild(val);
+      const inp = document.createElement('input'); inp.type = 'range';
+      inp.min = s.min; inp.max = s.max; inp.step = s.step; inp.value = CFG[s.k];
+      inp.addEventListener('input', () => {
+        CFG[s.k] = +inp.value; val.textContent = fmt(CFG[s.k], s.step);
+        if (s.rebuild) setPending = Math.max(setPending, s.rebuild);
+        if (s.layout) setLayout = true;
+        if (s.wind) setWind = true;
+        applyLive();
+      });
+      row.appendChild(inp);
+      if (s.rebuild) { const n = document.createElement('div'); n.className = 'note'; n.textContent = 'applied when you press Done'; row.appendChild(n); }
+    }
+    box.appendChild(row);
+  }
+  const btns = document.createElement('div'); btns.className = 'setBtns';
+  const mk = (t, fn) => { const b = document.createElement('button'); b.className = 'pill'; b.textContent = t; b.addEventListener('click', fn); btns.appendChild(b); };
+  mk('↺ Default settings', () => {
+    const changedRes = CFG.maskLong !== DEFAULTS.maskLong, changedGrid = CFG.cell !== DEFAULTS.cell || CFG.maxParticles !== DEFAULTS.maxParticles;
+    Object.assign(CFG, DEFAULTS);
+    setPending = Math.max(setPending, changedRes ? 2 : (changedGrid ? 1 : 0)); setLayout = true; setWind = true;
+    applyLive(); buildSettings();
+  });
+  mk('🧽 Remove drawn walls', () => { userStrokes = []; rebuildWorld(curCap, curMask, 'all'); hint('Drawn walls removed', 1400); });
+  mk('🗑️ Remove pipes, mills, wind…', () => { world.pipes = []; world.sewers = []; world.mills = []; world.winds = []; world.rebuildWind(); hint('All tools removed', 1400); });
+  mk('🐟 Remove creatures', () => { world.creatures = []; });
+  box.appendChild(btns);
+}
+function applyLive() { $('stats').style.display = CFG.showStats ? '' : 'none'; }
+$('bSettings').addEventListener('click', () => { setPending = 0; setLayout = false; setWind = false; buildSettings(); $('settings').classList.remove('hidden'); });
+$('setClose').addEventListener('click', () => {
+  $('settings').classList.add('hidden');
+  saveCfg();
+  if (setPending === 2) {           // new simulation resolution -> redo wall detection
+    curCap = prepareCapture(photo.edited);
+    curMask = computeWalls(curCap, photo.sens, photo.thick, photo.dots);
+    rebuildWorld(curCap, curMask, 'all');
+  } else if (setPending === 1) rebuildWorld(curCap, curMask, 'all');
+  else if (setLayout) layout();
+  if (setWind && world) world.rebuildWind();
+  while (world.creatures.length > CFG.maxCreatures) world.creatures.pop();
+  setPending = 0;
 });
 
-// bake the background: flattened photo + inked walls so kids see what blocks water
-function bakeBackground(cap, mask) {
-  const c = document.createElement('canvas'); c.width = cap.bg.width; c.height = cap.bg.height;
-  const x = c.getContext('2d');
-  x.drawImage(cap.bg, 0, 0);
-  x.globalAlpha = 0.55; x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
-  x.drawImage(maskCanvas(mask, cap.MW, cap.MH, 38, 40, 58, 255), 0, 0, c.width, c.height);
-  x.globalAlpha = 1;
-  return c;
-}
-
-function buildWorld(cap, mask, demo) {
-  world = new World(cap.MW, cap.MH, mask);
-  bgCanvas = bakeBackground(cap, mask);
-  renderer.setBackground(bgCanvas);
-  if (demo) {
-    const W = cap.MW, H = cap.MH;
-    world.pipes.push({ x: W * 0.215, y: H * 0.08, a: Math.PI / 2, acc: 0, row: 0 });
-    world.sewers.push({ x: W * 0.9, y: H * 0.88 });
-  }
-  layout();
-}
-
-/* ---- demo drawing (procedural "pencil on paper" photo) ---- */
+/* ---------------------------------------------------------------------
+   Demo drawing (procedural "pencil on paper" photo)
+   --------------------------------------------------------------------- */
 function makeDemoPhoto(aspect) {
   const W = 1600, H = Math.round(W / aspect);
-  const c = document.createElement('canvas'); c.width = W; c.height = H;
-  const x = c.getContext('2d');
+  const c = makeCanvas(W, H), x = c.getContext('2d');
   const g = x.createRadialGradient(W * 0.35, H * 0.3, 50, W * 0.5, H * 0.5, W * 0.85);
   g.addColorStop(0, '#f6f1e7'); g.addColorStop(1, '#a9a092');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
-  // paper grain
   const img = x.getImageData(0, 0, W, H), d = img.data;
   for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - 0.5) * 14; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
   x.putImageData(img, 0, 0);
@@ -1307,12 +2410,26 @@ function makeDemoPhoto(aspect) {
   pencil([[0.12, 0.13], [0.19, 0.28]]); pencil([[0.31, 0.13], [0.24, 0.28]]);          // funnel
   pencil([[0.10, 0.40], [0.52, 0.52]]);                                               // ramp 1
   pencil([[0.88, 0.50], [0.50, 0.64]]);                                               // ramp 2
-  pencil([[0.06, 0.70], [0.06, 0.93], [0.36, 0.93], [0.36, 0.72]]);                   // cup
+  pencil([[0.06, 0.66], [0.06, 0.93], [0.38, 0.93], [0.38, 0.68]]);                   // pond
   pencil([[0.62, 0.12], [0.62, 0.30], [0.80, 0.30]]);                                 // L-tube
   pencil([[0.68, 0.12], [0.68, 0.245], [0.80, 0.245]]);
-  for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) circle(0.42 + i * 0.07 + j * 0.035, 0.74 + j * 0.08, 0.022);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) circle(0.60 + i * 0.07 + j * 0.035, 0.74 + j * 0.08, 0.022);
   pencil([[0.6, 0.97], [0.96, 0.78]]);                                                // ramp to drain
   return c;
+}
+function demoScene() {
+  const W = world.MW, H = world.MH;
+  world.pipes.push({ x: W * 0.215, y: H * 0.08, a: Math.PI / 2, acc: 0, row: 0, type: 0 });
+  world.sewers.push({ x: W * 0.9, y: H * 0.88 });
+  world.mills.push({ x: W * 0.47, y: H * 0.75, th: 0, om: 0, mul: 1 });
+  // pre-filled pond with fish & a duck
+  const r = world.r, sp = 2 * r, rowH = Math.sqrt(3) * r;
+  let row = 0;
+  for (let y = H * 0.75; y < H * 0.92; y += rowH, row++)
+    for (let x = W * 0.07 + (row & 1 ? r : 0); x < W * 0.37; x += sp) world.add(x, y, 0, 0, 0);
+  for (let i = 0; i < 4; i++) world.spawnCreature(W * (0.1 + i * 0.07), H * (0.82 + (i & 1) * 0.05), i === 3 ? 4 : i % 3);
+  world.spawnCreature(W * 0.3, H * 0.74, 7);
+  for (let i = 0; i < 20; i++) world.step(1 / 60, 0, CFG.gravity * world.U);
 }
 
 /* ---------------------------------------------------------------------
@@ -1324,21 +2441,28 @@ function frame(t) {
   if (!world) return;
   let dt = (t - last) / 1000; last = t;
   if (dt > 0.1) dt = 0.1;
-  // gravity
-  if (tiltOn) {
-    grav.x += (gravTarget.x * CFG.gravity - grav.x) * 0.25;
-    grav.y += (gravTarget.y * CFG.gravity - grav.y) * 0.25;
-  } else { grav.x += (0 - grav.x) * 0.2; grav.y += (CFG.gravity - grav.y) * 0.2; }
+  const G = CFG.gravity * world.U;
+  if (tiltOn) { grav.x += (gravTarget.x * G - grav.x) * 0.25; grav.y += (gravTarget.y * G - grav.y) * 0.25; }
+  else { grav.x += (0 - grav.x) * 0.2; grav.y += (G - grav.y) * 0.2; }
   acc += dt;
-  let steps = 0;
+  const base = 1 / 60, ts = CFG.timeScale, sub = Math.ceil(ts), sdt = base * ts / sub;
+  let ticks = 0;
   const t0 = performance.now();
-  while (acc >= CFG.simDt && steps < 2) { world.step(CFG.simDt, grav.x, grav.y); acc -= CFG.simDt; steps++; }
-  if (acc > CFG.simDt) acc = 0;
-  if (steps) simMs = simMs * 0.9 + 0.1 * (performance.now() - t0) / steps;
+  while (acc >= base && ticks < 2) {
+    for (let k = 0; k < sub; k++) world.step(sdt, grav.x, grav.y);
+    acc -= base; ticks++;
+  }
+  if (acc > base) acc = 0;
+  if (ticks) simMs = simMs * 0.9 + 0.1 * (performance.now() - t0) / ticks;
+  if (bgDirty) {
+    renderer.updateBackgroundRect(bgCanvas, bgDirty[0], bgDirty[1], bgDirty[2] - bgDirty[0], bgDirty[3] - bgDirty[1]);
+    bgDirty = null;
+  }
   renderer.render(world, t / 1000);
+  drawOverlay(t / 1000);
   frames++;
   if (t - fpsT > 500) {
-    $('stats').textContent = `${Math.round(frames * 1000 / (t - fpsT))} fps · sim ${simMs.toFixed(1)} ms · ${world.N} drops`;
+    if (CFG.showStats) $('stats').textContent = `${Math.round(frames * 1000 / (t - fpsT))} fps · sim ${simMs.toFixed(1)} ms · ${world.N} drops · ${world.creatures.length} 🐟`;
     fpsT = t; frames = 0;
   }
 }
@@ -1349,10 +2473,14 @@ function init() {
     document.body.innerHTML = '<div id="nogl">Sorry, this device needs WebGL2 to run Paper Splash.<br><small>' + e.message + '</small></div>';
     return;
   }
-  const a = stageAspect();
-  const demo = makeDemoPhoto(a);
-  const cap = prepareCapture(demo, demo.width, demo.height, a);
-  buildWorld(cap, computeWalls(cap, 55, 1, 40), true);
+  photo = defaultPhoto(makeDemoPhoto(screenAspect()));
+  photo.edited = makeEdited(photo);
+  curCap = prepareCapture(photo.edited);
+  curMask = computeWalls(curCap, photo.sens, photo.thick, photo.dots);
+  rebuildWorld(curCap, curMask, null);
+  demoScene();
+  applyLive();
+  buildFlyout();
   window.addEventListener('resize', layout);
   window.addEventListener('orientationchange', () => setTimeout(layout, 200));
   hint('Take a 📷 photo of your drawing, or play with this one!', 4000);
