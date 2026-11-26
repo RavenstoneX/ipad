@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Paper Splash">
 <title>Paper Splash</title>
+<script async src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -111,8 +112,8 @@
     width: min(680px, 94vw); max-height: 88vh; display: flex; flex-direction: column;
     background: #252b3d; border-radius: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.5); overflow: hidden;
   }
-  #setHead { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #2e3550; }
-  #setHead h2 { margin: 0; font-size: 20px; }
+  #setHead, .setHead { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #2e3550; }
+  #setHead h2, .setHead h2 { margin: 0; font-size: 20px; }
   #setList { overflow-y: auto; padding: 6px 20px 20px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
   #setList h3 { margin: 18px 0 6px; font-size: 13px; letter-spacing: .6px; text-transform: uppercase; color: #ffd23f; }
   .srow { display: grid; grid-template-columns: 1fr 64px 38px; align-items: center; gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
@@ -124,12 +125,42 @@
   .srow .note { grid-column: 1 / 4; font-size: 11px; color: #8a93ad; }
   .setBtns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
   .setBtns .pill { height: 44px; font-size: 15px; }
+  /* ---------- multiplayer ---------- */
+  #netVideo { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; display: none; background: #1d2230; }
+  body.guest #netVideo { display: block; }
+  body.guest #stats { display: none; }
+  body.guest #bPhoto, body.guest #bEdit, body.guest #bTilt, body.guest #bSettings { display: none; }
+  #bNet.live { background: #5be37d; box-shadow: 0 3px 0 #2b9a48, 0 0 0 3px #fff; }
+  #netBadge { position: fixed; z-index: 11; left: calc(env(safe-area-inset-left) + 10px); top: calc(env(safe-area-inset-top) + 8px);
+              font-size: 13px; font-weight: 800; background: rgba(25,30,45,.78); padding: 4px 10px; border-radius: 10px; pointer-events: none; }
+  #netScr { background: rgba(10,14,24,.82); display: flex; align-items: center; justify-content: center; }
+  #netBox { width: min(520px, 94vw); max-height: 90vh; display: flex; flex-direction: column; background: #252b3d; border-radius: 22px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.5); overflow: hidden; }
+  #netBody { overflow-y: auto; padding: 8px 22px 22px; display: flex; flex-direction: column; gap: 10px; touch-action: pan-y; }
+  .nlab { margin-top: 8px; font-size: 13px; letter-spacing: .6px; text-transform: uppercase; color: #ffd23f; font-weight: 800; }
+  .ninp { font: 800 20px inherit; font-family: inherit; color: #223; background: #fff; border: 0; border-radius: 12px; padding: 10px 14px; width: 100%;
+          -webkit-user-select: text; user-select: text; box-sizing: border-box; }
+  .nrow { display: flex; gap: 10px; align-items: center; }
+  #netCode { text-transform: uppercase; letter-spacing: .3em; text-align: center; font-size: 26px; padding: 6px; }
+  .ncode { font-size: 72px; font-weight: 900; letter-spacing: .14em; color: #ffd23f; line-height: 1; }
+  .nnote { font-size: 13px; color: #9fb0d8; line-height: 1.4; -webkit-user-select: text; user-select: text; word-break: break-all; }
+  .nerr { margin: 0; min-height: 1.2em; color: #ffb3c0; font-size: 14px; font-weight: 700; }
+  #netList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  #netList li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; background: rgba(255,255,255,.08); border-radius: 12px; font-weight: 800; }
+  #netList .pc { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #fff; flex: none; }
+  #netList .tag { margin-left: auto; font-size: 11px; color: #9fb0d8; letter-spacing: .08em; }
+  #netList .kick { margin-left: 8px; width: 34px; height: 30px; border: 0; border-radius: 9px; background: #5a3040; color: #fff; font-size: 15px; }
+  .nseg { display: flex; gap: 6px; flex-wrap: wrap; }
+  .nseg button { flex: 1; min-width: 54px; height: 40px; border: 0; border-radius: 11px; background: #3a4260; color: #dfe5f5; font-weight: 800; font-size: 14px; }
+  .nseg button.on { background: #7fd3ff; color: #12324a; }
+  .ncheck { display: flex; align-items: center; gap: 10px; font-size: 15px; color: #dfe5f5; }
+  .ncheck input { width: 24px; height: 24px; accent-color: #5be37d; }
   #nogl { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px; font-size: 20px; }
 </style>
 </head>
 <body>
 
-<div id="stage"><canvas id="gl"></canvas><canvas id="ov"></canvas></div>
+<div id="stage"><canvas id="gl"></canvas><video id="netVideo" playsinline muted autoplay></video><canvas id="ov"></canvas></div>
 
 <div id="ui">
   <div id="toolbar">
@@ -152,11 +183,47 @@
     <button class="tb mode" data-mode="erase"><div class="in"><span>🧽</span><small>Erase</small></div></button>
     <button class="tb toggle" id="bTilt"><div class="in"><span>📱</span><small>Tilt</small></div></button>
     <button class="tb" id="bSettings"><div class="in"><span>⚙️</span><small>Setup</small></div></button>
+    <button class="tb" id="bNet"><div class="in"><span>👥</span><small>Friends</small></div></button>
   </div>
   <div id="flyout"></div>
 </div>
 <div id="hint"></div>
 <div id="stats"></div>
+<div id="netBadge" class="hidden"></div>
+
+<!-- multiplayer: one iPad shares its picture, friends join with the code -->
+<div id="netScr" class="screen hidden">
+  <div id="netBox">
+    <div id="netHead" class="setHead"><h2>👥 Play together</h2><button class="pill go" id="netClose">Done</button></div>
+    <div id="netBody">
+      <div id="netMenu" style="display:flex;flex-direction:column;gap:10px">
+        <div class="nlab">Your name</div>
+        <input id="netName" class="ninp" maxlength="12" autocomplete="off">
+        <button class="pill go" id="netHost">🎉 Share my picture</button>
+        <div class="nnote">Friends see your picture live on their iPads and can play in it with you.</div>
+        <div class="nlab">…or join a friend</div>
+        <div class="nrow"><input id="netCode" class="ninp" placeholder="ABC" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="pill go" id="netJoin">Join</button></div>
+      </div>
+      <div id="netRoom" class="hidden" style="display:flex;flex-direction:column;gap:8px">
+        <div class="nlab" id="netRoomLab">Room code</div>
+        <div id="netCodeBig" class="ncode">···</div>
+        <div id="netLink" class="nnote"></div>
+        <ul id="netList"></ul>
+        <div id="netHostCtl" style="display:flex;flex-direction:column;gap:8px">
+          <div class="nlab">Stream quality</div>
+          <div class="nseg" id="netQ"></div>
+          <div class="nnote" id="netQNote"></div>
+          <div class="nlab">Max players</div>
+          <div class="nseg" id="netMax"></div>
+          <label class="ncheck"><input type="checkbox" id="netAllowClear"> Friends can use 🧹 Clear</label>
+          <label class="ncheck"><input type="checkbox" id="netPause"> Pause friends (they can only watch)</label>
+        </div>
+        <button class="pill" id="netLeave" style="margin-top:8px">Stop</button>
+      </div>
+      <p id="netErr" class="nerr"></p>
+    </div>
+  </div>
+</div>
 
 <!-- camera -->
 <div id="camera" class="screen hidden">
@@ -3090,7 +3157,7 @@ function layout() {
   const a = stageArea();
   const hn = $('hint'); hn.style.left = (a.x + a.w / 2) + 'px'; hn.style.top = (a.y + a.h / 2) + 'px';
   if (!world) return;
-  const A = world.MW / world.MH;
+  const A = NET.role === 'guest' && NET.aspect ? NET.aspect : world.MW / world.MH;
   let w, h;
   if (a.w / a.h > A) { h = a.h; w = a.h * A; } else { w = a.w; h = a.w / A; }
   const dpr = Math.min(window.devicePixelRatio || 1, CFG.dprCap);
@@ -3158,9 +3225,14 @@ function drawOverlay(time) {
   octx.setTransform(1, 0, 0, 1, 0, 0);
   octx.clearRect(0, 0, ov.width, ov.height);
   if (!world) return;
+  drawOverlayScene(time);
+  octx.setTransform(1, 0, 0, 1, 0, 0);
+  if (NET.role === 'host') drawNetMarkers(octx, ov.width / world.MW, view.dpr, false);
+}
+function drawOverlayScene(time) {
   const k = ov.width / world.MW;
   octx.setTransform(k, 0, 0, k, 0, 0);
-  if (mode === 'wind' || mode === 'erase') for (const w of world.winds) drawWind(w, time);
+  if (mode === 'wind' || mode === 'erase' || NET.windView) for (const w of world.winds) drawWind(w, time);
   for (const w of drawingWinds) drawWind(w, time);
   for (const s of world.sewers) drawSewer(s);
   for (const m of world.mills) drawMill(m);
@@ -3318,7 +3390,9 @@ function drawBomb(b, time) {
 }
 
 let hintTimer = 0;
+let hintSink = null;        // while a remote player's input is applied, hints go to that player
 function hint(text, ms = 2600) {
+  if (hintSink) { netHintTo(hintSink, text); return; }
   const h = $('hint'); h.textContent = text; h.classList.add('show');
   clearTimeout(hintTimer); hintTimer = setTimeout(() => h.classList.remove('show'), ms);
 }
@@ -3527,10 +3601,15 @@ function finishLasso(pts) {
 }
 
 glc.addEventListener('pointerdown', e => {
-  if (!world) return;
   e.preventDefault();
   try { glc.setPointerCapture(e.pointerId); } catch (_) {}
-  const p = toDomain(e), U = world.U;
+  if (NET.role === 'guest') { guestPointer(e, 'd'); return; }
+  if (!world) return;
+  ptrDown(e.pointerId, toDomain(e));
+});
+// one input path for everybody: local fingers and remote players (multiplayer) both end up here
+function ptrDown(pid, p) {
+  const U = world.U;
   const st = { start: p, last: p, vx: 0, vy: 0, moved: false };
   switch (mode) {
     case 'pour':
@@ -3610,11 +3689,14 @@ glc.addEventListener('pointerdown', e => {
       else if (!world.spawnCreature(p.x, p.y, tool.fish)) hint('Not inside a wall 🙂');
       break;
   }
-  pointers.set(e.pointerId, st);
-});
+  pointers.set(pid, st);
+}
 glc.addEventListener('pointermove', e => {
-  const st = pointers.get(e.pointerId); if (!st || !world) return;
-  const p = toDomain(e);
+  if (NET.role === 'guest') { guestPointer(e, 'm'); return; }
+  if (world) ptrMove(e.pointerId, toDomain(e));
+});
+function ptrMove(pid, p) {
+  const st = pointers.get(pid); if (!st || !world) return;
   const dt = Math.max(1, p.t - st.last.t) / 1000;
   st.vx = st.vx * 0.6 + 0.4 * (p.x - st.last.x) / dt;
   st.vy = st.vy * 0.6 + 0.4 * (p.y - st.last.y) / dt;
@@ -3652,9 +3734,13 @@ glc.addEventListener('pointermove', e => {
     const w = st.wind.pts, n = w.length;
     if (Math.hypot(p.x - w[n - 2], p.y - w[n - 1]) > 8 * world.U) w.push(p.x, p.y);
   }
-});
+}
 function endPointer(e) {
-  const st = pointers.get(e.pointerId); if (!st) return;
+  if (NET.role === 'guest') { guestPointer(e, 'u'); return; }
+  ptrEnd(e.pointerId);
+}
+function ptrEnd(pid) {
+  const st = pointers.get(pid); if (!st) return;
   if (world) {
     if (st.brush) { const i = world.brushes.indexOf(st.brush); if (i >= 0) world.brushes.splice(i, 1); }
     if (st.torch) { const i = world.torches.indexOf(st.torch); if (i >= 0) world.torches.splice(i, 1); }
@@ -3673,14 +3759,14 @@ function endPointer(e) {
       else hint('Drag a longer line to make wind 🌬️');
     }
   }
-  pointers.delete(e.pointerId);
+  pointers.delete(pid);
 }
 glc.addEventListener('pointerup', endPointer);
 glc.addEventListener('pointercancel', endPointer);
 document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('touchmove', e => {      // block page scroll/bounce, but let sliders and the settings list work
   const t = e.target;
-  if (t && t.closest && (t.closest('input[type=range]') || t.closest('#setList'))) return;
+  if (t && t.closest && (t.closest('input[type=range]') || t.closest('#setList') || t.closest('#netBody'))) return;
   e.preventDefault();
 }, { passive: false });
 
@@ -3690,7 +3776,14 @@ document.querySelectorAll('.tb.mode').forEach(b => b.addEventListener('click', (
   buildFlyout();
   hint(HINTS[mode]);
 }));
-$('bClear').addEventListener('click', () => { if (world) { world.clearLiquids(); hint('All clean! 🧹', 1400); } });
+$('bClear').addEventListener('click', () => {
+  if (NET.role === 'guest') {
+    if (!NET.perm.clear) { hint('The host turned Clear off'); return; }
+    if (NET.hostConn && NET.hostConn.open) NET.hostConn.send({ t: 'clear' });
+    return;
+  }
+  if (world) { world.clearLiquids(); hint('All clean! 🧹', 1400); }
+});
 
 
 /* ---- motion: tilt gravity + physical orientation for icons & animals ---- */
@@ -4139,6 +4232,7 @@ let last = performance.now(), acc = 0, fpsT = 0, frames = 0, simMs = 0;
 function frame(t) {
   requestAnimationFrame(frame);
   if (!world) return;
+  if (NET.role === 'guest') { guestFrame(t); return; }
   let dt = (t - last) / 1000; last = t;
   if (dt > 0.1) dt = 0.1;
   const G = CFG.gravity * world.U;
@@ -4167,12 +4261,445 @@ function frame(t) {
   }
   renderer.render(world, t / 1000, dt * CFG.timeScale);
   drawOverlay(t / 1000);
+  if (NET.role === 'host') netHostFrame(t);
   frames++;
   if (t - fpsT > 500) {
-    if (CFG.showStats) $('stats').textContent = `${Math.round(frames * 1000 / (t - fpsT))} fps · sim ${simMs.toFixed(1)} ms · ${world.N} drops · ${world.creatures.length} 🐟`;
+    if (CFG.showStats) $('stats').textContent = `${Math.round(frames * 1000 / (t - fpsT))} fps · sim ${simMs.toFixed(1)} ms · ${world.N} drops · ${world.creatures.length} 🐟` + netStats();
     fpsT = t; frames = 0;
   }
 }
+
+/* ---------------------------------------------------------------------
+   Multiplayer (networking from Blitz Karts: PeerJS, 3-letter code that stays
+   the same on this iPad, host / join). The host iPad runs the whole simulation
+   and streams its picture as WebRTC video; friends send only their touches and
+   tool choices, which the host applies through the same input code as its own.
+   --------------------------------------------------------------------- */
+const NET_PREFIX = 'papersplash-v1-';
+const NET_COL = ['#ff5a5a', '#3fa9ff', '#5be37d', '#ffd23f', '#c77dff', '#ff9f43', '#00d2d3', '#ff6bcb'];
+// stream presets: long side of the video in pixels, frames per second, max bitrate
+const STREAM_Q = [
+  { name: 'Low', res: 640, fps: 20, kbps: 900, note: 'Saves battery and Wi-Fi. Fine for 6+ friends.' },
+  { name: 'Medium', res: 960, fps: 30, kbps: 2200, note: 'Good balance for most homes.' },
+  { name: 'High', res: 1280, fps: 30, kbps: 4500, note: 'Sharp picture. Needs good Wi-Fi.' },
+  { name: 'Max', res: 1600, fps: 60, kbps: 9000, note: 'Smoothest. Best with 1–2 friends on fast Wi-Fi.' },
+];
+const NET_MODES = new Set(['pour', 'pipe', 'sewer', 'mill', 'wall', 'wind', 'fish', 'fire', 'bomb', 'object', 'erase']);
+const NET = {
+  role: null, peer: null, code: '', name: 'Player', myN: 0,
+  // host
+  players: [], conns: new Map(), nextN: 1, max: 4, q: 1, allowClear: true, paused: false,
+  scv: null, sctx: null, mstream: null, lastFrame: 0, windView: false,
+  // guest
+  hostConn: null, call: null, aspect: 0, gptr: new Map(), gmoves: [], list: [], perm: { clear: true, paused: false },
+};
+const netPrefsKey = 'paperSplash.net';
+try {
+  const p = JSON.parse(localStorage.getItem(netPrefsKey) || '{}');
+  if (p.q >= 0 && p.q < STREAM_Q.length) NET.q = p.q | 0;
+  if (p.max >= 2 && p.max <= 8) NET.max = p.max | 0;
+  if (typeof p.allowClear === 'boolean') NET.allowClear = p.allowClear;
+  NET.name = p.name || ['Fox', 'Bear', 'Owl', 'Frog', 'Duck', 'Cat', 'Seal', 'Bee'][(Math.random() * 8) | 0];
+} catch (_) {}
+function netSavePrefs() { try { localStorage.setItem(netPrefsKey, JSON.stringify({ q: NET.q, max: NET.max, allowClear: NET.allowClear, name: NET.name })); } catch (_) {} }
+const netClean = s => String(s || 'Player').replace(/[<>&"]/g, '').trim().slice(0, 12) || 'Player';
+const netEsc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function netErr(t) { $('netErr').textContent = t || ''; }
+function netGenCode() { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; let s = ''; for (let i = 0; i < 3; i++) s += A[Math.floor(Math.random() * A.length)]; return s; }
+// this iPad always shares with the same code (kept on the device)
+function netMyCode() {
+  let c = null; try { c = localStorage.getItem('paperSplash.code'); } catch (_) {}
+  if (!c || !/^[A-Z]{3}$/.test(c)) { c = netGenCode(); try { localStorage.setItem('paperSplash.code', c); } catch (_) {} }
+  return c;
+}
+function netNoPeer() {
+  if (typeof Peer === 'undefined') { netErr('Could not load the network library. Check the internet connection and try again.'); return true; }
+  return false;
+}
+function netError(e) { console.warn(e); netErr('Connection problem: ' + (e && e.type || 'unknown') + '. Check Wi-Fi and try again.'); }
+
+/* ---------------- host ---------------- */
+let netHostTry = 0;
+function netHost(retry) {
+  if (!retry) netHostTry = 0;
+  if (netNoPeer()) return;
+  NET.role = 'host'; netErr('Opening the room…');
+  const code = netMyCode();
+  const peer = NET.peer = window.PAPER_SPLASH_PEER ? new Peer(NET_PREFIX + code, window.PAPER_SPLASH_PEER) : new Peer(NET_PREFIX + code);
+  peer.on('open', () => {
+    NET.code = code; NET.players = [{ n: 0, name: NET.name, c: 0, id: null, ptrs: new Map() }]; NET.nextN = 1;
+    netErr(''); netUI(); keepAwake();
+  });
+  peer.on('connection', conn => {
+    conn.on('data', m => netHostRecv(conn, m));
+    conn.on('close', () => netDrop(conn.peer));
+    conn.on('error', () => netDrop(conn.peer));
+  });
+  peer.on('error', e => {
+    if (e.type === 'unavailable-id') {
+      try { peer.destroy(); } catch (_) {}
+      // the code can stay reserved for a few seconds after a reload: retry, then give up and use a new one
+      netHostTry++; if (netHostTry === 6) { try { localStorage.removeItem('paperSplash.code'); } catch (_) {} }
+      netErr(netHostTry < 6 ? 'Reserving room code ' + netMyCode() + '…' : 'Opening the room…');
+      setTimeout(() => { if (NET.role === 'host') netHost(true); }, netHostTry < 6 ? 2500 : 0);
+      return;
+    }
+    netError(e);
+  });
+  peer.on('disconnected', () => { try { if (NET.peer === peer && !peer.destroyed) peer.reconnect(); } catch (_) {} });
+}
+function netFreeColor() { for (let c = 1; c < NET_COL.length; c++) if (!NET.players.some(p => p.c === c)) return c; return 1; }
+function netHostRecv(conn, m) {
+  if (!m || typeof m !== 'object') return;
+  const pl = NET.players.find(p => p.id === conn.peer);
+  if (m.t === 'hello') {
+    if (pl) return;
+    if (NET.players.length >= NET.max) { conn.send({ t: 'full', max: NET.max }); setTimeout(() => conn.close(), 400); return; }
+    const p = { n: NET.nextN++, id: conn.peer, conn, name: netClean(m.name), c: netFreeColor(), ptrs: new Map(), mode: 'pour', liquid: 0, tool: {} };
+    NET.players.push(p); NET.conns.set(conn.peer, conn);
+    conn.send({ t: 'welcome', n: p.n, c: p.c, a: world ? world.MW / world.MH : 1.5, code: NET.code });
+    conn.send({ t: 'perm', clear: NET.allowClear, paused: NET.paused });
+    netCallGuest(p);
+    netBroadcastPlayers(); hint(p.name + ' joined 👋', 1800);
+    return;
+  }
+  if (!pl) return;
+  switch (m.t) {
+    case 'd': netRemoteDown(pl, m); break;
+    case 'M': {                                    // batched moves: [i, x, y, ts, i, x, y, ts, ...]
+      const a = Array.isArray(m.a) ? m.a : [];
+      for (let k = 0; k + 3 < a.length; k += 4) netRemoteMove(pl, a[k] | 0, +a[k + 1], +a[k + 2], +a[k + 3]);
+      break;
+    }
+    case 'u': netRemoteUp(pl, m.i | 0); break;
+    case 'clear':
+      if (NET.allowClear && !NET.paused && world) { world.clearLiquids(); hint(pl.name + ' cleaned up 🧹', 1400); }
+      else netHintTo(pl, 'The host turned Clear off');
+      break;
+  }
+}
+function netBroadcastPlayers() {
+  const list = NET.players.map(p => ({ n: p.n, name: p.name, c: p.c }));
+  for (const c of NET.conns.values()) if (c.open) c.send({ t: 'players', list, max: NET.max });
+  netUI();
+}
+function netHintTo(pl, text) { if (pl.conn && pl.conn.open) pl.conn.send({ t: 'hint', s: String(text) }); }
+function netDrop(id) {
+  const pl = NET.players.find(p => p.id === id); if (!pl) return;
+  for (const i of [...pl.ptrs.keys()]) netRemoteUp(pl, i);
+  try { pl.call && pl.call.close(); } catch (_) {}
+  NET.players = NET.players.filter(p => p !== pl); NET.conns.delete(id);
+  hint(pl.name + ' left', 1600);
+  netBroadcastPlayers();
+}
+function netKick(n) {
+  const pl = NET.players.find(p => p.n === n); if (!pl || !pl.conn) return;
+  try { pl.conn.send({ t: 'kick' }); } catch (_) {}
+  const c = pl.conn; netDrop(pl.id); setTimeout(() => { try { c.close(); } catch (_) {} }, 300);
+}
+
+/* apply a remote player's input with that player's own tool, through the normal input code */
+function netSanTool(tl) {
+  const out = {};
+  if (tl && typeof tl === 'object') for (const k in tool) {
+    const v = tl[k];
+    if (typeof tool[k] === 'number' && Number.isFinite(+v)) out[k] = clamp(Math.round(+v), -2, 12);
+    else if (k === 'wallMode' && WALL_MODES.some(w => w[0] === v)) out[k] = v;
+  }
+  return out;
+}
+function asPlayer(pl, fn) {
+  const m0 = mode, l0 = liquid, t0 = Object.assign({}, tool);
+  mode = pl.mode; liquid = pl.liquid; Object.assign(tool, pl.tool); hintSink = pl;
+  try { fn(); } catch (e) { console.warn(e); }
+  finally { mode = m0; liquid = l0; Object.assign(tool, t0); hintSink = null; }
+}
+const netKey = (pl, i) => 'r' + pl.n + '_' + i;
+const netPos = (x, y, ts) => ({ x: clamp(x, 0, 1) * world.MW, y: clamp(y, 0, 1) * world.MH, t: ts });
+function netRemoteDown(pl, m) {
+  if (!world) return;
+  if (NET.paused) { netHintTo(pl, 'The host paused drawing ✋ Just watch for now'); return; }
+  const i = m.i | 0, key = netKey(pl, i);
+  if (pointers.has(key)) netRemoteUp(pl, i);
+  if (pl.ptrs.size >= 5) return;                   // max 5 fingers per friend
+  pl.mode = NET_MODES.has(m.m) ? m.m : 'pour';
+  pl.liquid = clamp(m.l | 0, 0, LIQUIDS.length - 1);
+  pl.tool = netSanTool(m.tl);
+  const p = netPos(+m.x, +m.y, +m.ts || performance.now());
+  asPlayer(pl, () => ptrDown(key, p));
+  pl.ptrs.set(i, { x: p.x, y: p.y, up: 0 });
+  netUpdateWindView();
+}
+function netRemoteMove(pl, i, x, y, ts) {
+  const key = netKey(pl, i); if (!world || !pointers.has(key)) return;
+  const p = netPos(x, y, ts);
+  asPlayer(pl, () => ptrMove(key, p));
+  const d = pl.ptrs.get(i); if (d) { d.x = p.x; d.y = p.y; }
+}
+function netRemoteUp(pl, i) {
+  const key = netKey(pl, i);
+  if (pointers.has(key)) asPlayer(pl, () => ptrEnd(key));
+  const d = pl.ptrs.get(i); if (d) { d.up = performance.now(); setTimeout(() => { if (pl.ptrs.get(i) === d) pl.ptrs.delete(i); }, 700); }
+  netUpdateWindView();
+}
+function netUpdateWindView() {
+  NET.windView = NET.players.some(p => p.n && p.ptrs.size && (p.mode === 'wind' || p.mode === 'erase'));
+}
+
+/* finger markers: a ring in the player's colour with the name (host screen + the stream) */
+function drawMarker(ctx, x, y, col, name, s, alpha) {
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = 3.5 * s; ctx.strokeStyle = '#fff';
+  ctx.beginPath(); ctx.arc(x, y, 17 * s, 0, 7); ctx.stroke();
+  ctx.lineWidth = 2.2 * s; ctx.strokeStyle = col;
+  ctx.beginPath(); ctx.arc(x, y, 17 * s, 0, 7); ctx.stroke();
+  ctx.font = `800 ${Math.round(12 * s)}px -apple-system, system-ui, sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(name).width + 12 * s, ty = y - 31 * s;
+  ctx.fillStyle = col; ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x - w / 2, ty - 9 * s, w, 18 * s, 9 * s); else ctx.rect(x - w / 2, ty - 9 * s, w, 18 * s);
+  ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillText(name, x, ty + 0.5 * s);
+  ctx.globalAlpha = 1;
+}
+function drawNetMarkers(ctx, k, s, withHost) {
+  const now = performance.now();
+  for (const pl of NET.players) {
+    if (pl.n === 0) {
+      if (!withHost) continue;
+      for (const [id, st] of pointers) if (typeof id !== 'string' && st.last) drawMarker(ctx, st.last.x * k, st.last.y * k, NET_COL[0], pl.name, s, 1);
+      continue;
+    }
+    for (const d of pl.ptrs.values()) {
+      const a = d.up ? Math.max(0, 1 - (now - d.up) / 700) : 1;
+      if (a > 0) drawMarker(ctx, d.x * k, d.y * k, NET_COL[pl.c], pl.name, s, a);
+    }
+  }
+}
+
+/* the video stream: GL canvas + overlay composited into one small canvas, only while friends are watching */
+function netEnsureStream() {
+  if (NET.mstream) return NET.mstream;
+  NET.scv = document.createElement('canvas'); NET.sctx = NET.scv.getContext('2d', { alpha: false });
+  netSizeStream(); netDrawStream();
+  NET.mstream = NET.scv.captureStream();           // a new video frame whenever we draw
+  for (const tr of NET.mstream.getVideoTracks()) { try { tr.contentHint = 'motion'; } catch (_) {} }
+  return NET.mstream;
+}
+function netSizeStream() {
+  const Q = STREAM_Q[NET.q], A = world.MW / world.MH;
+  const long = Math.min(Q.res, Math.max(glc.width, glc.height));
+  let w = A >= 1 ? long : long * A, h = A >= 1 ? long / A : long;
+  w = Math.max(2, Math.round(w / 2) * 2); h = Math.max(2, Math.round(h / 2) * 2);
+  if (NET.scv.width !== w || NET.scv.height !== h) {
+    NET.scv.width = w; NET.scv.height = h;
+    const a = world.MW / world.MH;
+    for (const c of NET.conns.values()) if (c.open) c.send({ t: 'aspect', a });
+  }
+}
+function netDrawStream() {
+  const c = NET.sctx, W = NET.scv.width, H = NET.scv.height;
+  c.imageSmoothingEnabled = true;
+  c.drawImage(glc, 0, 0, W, H);                    // same frame as rendered: the GL buffer is still valid here
+  c.drawImage(ov, 0, 0, W, H);
+  drawNetMarkers(c, W / world.MW, W / view.w, true);
+}
+function netHostFrame(t) {
+  if (!NET.mstream || NET.players.length < 2) return;
+  const Q = STREAM_Q[NET.q];
+  if (t - NET.lastFrame < 1000 / Q.fps - 4) return;
+  NET.lastFrame = t;
+  netSizeStream(); netDrawStream();
+}
+function netCallGuest(pl) {
+  const call = NET.peer.call(pl.id, netEnsureStream());
+  if (!call) return;
+  pl.call = call;
+  const pc = call.peerConnection;
+  const apply = () => netApplyQuality(pl);
+  if (pc) {
+    pc.addEventListener('connectionstatechange', () => { if (pc.connectionState === 'connected') apply(); });
+    pc.addEventListener('iceconnectionstatechange', () => { if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') apply(); });
+  }
+  setTimeout(apply, 1500); setTimeout(apply, 4000);
+}
+function netApplyQuality(pl) {
+  const Q = STREAM_Q[NET.q], pc = pl.call && pl.call.peerConnection;
+  if (!pc || !pc.getSenders) return;
+  for (const s of pc.getSenders()) {
+    if (!s.track || s.track.kind !== 'video') continue;
+    try {
+      const p = s.getParameters();
+      if (!p.encodings || !p.encodings.length) p.encodings = [{}];
+      p.encodings[0].maxBitrate = Q.kbps * 1000;
+      p.encodings[0].maxFramerate = Q.fps;
+      s.setParameters(p).catch(() => {});
+    } catch (_) {}
+  }
+}
+function netSetQuality(q) {
+  NET.q = q; netSavePrefs();
+  if (NET.scv) { netSizeStream(); netDrawStream(); }
+  for (const p of NET.players) if (p.call) netApplyQuality(p);
+  netUI();
+}
+function netSendPerm() { for (const c of NET.conns.values()) if (c.open) c.send({ t: 'perm', clear: NET.allowClear, paused: NET.paused }); }
+
+/* ---------------- guest ---------------- */
+function netJoin(code) {
+  if (netNoPeer()) return;
+  code = String(code || '').toUpperCase().replace(/[^A-Z]/g, '');
+  if (code.length !== 3) { netErr('Enter the 3-letter code shown on the other iPad.'); return; }
+  NET.role = 'joining'; netErr('Joining ' + code + '…');
+  const peer = NET.peer = window.PAPER_SPLASH_PEER ? new Peer(window.PAPER_SPLASH_PEER) : new Peer();   // test hook: own signaling server
+  peer.on('open', () => {
+    NET.code = code;
+    const c = NET.hostConn = peer.connect(NET_PREFIX + code, { reliable: true, label: 'c' });
+    c.on('open', () => c.send({ t: 'hello', name: NET.name }));
+    c.on('data', netGuestRecv);
+    c.on('close', () => { if (NET.role === 'guest' || NET.role === 'joining') { netLeave(); netErr('The room was closed.'); netOpen(); } });
+  });
+  peer.on('call', call => {
+    NET.call = call; call.answer();
+    call.on('stream', s => { const v = $('netVideo'); v.srcObject = s; v.play().catch(() => {}); });
+  });
+  peer.on('error', e => {
+    if (e.type === 'peer-unavailable') { netLeave(); netErr('No room found with code ' + code + '.'); netOpen(); }
+    else netError(e);
+  });
+  peer.on('disconnected', () => { try { if (NET.peer === peer && !peer.destroyed) peer.reconnect(); } catch (_) {} });
+}
+function netGuestRecv(m) {
+  if (!m || typeof m !== 'object') return;
+  switch (m.t) {
+    case 'welcome':
+      NET.role = 'guest'; NET.myN = m.n | 0; NET.myC = m.c | 0; NET.aspect = +m.a || 1.5;
+      for (const id of [...pointers.keys()]) ptrEnd(id);       // finish any local strokes first
+      document.body.classList.add('guest'); layout(); netErr(''); netUI(); keepAwake();
+      $('netScr').classList.add('hidden');
+      hint('You joined ' + NET.code + '! Play in the picture 🎨', 2600);
+      break;
+    case 'players': NET.list = Array.isArray(m.list) ? m.list : []; NET.max = m.max | 0 || NET.max; netUI(); break;
+    case 'perm': NET.perm = { clear: !!m.clear, paused: !!m.paused }; netUI(); break;
+    case 'aspect': if (+m.a > 0) { NET.aspect = +m.a; layout(); } break;
+    case 'hint': hint(String(m.s || '')); break;
+    case 'full': netLeave(); netErr('That room is full (max ' + (m.max | 0) + ' players).'); netOpen(); break;
+    case 'kick': netLeave(); netErr('The host removed you from the room.'); netOpen(); break;
+  }
+}
+// touches: down/up are sent at once, moves are batched once per frame (≈60 messages/s at most)
+function guestPointer(e, kind) {
+  if (NET.role !== 'guest') return;
+  const c = NET.hostConn; if (!c || !c.open) return;
+  const r = glc.getBoundingClientRect();
+  const x = Math.round((e.clientX - r.left) / r.width * 10000) / 10000, y = Math.round((e.clientY - r.top) / r.height * 10000) / 10000;
+  const ts = Math.round(performance.now());
+  const i = NET.gptr.has(e.pointerId) ? NET.gptr.get(e.pointerId).i : ((NET.gi = ((NET.gi | 0) + 1) % 1000));
+  if (kind === 'd') {
+    if (NET.perm.paused) { hint('The host paused drawing ✋ Just watch for now'); return; }
+    NET.gptr.set(e.pointerId, { i, x, y });
+    c.send({ t: 'd', i, x, y, ts, m: mode, l: liquid, tl: tool });
+  } else if (kind === 'm') {
+    const g = NET.gptr.get(e.pointerId); if (!g) return;
+    g.x = x; g.y = y; NET.gmoves.push(i, x, y, ts);
+  } else {
+    const g = NET.gptr.get(e.pointerId); if (!g) return;
+    guestFlush();
+    NET.gptr.delete(e.pointerId); c.send({ t: 'u', i });
+  }
+}
+function guestFlush() {
+  if (!NET.gmoves.length) return;
+  const c = NET.hostConn; if (c && c.open) c.send({ t: 'M', a: NET.gmoves });
+  NET.gmoves = [];
+}
+function guestFrame(t) {
+  guestFlush();
+  // instant local feedback: own finger rings (the host's picture arrives a moment later)
+  octx.setTransform(1, 0, 0, 1, 0, 0);
+  octx.clearRect(0, 0, ov.width, ov.height);
+  const s = view.dpr;
+  for (const g of NET.gptr.values()) {
+    octx.lineWidth = 3 * s; octx.strokeStyle = 'rgba(255,255,255,.85)';
+    octx.beginPath(); octx.arc(g.x * ov.width, g.y * ov.height, 12 * s, 0, 7); octx.stroke();
+    octx.lineWidth = 2 * s; octx.strokeStyle = NET_COL[NET.myC | 0];
+    octx.beginPath(); octx.arc(g.x * ov.width, g.y * ov.height, 12 * s, 0, 7); octx.stroke();
+  }
+  const v = $('netVideo');
+  if (!v.srcObject || v.readyState < 2) {
+    octx.fillStyle = 'rgba(255,255,255,.7)'; octx.font = `700 ${Math.round(18 * s)}px -apple-system, system-ui, sans-serif`;
+    octx.textAlign = 'center'; octx.fillText('Waiting for the picture…', ov.width / 2, ov.height / 2);
+  } else if (v.videoWidth && Math.abs(v.videoWidth / v.videoHeight - NET.aspect) > 0.02) { NET.aspect = v.videoWidth / v.videoHeight; layout(); }
+}
+
+/* ---------------- shared ---------------- */
+function netLeave() {
+  const p = NET.peer, wasHost = NET.role === 'host';
+  if (wasHost) {
+    for (const pl of NET.players) { for (const i of [...pl.ptrs.keys()]) if (pl.n) netRemoteUp(pl, i); try { pl.call && pl.call.close(); } catch (_) {} }
+  }
+  NET.role = null; NET.peer = null; NET.hostConn = null; NET.call = null; NET.conns.clear(); NET.players = []; NET.list = [];
+  NET.gptr.clear(); NET.gmoves = []; NET.windView = false; NET.paused = false; NET.perm = { clear: true, paused: false };
+  if (NET.mstream) { for (const tr of NET.mstream.getTracks()) tr.stop(); NET.mstream = null; NET.scv = null; NET.sctx = null; }
+  const v = $('netVideo'); v.srcObject = null;
+  document.body.classList.remove('guest');
+  if (p) { try { p.destroy(); } catch (_) {} }
+  last = performance.now();
+  layout(); netUI();
+}
+function netStats() {
+  if (NET.role === 'host' && NET.scv) return ` · 📡 ${NET.scv.width}×${NET.scv.height}@${STREAM_Q[NET.q].fps}`;
+  return '';
+}
+function netUI() {
+  const role = NET.role, inRoom = role === 'host' || role === 'guest';
+  $('netMenu').classList.toggle('hidden', inRoom);
+  $('netRoom').classList.toggle('hidden', !inRoom);
+  $('bNet').classList.toggle('live', inRoom);
+  const badge = $('netBadge');
+  badge.classList.toggle('hidden', !inRoom);
+  if (!inRoom) return;
+  const host = role === 'host';
+  const list = host ? NET.players.map(p => ({ n: p.n, name: p.name, c: p.c })) : NET.list;
+  badge.textContent = host ? `📡 ${NET.code} · ${list.length - 1} friend${list.length === 2 ? '' : 's'}` : `📡 ${NET.code}${NET.perm.paused ? ' · paused ✋' : ''}`;
+  $('netRoomLab').textContent = host ? 'Room code – friends tap 👥 and enter it' : 'You are in room';
+  $('netCodeBig').textContent = NET.code || '···';
+  const canLink = /^https?:/.test(location.protocol);
+  $('netLink').textContent = host && canLink ? 'Or open: ' + location.origin + location.pathname + '?join=' + NET.code : '';
+  $('netList').innerHTML = list.map(p => `<li><span class="pc" style="background:${NET_COL[p.c] || '#fff'}"></span>${netEsc(p.name)}` +
+    (p.n === 0 ? '<span class="tag">HOST</span>' : '') + (host ? '' : (p.n === NET.myN ? '<span class="tag">YOU</span>' : '')) +
+    (host && p.n !== 0 ? `<button class="kick" data-n="${p.n}" aria-label="Remove ${netEsc(p.name)}">✕</button>` : '') + '</li>').join('');
+  $('netList').querySelectorAll('.kick').forEach(b => b.onclick = () => netKick(+b.dataset.n));
+  $('netHostCtl').classList.toggle('hidden', !host);
+  $('netLeave').textContent = host ? 'Stop sharing' : 'Leave';
+  if (host) {
+    const qs = $('netQ'); qs.innerHTML = '';
+    STREAM_Q.forEach((Q, i) => { const b = document.createElement('button'); b.textContent = Q.name; b.classList.toggle('on', i === NET.q); b.onclick = () => netSetQuality(i); qs.appendChild(b); });
+    const Q = STREAM_Q[NET.q];
+    $('netQNote').textContent = `${Q.res}px · ${Q.fps} fps · up to ${(Q.kbps / 1000).toFixed(1)} Mbit/s per friend. ${Q.note}`;
+    const ms = $('netMax'); ms.innerHTML = '';
+    for (let n = 2; n <= 8; n++) { const b = document.createElement('button'); b.textContent = n; b.classList.toggle('on', n === NET.max);
+      b.onclick = () => { NET.max = n; netSavePrefs(); netBroadcastPlayers(); }; ms.appendChild(b); }
+    $('netAllowClear').checked = NET.allowClear; $('netPause').checked = NET.paused;
+  }
+}
+function netOpen() { $('netName').value = NET.name; netUI(); $('netScr').classList.remove('hidden'); }
+$('bNet').addEventListener('click', netOpen);
+$('netClose').addEventListener('click', () => $('netScr').classList.add('hidden'));
+$('netName').addEventListener('change', () => { NET.name = netClean($('netName').value); netSavePrefs(); });
+$('netHost').addEventListener('click', () => { NET.name = netClean($('netName').value); netSavePrefs(); netHost(); });
+$('netJoin').addEventListener('click', () => { NET.name = netClean($('netName').value); netSavePrefs(); netJoin($('netCode').value); });
+$('netCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('netJoin').click(); });
+$('netLeave').addEventListener('click', () => { netLeave(); netErr(''); });
+$('netAllowClear').addEventListener('change', e => { NET.allowClear = e.target.checked; netSavePrefs(); netSendPerm(); });
+$('netPause').addEventListener('change', e => {
+  NET.paused = e.target.checked; netSendPerm(); netUI();
+  if (NET.paused) for (const pl of NET.players) if (pl.n) for (const i of [...pl.ptrs.keys()]) netRemoteUp(pl, i);
+});
+let wake = null;
+async function keepAwake() {
+  try { if ('wakeLock' in navigator && !wake && document.visibilityState === 'visible') { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => wake = null); } } catch (_) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && NET.role) keepAwake(); });
 
 function init() {
   try { renderer = new Renderer(glc); }
@@ -4197,6 +4724,8 @@ function init() {
   window.addEventListener('orientationchange', () => setTimeout(layout, 200));
   hint('Take a 📷 photo of your drawing, or play with this one!', 4000);
   requestAnimationFrame(frame);
+  const jc = new URLSearchParams(location.search).get('join');
+  if (jc) { $('netCode').value = jc.toUpperCase().slice(0, 3); netOpen(); }
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden && stream) closeCamera(); last = performance.now(); });
 init();
