@@ -25,36 +25,32 @@
 
   /* ---------- UI strip: its own area, never over the drawing ---------- */
   :root { --rot: 0deg; }
-  #ui { position: fixed; z-index: 10; display: flex; gap: 14px; padding: 10px; background: #252b3d; align-items: center; justify-content: center; }
-  body.land #ui { left: 0; top: 0; bottom: 0; flex-direction: column; padding-left: calc(env(safe-area-inset-left) + 10px); }
-  body.port #ui { left: 0; right: 0; bottom: 0; flex-direction: row; padding-bottom: calc(env(safe-area-inset-bottom) + 10px); }
-  #toolbar { display: grid; gap: 6px; }
-  body.land #toolbar { grid-template-columns: repeat(2, 52px); }
-  body.port #toolbar { grid-auto-flow: column; grid-template-rows: repeat(2, 52px); }
-  #flyout { display: grid; gap: 6px; align-content: start; justify-content: start; }
-  body.land #flyout { grid-template-columns: repeat(3, 44px); grid-auto-rows: 44px; width: 144px; height: 144px; }
-  body.port #flyout { grid-template-rows: repeat(2, 44px); grid-auto-flow: column; grid-auto-columns: 44px; width: 194px; height: 94px; }
+  #ui { position: fixed; z-index: 10; display: flex; flex-direction: row; gap: 12px; align-items: center; justify-content: center;
+        left: 0; right: 0; bottom: 0; padding: 6px 8px calc(env(safe-area-inset-bottom) + 6px); background: #252b3d; }
+  #toolbar { display: grid; gap: 5px; grid-auto-flow: column; grid-template-rows: repeat(2, 46px); }
+  #flyout { display: grid; gap: 5px; grid-template-rows: repeat(2, 40px); grid-auto-flow: column; grid-auto-columns: 40px;
+            align-content: start; justify-content: start; width: 220px; height: 85px; }
   .fgroup { display: contents; }
   .tb {
-    width: 52px; height: 52px; border-radius: 15px; border: none; padding: 0;
-    background: rgba(255,255,255,.93); color: #223; font-size: 23px; line-height: 1;
+    width: 46px; height: 46px; border-radius: 13px; border: none; padding: 0;
+    background: rgba(255,255,255,.93); color: #223; font-size: 20px; line-height: 1;
     box-shadow: 0 3px 0 rgba(0,0,0,.3); transition: background .15s;
   }
   .in { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
         transform: rotate(var(--rot)); transition: transform .35s; }
-  .in small { font-size: 8px; font-weight: 800; margin-top: 3px; letter-spacing: .2px; text-transform: uppercase; color: #556; }
-  .tb svg { width: 25px; height: 25px; }
+  .in small { font-size: 7px; font-weight: 800; margin-top: 2px; letter-spacing: .2px; text-transform: uppercase; color: #556; }
+  .tb svg { width: 22px; height: 22px; }
   .tb:active, .chip:active { transform: scale(.92); }
   .tb.on { background: #ffd23f; box-shadow: 0 3px 0 #b8901a, 0 0 0 3px #fff; }
   .tb.on small { color: #6a4c00; }
   .tb.toggle.on { background: #5be37d; box-shadow: 0 3px 0 #2b9a48, 0 0 0 3px #fff; }
   .tb.toggle.on small { color: #10551f; }
   .chip {
-    width: 44px; height: 44px; border-radius: 13px; border: none; padding: 0;
-    background: rgba(255,255,255,.88); color: #223; font-size: 19px; line-height: 1;
+    width: 40px; height: 40px; border-radius: 12px; border: none; padding: 0;
+    background: rgba(255,255,255,.88); color: #223; font-size: 17px; line-height: 1;
     box-shadow: 0 2px 0 rgba(0,0,0,.3);
   }
-  .chip small { font-size: 7.5px; font-weight: 800; text-transform: uppercase; color: #556; margin-top: 2px; white-space: nowrap; }
+  .chip small { font-size: 6.5px; font-weight: 800; text-transform: uppercase; color: #556; margin-top: 2px; white-space: nowrap; }
   .chip.on { background: #7fd3ff; box-shadow: 0 2px 0 #3a8fbd, 0 0 0 2.5px #fff; }
   .dot { border-radius: 50%; background: #334; display: inline-block; }
 
@@ -119,12 +115,13 @@
   #setHead h2 { margin: 0; font-size: 20px; }
   #setList { overflow-y: auto; padding: 6px 20px 20px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
   #setList h3 { margin: 18px 0 6px; font-size: 13px; letter-spacing: .6px; text-transform: uppercase; color: #ffd23f; }
-  .srow { display: grid; grid-template-columns: 1fr 64px; align-items: center; gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .srow { display: grid; grid-template-columns: 1fr 64px 38px; align-items: center; gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
   .srow label { font-size: 14px; color: #dfe5f5; }
   .srow span { text-align: right; font: 13px ui-monospace, Menlo, monospace; color: #9fb0d8; }
-  .srow input[type=range] { grid-column: 1 / 3; width: 100%; height: 28px; accent-color: #7fd3ff; touch-action: pan-x; }
+  .srow .rst { width: 32px; height: 28px; border-radius: 9px; border: none; background: #3a4260; color: #cfd6ea; font-size: 15px; justify-self: end; }
+  .srow input[type=range] { grid-column: 1 / 4; width: 100%; height: 28px; accent-color: #7fd3ff; touch-action: pan-x; }
   .srow input[type=checkbox] { width: 26px; height: 26px; justify-self: end; accent-color: #5be37d; }
-  .srow .note { grid-column: 1 / 3; font-size: 11px; color: #8a93ad; }
+  .srow .note { grid-column: 1 / 4; font-size: 11px; color: #8a93ad; }
   .setBtns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
   .setBtns .pill { height: 44px; font-size: 15px; }
   #nogl { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px; font-size: 20px; }
@@ -150,10 +147,10 @@
     <button class="tb mode" data-mode="fish"><div class="in"><span>🐠</span><small>Animal</small></div></button>
     <button class="tb mode" data-mode="fire"><div class="in"><span>🔥</span><small>Fire</small></div></button>
     <button class="tb mode" data-mode="bomb"><div class="in"><span>💣</span><small>Bomb</small></div></button>
-    <button class="tb mode" data-mode="erase"><div class="in"><span>🧽</span><small>Erase</small></div></button>
-    <button class="tb toggle" id="bTilt"><div class="in"><span>📱</span><small>Tilt</small></div></button>
     <button class="tb mode" data-mode="object"><div class="in"><span>📦</span><small>Object</small></div></button>
     <button class="tb" id="bClear"><div class="in"><span>🧹</span><small>Clear</small></div></button>
+    <button class="tb mode" data-mode="erase"><div class="in"><span>🧽</span><small>Erase</small></div></button>
+    <button class="tb toggle" id="bTilt"><div class="in"><span>📱</span><small>Tilt</small></div></button>
     <button class="tb" id="bSettings"><div class="in"><span>⚙️</span><small>Setup</small></div></button>
   </div>
   <div id="flyout"></div>
@@ -208,7 +205,7 @@
 <!-- settings -->
 <div id="settings" class="screen hidden">
   <div id="setBox">
-    <div id="setHead"><h2>⚙️ Setup</h2><button class="pill go" id="setClose">Done</button></div>
+    <div id="setHead"><h2>⚙️ Setup</h2><div style="display:flex;gap:10px"><button class="pill" id="setResetAll">↺ Reset all</button><button class="pill go" id="setClose">Done</button></div></div>
     <div id="setList"></div>
   </div>
 </div>
@@ -242,12 +239,12 @@ const DEFAULTS = {
   millSize: 34, millFriction: 0.6, millMass: 2500,
   maxCreatures: 40, creatureSize: 28, creatureSwim: 60, dryTime: 10,
   fireSpread: 1, woodBurnTime: 3, oilBurnTime: 4, fireBrush: 16, fireSize: 1.4,
-  ropeSpeed: 70, plastSpeed: 300, sandFriction: 0.8,
+  ropeSpeed: 49, plastSpeed: 300, sandFriction: 0.8,
   fuseTime: 5, bombRadius: 42, fireBombGlobs: 26,
   fireFx: 1, fireRes: 3, bgBright: 0.64,
   dprCap: 2, denScale: 1, blobSize: 3.9, showStats: 1,
 };
-const CFG_KEY = 'paperSplash.cfg5';
+const CFG_KEY = 'paperSplash.cfg6';
 const CFG = Object.assign({}, DEFAULTS);
 try {
   const saved = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
@@ -450,7 +447,30 @@ function applyStroke(A, MW, MH, ax, ay, bx, by, rad, mode, frame) {
   }
   return [x0, y0, x1 + 1, y1 + 1];
 }
+function polyFill(pts, MW, MH, fn) {      // scanline fill of a closed polygon [x,y,...] in mask px
+  const n = pts.length / 2; if (n < 3) return;
+  let y0 = 1e9, y1 = -1e9;
+  for (let k = 0; k < n; k++) { y0 = Math.min(y0, pts[2 * k + 1]); y1 = Math.max(y1, pts[2 * k + 1]); }
+  const xs = [];
+  for (let y = Math.max(0, Math.floor(y0)); y <= Math.min(MH - 1, Math.ceil(y1)); y++) {
+    const yc = y + 0.5; xs.length = 0;
+    for (let k = 0; k < n; k++) {
+      const ax = pts[2 * k], ay = pts[2 * k + 1], j = (k + 1) % n, bx = pts[2 * j], by = pts[2 * j + 1];
+      if ((ay <= yc) !== (by <= yc)) xs.push(ax + (yc - ay) / (by - ay) * (bx - ax));
+    }
+    xs.sort((a, b) => a - b);
+    for (let k = 0; k + 1 < xs.length; k += 2) {
+      const xa = Math.max(0, Math.ceil(xs[k] - 0.5)), xb = Math.min(MW - 1, Math.floor(xs[k + 1] - 0.5));
+      for (let x = xa; x <= xb; x++) fn(y * MW + x, x, y);
+    }
+  }
+}
 function applyStrokeAll(A, MW, MH, s, frame) {
+  if (s.mode === 'cutPoly') {
+    const pts = s.pts.map((v, i) => v * (i & 1 ? MH : MW));
+    polyFill(pts, MW, MH, (i, x, y) => { if (!frame || !(x < frame || y < frame || x >= MW - frame || y >= MH - frame)) A.wall[i] = 0; });
+    return;
+  }
   const rad = s.rN * MW, p = s.pts;
   if (p.length === 2) return applyStroke(A, MW, MH, p[0] * MW, p[1] * MH, p[0] * MW, p[1] * MH, rad, s.mode, frame);
   for (let i = 0; i + 3 < p.length; i += 2)
@@ -910,7 +930,7 @@ class World {
     this.windX = F(); this.windY = F();
     this.denF = F(); this.denS = F(); this.heat = F(); this.heatTmp = F(); this.fuel = F();
     this.fireSrc = F(); this.smokeSrc = F(); this.steamSrc = F(); this.flashSrc = F(); this.oilHeat = F();
-    this.burn = new Uint8Array(n); this.evap = new Uint8Array(n); this.smother = new Uint8Array(n);
+    this.burn = new Uint8Array(n); this.evap = new Uint8Array(n); this.smother = new Uint8Array(n); this.woodN = new Int32Array(n);
     this.char = new Float32Array(n).fill(1); this.charList = [];
     this.solid = new Uint8Array(n); this.type = new Uint8Array(n);
     this.validU = new Uint8Array(n); this.validV = new Uint8Array(n);
@@ -950,7 +970,7 @@ class World {
 
   /* ---- walls ---- */
   updateSolidRegion(cx0, cy0, cx1, cy1) {
-    const { NX, NY, h, MW, MH, wall, mat, solid, s, fixU, fixV, fuel, burn } = this;
+    const { NX, NY, h, MW, MH, wall, mat, solid, s, fixU, fixV, fuel, burn, woodN } = this;
     cx0 = Math.max(0, cx0); cy0 = Math.max(0, cy0); cx1 = Math.min(NX - 1, cx1); cy1 = Math.min(NY - 1, cy1);
     const thr = 0.2 * h * h;
     for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
@@ -965,7 +985,7 @@ class World {
         }
         sol = cnt >= thr;
       }
-      solid[c] = sol ? 1 : 0; s[c] = sol ? 0 : 1;
+      solid[c] = sol ? 1 : 0; s[c] = sol ? 0 : 1; woodN[c] = wood;
       const cov = Math.min(1, wood / (h * h) * 1.6);
       fuel[c] = burn[c] ? Math.min(fuel[c], cov) : cov;
       if (!wood) burn[c] = 0;
@@ -1198,6 +1218,15 @@ class World {
           x += gx * push; y += gy * push;
           const vn = vx[i] * gx + vy[i] * gy;
           if (vn < 0) { vx[i] -= vn * gx; vy[i] -= vn * gy; }
+          // never let a drop end up on the other side of a thin wall (it can get squeezed across in one step)
+          const mx = x - ox[i], my = y - oy[i], ml = Math.abs(mx) + Math.abs(my);
+          if (ml > 0.7) {
+            const nS = Math.ceil(ml);
+            for (let k = 1; k <= nS; k++) {
+              const qx = ox[i] + mx * k / nS, qy = oy[i] + my * k / nS;
+              if (sdf[(qy | 0) * MW + (qx | 0)] < -0.3) { x = ox[i]; y = oy[i]; vx[i] *= 0.3; vy[i] *= 0.3; break; }
+            }
+          }
           if (pt[i] === 3) {                 // sand grips walls
             const dx = x - ox[i], dy = y - oy[i], dn = dx * gx + dy * gy, tx = dx - dn * gx, ty = dy - dn * gy;
             const k = tx * tx + ty * ty < 0.25 ? 1 : 0.6 * CFG.sandFriction + 0.2;   // static, then kinetic friction
@@ -1657,7 +1686,7 @@ class World {
   }
   stepFire(dt) {
     this.updateEmbers(dt);
-    const { NX, NY, h, heat, heatTmp, burn, fuel, fireSrc, smokeSrc, steamSrc, flashSrc, oilHeat, denW, denF, solid, evap } = this;
+    const { NX, NY, h, heat, heatTmp, burn, fuel, fireSrc, smokeSrc, steamSrc, flashSrc, oilHeat, denW, denF, solid, evap, woodN } = this;
     const n = NX * NY;
     if (this.flashOn) {
       const k = Math.exp(-5 * dt); let any = false;
@@ -1692,7 +1721,7 @@ class World {
     let nBurn = 0, hot = false;
     for (let cy = 1; cy < NY - 1; cy++) for (let cx = 1; cx < NX - 1; cx++) {
       const c = cy * NX + cx, f = fuel[c];
-      if (solid[c] && f <= 0.02) { heat[c] = 0; burn[c] = 0; continue; }   // stone blocks heat
+      if (solid[c] && woodN[c] === 0) { heat[c] = 0; burn[c] = 0; continue; }   // stone blocks heat
       const t = heatTmp[c];
       let nt = t + D * (heatTmp[c - 1] + heatTmp[c + 1] + heatTmp[c - NX] + heatTmp[c + NX] - 4 * t) + R * (heatTmp[c - upOff] - t);
       nt *= cool;
@@ -1714,7 +1743,7 @@ class World {
         if (fuel[c] <= 0) { fuel[c] = 0; burn[c] = 0; this.burnQueue.push(c); }
         if (Math.random() < 2.5 * dt) this.spawnEmber((cx + Math.random()) * h, (cy + Math.random()) * h,
           (Math.random() - 0.5) * 60 * U, (Math.random() - 0.5) * 60 * U, 0.6 + Math.random() * 0.9, 0);
-      } else if (f > 0.005 && !wet && !foamy) {
+      } else if (woodN[c] > 0 && !wet && !foamy) {
         // fire creeps along wood cell by cell; hot air above can also light it
         const nbB = burn[c - 1] | burn[c + 1] | burn[c - NX] | burn[c + NX] | burn[c - NX - 1] | burn[c - NX + 1] | burn[c + NX - 1] | burn[c + NX + 1];
         if ((nbB && Math.random() < spreadP) || (nt > 0.55 && Math.random() < ign)) burn[c] = 1;
@@ -1728,9 +1757,13 @@ class World {
     this.burning = nBurn; this.hot = hot;
     this.burnBodies(dt);
     let k = 0;
-    while (this.burnQueue.length && k++ < 10) {
+    while (this.burnQueue.length && k++ < 12) {
       const c = this.burnQueue.shift();
       this.burnAt(((c % NX) + 0.5) * h, (((c / NX) | 0) + 0.5) * h, h * 1.5);
+      for (const o of [-1, 1, -NX, NX, -NX - 1, -NX + 1, NX - 1, NX + 1]) {     // fire never stops halfway along wood
+        const nc = c + o;
+        if (nc > 0 && nc < n && woodN[nc] > 0 && !burn[nc] && denW[nc] < rest * 0.3 && !this.smother[nc]) burn[nc] = 1;
+      }
     }
   }
   updateGlobs(dt) {
@@ -1985,21 +2018,35 @@ class World {
       if (b.grab) continue;
       let fx = gx * b.mass, fy = gy * b.mass, tq = 0;
       const bnd = b.bnd, c = b.c, s = b.s;
-      // find the waterline by probing just outside the outline
-      let tot = 0, wet = 0, vwx = 0, vwy = 0; const hs = [];
+      // waterline: walk up the water columns just left and right of the object (in the gravity frame),
+      // starting below its bottom. Deck puddles, rain on top or water sheets running down the hull don't count.
+      const rgx = -uy, rgy = ux;                 // "right" axis
+      let bottomH = 1e9, topH = -1e9, minR = 1e9, maxR = -1e9;
       for (let k = 0; k < bnd.length; k += 2) {
-        const lx = bnd[k], ly = bnd[k + 1], rl = Math.hypot(lx, ly) || 1;
-        const rx = lx * c - ly * s, ry = lx * s + ly * c;
-        const qx = b.x + rx + rx / rl * h * 1.2, qy = b.y + ry + ry / rl * h * 1.2, cell = this.cellOf(qx, qy);
-        tot++;
-        if (dens[cell] > rest * 0.4) {
-          wet++; hs.push((b.x + rx) * ux + (b.y + ry) * uy);
-          const gv = this.gridVel(qx, qy); if (gv) { vwx += gv[0]; vwy += gv[1]; }
-        }
+        const wx = b.x + bnd[k] * c - bnd[k + 1] * s, wy = b.y + bnd[k] * s + bnd[k + 1] * c;
+        const hh = wx * ux + wy * uy, rr = wx * rgx + wy * rgy;
+        if (hh < bottomH) bottomH = hh; if (hh > topH) topH = hh;
+        if (rr < minR) minR = rr; if (rr > maxR) maxR = rr;
       }
-      if (wet > 0) {
-        let wl = Infinity;
-        if (wet < tot * 0.85) { hs.sort((p, q) => p - q); wl = hs[Math.min(hs.length - 1, Math.floor(hs.length * 0.92))]; }
+      let wl = 1e9, nWet = 0, vwx = 0, vwy = 0;
+      const colLevel = side => {               // surface height of the pool in one column, or null
+        let hh = bottomH + h * 0.5, cc = this.cellOf(rgx * side + ux * hh, rgy * side + uy * hh);
+        if (dens[cc] < rest * 0.5 || this.solid[cc]) return null;
+        const gv = this.gridVel(rgx * side + ux * hh, rgy * side + uy * hh); if (gv) { vwx += gv[0]; vwy += gv[1]; nWet++; }
+        while (hh < topH + 4 * h) {
+          const nh = hh + h * 0.5;
+          cc = this.cellOf(rgx * side + ux * nh, rgy * side + uy * nh);
+          if (dens[cc] < rest * 0.6 || this.solid[cc]) break;   // thin falling water is not a pool
+          hh = nh;
+        }
+        return hh;
+      };
+      // pools are level: use the lowest reading, so water spilling down one side can't fake a deep pool
+      for (const side of [minR - 2.5 * h, maxR + 2.5 * h, minR - 4 * h, maxR + 4 * h]) { const L = colLevel(side); if (L !== null && L < wl) wl = L; }
+      if (wl === 1e9) for (const side of [minR - 1.3 * h, maxR + 1.3 * h]) { const L = colLevel(side); if (L !== null && L < wl) wl = L; }
+      if (wl === 1e9) wl = -1e9;
+      if (wl > -1e9) {
+        const wet = Math.max(1, nWet);
         const smp = b.smp;
         let subA = 0;
         for (let k = 0; k < smp.length; k += 5) {
@@ -2096,6 +2143,7 @@ class World {
           if (heat[cell] < 1.15) heat[cell] = 1.15;
           if (fireSrc[cell] < 1) fireSrc[cell] = 1;
           if (smokeSrc[cell] < 0.35) smokeSrc[cell] = 0.35;
+          if (st < CFG.woodBurnTime * 0.6) this.igniteBlockNeighbours(b, blk);
           if (st <= 0) {
             st = -1;
             const bi = (blk % BW) * 2, bj = ((blk / BW) | 0) * 2;
@@ -2111,6 +2159,49 @@ class World {
     }
     this.bodyBurning = nb;
     this.fixBodies();
+  }
+  blockHasWood(b, blk) {
+    const BW = Math.ceil(b.W / 2), bi = (blk % BW) * 2, bj = ((blk / BW) | 0) * 2;
+    for (let j = bj; j < Math.min(b.H, bj + 2); j++) for (let i = bi; i < Math.min(b.W, bi + 2); i++) if (b.m[j * b.W + i] === 2) return true;
+    return false;
+  }
+  igniteBlockNeighbours(b, blk) {
+    const BW = Math.ceil(b.W / 2), BH = Math.ceil(b.H / 2), bx = blk % BW, by = (blk / BW) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = bx + dx, ny = by + dy; if (nx < 0 || ny < 0 || nx >= BW || ny >= BH) continue;
+      const nb = ny * BW + nx, st = b.blockBurn[nb];
+      if (st === 0 || (st < 0 && st > -0.9)) {
+        if (!this.blockHasWood(b, nb)) continue;
+        b.blockBurn[nb] = CFG.woodBurnTime * (0.8 + 0.4 * Math.random()); this.charBlock(b, nb);
+      }
+    }
+  }
+  igniteAt(x, y, R) {          // rope flame: lights wood (walls & objects), bombs and plasteline it touches
+    const { NX, NY, h, fuel, burn, denW, restDensity: rest } = this;
+    for (let cy = clamp(((y - R) / h) | 0, 1, NY - 2); cy <= clamp(((y + R) / h) | 0, 1, NY - 2); cy++)
+      for (let cx = clamp(((x - R) / h) | 0, 1, NX - 2); cx <= clamp(((x + R) / h) | 0, 1, NX - 2); cx++) {
+        const c = cy * NX + cx;
+        if (Math.hypot((cx + 0.5) * h - x, (cy + 0.5) * h - y) > R + h * 0.7) continue;
+        if (this.woodN[c] > 0 && !burn[c] && denW[c] < rest * 0.3) burn[c] = 1;
+        if (this.plastCnt[c] > 0) this.triggerPlast(c);
+      }
+    for (const b of this.bodies) {
+      if (!b.hasWood || Math.hypot(b.x - x, b.y - y) > b.R + R) continue;
+      const smp = b.smp;
+      for (let k = 0; k < smp.length; k += 5) {
+        if (!smp[k + 4]) continue;
+        const wx = b.x + smp[k] * b.c - smp[k + 1] * b.s, wy = b.y + smp[k] * b.s + smp[k + 1] * b.c;
+        if (Math.hypot(wx - x, wy - y) > R) continue;
+        const blk = smp[k + 3];
+        if (b.blockBurn[blk] === 0 || (b.blockBurn[blk] < 0 && b.blockBurn[blk] > -0.9)) { b.blockBurn[blk] = CFG.woodBurnTime * (0.8 + 0.4 * Math.random()); this.charBlock(b, blk); }
+      }
+    }
+    const rb = this.bombR();
+    for (const bb of this.bombs) {
+      if (bb.dead || bb.lit) continue;
+      const [tx, ty] = this.bombTip(bb);
+      if (Math.hypot(bb.x - x, bb.y - y) < rb + R || Math.hypot(tx - x, ty - y) < R + rb * 0.5) bb.lit = true;
+    }
   }
   blastBodies(x, y, R, P, destroyWood) {
     for (const b of this.bodies) {
@@ -2270,6 +2361,7 @@ class World {
         nb++;
         const a = s + dt; st[k] = a;
         this.stampHeat(x, y, h * 1.3, 1.0, 0.85);
+        this.igniteAt(x, y, h * 1.4);
         if (a > stepT) { if (k > 0 && st[k - 1] === 0) st[k - 1] = 1e-6; if (k < n - 1 && st[k + 1] === 0) st[k + 1] = 1e-6; }
         if (a > stepT * 3) st[k] = -1;
         if (Math.random() < 6 * dt) this.spawnEmber(x, y, (Math.random() - 0.5) * 80 * U, (Math.random() - 0.5) * 80 * U, 0.2 + Math.random() * 0.3, 2);
@@ -2631,7 +2723,8 @@ class FireFX {
     if (world.wallsVersion !== this.solidVer) {
       this.solidVer = world.wallsVersion;
       const s = this.solBuf, so = world.solid, fu = world.fuel;
-      for (let c = 0; c < n; c++) s[c * 4] = (so[c] && fu[c] <= 0.02) ? 255 : 0;
+      const wn = world.woodN;
+      for (let c = 0; c < n; c++) s[c * 4] = (so[c] && wn[c] === 0) ? 255 : 0;
       gl.bindTexture(gl.TEXTURE_2D, this.solidTex);
       gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, NX, NY, gl.RGBA, gl.UNSIGNED_BYTE, s);
     }
@@ -2989,9 +3082,8 @@ let uiRot = 0;             // degrees, physical orientation of the iPad relative
 function stageArea() {
   const ww = window.innerWidth, wh = window.innerHeight, land = ww >= wh;
   document.body.classList.toggle('land', land); document.body.classList.toggle('port', !land);
-  const r = $('ui').getBoundingClientRect(), m = 8;
-  return land ? { x: r.right + m, y: m, w: ww - r.right - 2 * m, h: wh - 2 * m }
-              : { x: m, y: m, w: ww - 2 * m, h: r.top - 2 * m };
+  const r = $('ui').getBoundingClientRect(), m = 6;
+  return { x: m, y: m, w: ww - 2 * m, h: r.top - 2 * m };
 }
 function screenAspect() { const a = stageArea(); return a.w / a.h; }
 function layout() {
@@ -3082,6 +3174,15 @@ function drawOverlay(time) {
     for (let k = 2; k < o.pts.length; k += 2) octx.lineTo(o.pts[k], o.pts[k + 1]);
     if (o.pts.length === 2) octx.lineTo(o.pts[0] + 0.1, o.pts[1]);
     octx.stroke(); octx.restore();
+  }
+  for (const l of drawingLasso) {
+    if (l.length < 4) continue;
+    octx.save(); octx.lineJoin = 'round';
+    octx.beginPath(); octx.moveTo(l[0], l[1]); for (let k = 2; k < l.length; k += 2) octx.lineTo(l[k], l[k + 1]); octx.closePath();
+    octx.fillStyle = 'rgba(255,210,63,.12)'; octx.fill();
+    octx.lineWidth = 2.2 * world.U; octx.strokeStyle = 'rgba(20,20,30,.85)'; octx.stroke();
+    octx.setLineDash([5 * world.U, 5 * world.U]); octx.lineDashOffset = -time * 30 * world.U; octx.strokeStyle = '#fff'; octx.stroke();
+    octx.restore();
   }
   for (const b of world.bombs) drawBomb(b, time);
   const now = performance.now();
@@ -3267,7 +3368,7 @@ const OBJ_CHIPS = [
   ['🧱', 'Block', 1, 'Tap to drop a stone block – it sinks'],
   ['🪵', 'Wood', 2, 'Draw a wooden thing – a boat floats!'],
   ['🪨', 'Stone', 3, 'Draw a stone thing – it falls and sinks'],
-  ['✂️', '→Object', 4, 'Paint over walls to cut them loose as objects'],
+  ['✂️', 'Cut', 4, 'Draw a loop around walls to cut them out as an object ✂️'],
 ];
 function buildFlyout() {
   flyout.innerHTML = '';
@@ -3349,7 +3450,7 @@ function texBox(W, H) {
   };
 }
 function dropBox(p, stone) {
-  const S = Math.round([12, 18, 26][tool.objSize] * world.U), x0 = Math.round(p.x - S / 2), y0 = Math.round(p.y - S / 2);
+  const S = Math.round([16, 24, 34][tool.objSize] * world.U), x0 = Math.round(p.x - S / 2), y0 = Math.round(p.y - S / 2);
   const m = new Uint8Array(S * S).fill(stone ? 1 : 2);
   if (!world.createBody(x0, y0, S, S, m, texBox(S, S))) hint('Too many objects!');
 }
@@ -3402,7 +3503,28 @@ function paintPlastTo(st, p) {
   st.cursor = nc;
   if (box) renderBG(box[0], box[1], box[2], box[3]);
 }
-const drawingObjs = new Set(), drawingRopes = new Set();
+const drawingObjs = new Set(), drawingRopes = new Set(), drawingLasso = new Set();
+function finishLasso(pts) {
+  const MW = world.MW, MH = world.MH, fr = world.frame;
+  if (pts.length < 16) { hint('Draw a loop around the walls you want to cut out ✂️'); return; }
+  const sel = new Uint8Array(MW * MH);
+  let x0 = MW, y0 = MH, x1 = -1, y1 = -1, n = 0;
+  polyFill(pts, MW, MH, (i, x, y) => {
+    if (!world.wall[i] || x < fr || y < fr || x >= MW - fr || y >= MH - fr) return;
+    sel[i] = world.mat[i] === 2 ? 2 : 1; n++;
+    if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y;
+  });
+  if (n < 12) { hint('No walls inside the loop – draw it around a wall ✂️'); return; }
+  const W = x1 - x0 + 1, H = y1 - y0 + 1, m = new Uint8Array(W * H);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) m[(y - y0) * W + x - x0] = sel[y * MW + x];
+  if (!world.createBody(x0, y0, W, H, m, texFromBG)) { hint('Too many objects!'); return; }
+  const stroke = { mode: 'cutPoly', pts: pts.map((v, i) => v / (i & 1 ? MH : MW)) };
+  userStrokes.push(stroke);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (sel[y * MW + x]) world.wall[y * MW + x] = 0;
+  const box = [x0 - 1, y0 - 1, x1 + 2, y1 + 2];
+  world.refreshWalls(box);
+  renderBG(box[0], box[1], box[2], box[3]);
+}
 
 glc.addEventListener('pointerdown', e => {
   if (!world) return;
@@ -3428,6 +3550,7 @@ glc.addEventListener('pointerdown', e => {
         st.grab = { b, lx: dx * b.c + dy * b.s, ly: -dx * b.s + dy * b.c, tx: p.x, ty: p.y };
         b.grab = true; world.grabs.push(st.grab);
       } else if (tool.obj <= 1) dropBox(p, tool.obj === 1);
+      else if (tool.obj === 4) { st.lasso = [p.x, p.y]; drawingLasso.add(st.lasso); }
       else {
         st.obj = { kind: tool.obj, rad: [CFG.wallS, CFG.wallM, CFG.wallL][tool.objSize] * U * (tool.obj === 4 ? 1.6 : 1.4), pts: [p.x, p.y] };
         drawingObjs.add(st.obj);
@@ -3503,6 +3626,7 @@ glc.addEventListener('pointermove', e => {
     if (st.brush.erase) { const eb = world.erasePlast(p.x, p.y, st.brush.R); if (eb) renderBG(eb[0], eb[1], eb[2], eb[3]); }
   } else if (st.torch) { st.torch.x = p.x; st.torch.y = p.y; }
   else if (st.grab) { st.grab.tx = p.x; st.grab.ty = p.y; }
+  else if (st.lasso) { const l = st.lasso, n = l.length; if (Math.hypot(p.x - l[n - 2], p.y - l[n - 1]) > 2.5) l.push(p.x, p.y); }
   else if (st.obj) {
     const o = st.obj.pts, n = o.length;
     if (Math.hypot(p.x - o[n - 2], p.y - o[n - 1]) > 2) o.push(p.x, p.y);
@@ -3537,6 +3661,7 @@ function endPointer(e) {
     if (st.target && st.target.held) st.target.held = false;
     if (st.grab) { st.grab.b.grab = false; const i = world.grabs.indexOf(st.grab); if (i >= 0) world.grabs.splice(i, 1); }
     if (st.obj) { drawingObjs.delete(st.obj); finishObject(st.obj); }
+    if (st.lasso) { drawingLasso.delete(st.lasso); finishLasso(st.lasso); }
     if (st.plastTap && !st.moved) { const c = world.nearPlast(st.start.x, st.start.y, 3); if (c >= 0) world.triggerPlast(c); }
     if (st.rope) { drawingRopes.delete(st.rope); if (!world.addRope(st.rope)) hint('Draw a longer rope 🪢'); }
     if (st.bombTap && !st.moved) world.explode(st.target);
@@ -3886,21 +4011,26 @@ function buildSettings() {
     if (s.g) { const h = document.createElement('h3'); h.textContent = s.g; box.appendChild(h); continue; }
     const row = document.createElement('div'); row.className = 'srow';
     const lab = document.createElement('label'); lab.textContent = s.l; row.appendChild(lab);
+    const rst = document.createElement('button'); rst.className = 'rst'; rst.textContent = '↺'; rst.title = 'Reset to default';
     if (s.toggle) {
       const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!CFG[s.k];
       cb.addEventListener('change', () => { CFG[s.k] = cb.checked ? 1 : 0; applyLive(); });
-      row.appendChild(cb);
+      rst.addEventListener('click', () => { CFG[s.k] = DEFAULTS[s.k]; cb.checked = !!CFG[s.k]; applyLive(); });
+      row.appendChild(cb); row.appendChild(rst);
     } else {
       const val = document.createElement('span'); val.textContent = fmt(CFG[s.k], s.step); row.appendChild(val);
+      row.appendChild(rst);
       const inp = document.createElement('input'); inp.type = 'range';
       inp.min = s.min; inp.max = s.max; inp.step = s.step; inp.value = CFG[s.k];
-      inp.addEventListener('input', () => {
-        CFG[s.k] = +inp.value; val.textContent = fmt(CFG[s.k], s.step);
+      const changed = () => {
+        val.textContent = fmt(CFG[s.k], s.step);
         if (s.rebuild) setPending = Math.max(setPending, s.rebuild);
         if (s.layout) setLayout = true;
         if (s.wind) setWind = true;
         applyLive();
-      });
+      };
+      inp.addEventListener('input', () => { CFG[s.k] = +inp.value; changed(); });
+      rst.addEventListener('click', () => { if (CFG[s.k] === DEFAULTS[s.k]) return; CFG[s.k] = DEFAULTS[s.k]; inp.value = CFG[s.k]; changed(); });
       row.appendChild(inp);
       if (s.rebuild) { const n = document.createElement('div'); n.className = 'note'; n.textContent = 'applied when you press Done'; row.appendChild(n); }
     }
@@ -3908,12 +4038,6 @@ function buildSettings() {
   }
   const btns = document.createElement('div'); btns.className = 'setBtns';
   const mk = (t, fn) => { const b = document.createElement('button'); b.className = 'pill'; b.textContent = t; b.addEventListener('click', fn); btns.appendChild(b); };
-  mk('↺ Default settings', () => {
-    const changedRes = CFG.maskLong !== DEFAULTS.maskLong, changedGrid = CFG.cell !== DEFAULTS.cell || CFG.maxParticles !== DEFAULTS.maxParticles;
-    Object.assign(CFG, DEFAULTS);
-    setPending = Math.max(setPending, changedRes ? 2 : (changedGrid ? 1 : 0)); setLayout = true; setWind = true;
-    applyLive(); buildSettings();
-  });
   mk('🧪 Test: 100 000 drops', () => {
     CFG.maxParticles = 100000; CFG.maskLong = 1200; CFG.separateIters = 1;
     setPending = 2; buildSettings(); hint('Press Done, then pour lots of water 💧', 2500);
@@ -3928,6 +4052,12 @@ function buildSettings() {
 }
 function applyLive() { $('stats').style.display = CFG.showStats ? '' : 'none'; }
 $('bSettings').addEventListener('click', () => { setPending = 0; setLayout = false; setWind = false; buildSettings(); $('settings').classList.remove('hidden'); });
+$('setResetAll').addEventListener('click', () => {
+  const changedRes = CFG.maskLong !== DEFAULTS.maskLong, changedGrid = CFG.cell !== DEFAULTS.cell || CFG.maxParticles !== DEFAULTS.maxParticles;
+  Object.assign(CFG, DEFAULTS);
+  setPending = Math.max(setPending, changedRes ? 2 : (changedGrid ? 1 : 0)); setLayout = true; setWind = true;
+  applyLive(); buildSettings(); hint('All settings reset', 1200);
+});
 $('setClose').addEventListener('click', () => {
   $('settings').classList.add('hidden');
   saveCfg();
