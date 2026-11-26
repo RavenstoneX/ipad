@@ -4316,7 +4316,12 @@ function netNoPeer() {
   if (typeof Peer === 'undefined') { netErr('Could not load the network library. Check the internet connection and try again.'); return true; }
   return false;
 }
-function netError(e) { console.warn(e); netErr('Connection problem: ' + (e && e.type || 'unknown') + '. Check Wi-Fi and try again.'); }
+const NET_RETRY = new Set(['network', 'server-error', 'socket-error', 'socket-closed', 'disconnected', 'webrtc']);
+function netError(e) {
+  console.warn(e);
+  const why = (e && e.type || 'unknown') + (e && e.message ? ' – ' + String(e.message).slice(0, 80) : '');
+  netErr('Connection problem: ' + why + '. Check Wi-Fi and try again.');
+}
 
 /* ---------------- host ---------------- */
 let netHostTry = 0;
@@ -4342,6 +4347,10 @@ function netHost(retry) {
       netHostTry++; if (netHostTry === 6) { try { localStorage.removeItem('paperSplash.code'); } catch (_) {} }
       netErr(netHostTry < 6 ? 'Reserving room code ' + netMyCode() + '…' : 'Opening the room…');
       setTimeout(() => { if (NET.role === 'host') netHost(true); }, netHostTry < 6 ? 2500 : 0);
+      return;
+    }
+    if (NET.code && NET_RETRY.has(e.type)) {          // room is open: friends already playing keep playing, we just re-attach to the server
+      setTimeout(() => { try { if (NET.peer === peer && !peer.destroyed && peer.disconnected) peer.reconnect(); } catch (_) {} }, 1500);
       return;
     }
     netError(e);
@@ -4545,25 +4554,43 @@ function netSetQuality(q) {
 function netSendPerm() { for (const c of NET.conns.values()) if (c.open) c.send({ t: 'perm', clear: NET.allowClear, paused: NET.paused }); }
 
 /* ---------------- guest ---------------- */
-function netJoin(code) {
+function netJoin(code, attempt = 0) {
   if (netNoPeer()) return;
   code = String(code || '').toUpperCase().replace(/[^A-Z]/g, '');
   if (code.length !== 3) { netErr('Enter the 3-letter code shown on the other iPad.'); return; }
-  NET.role = 'joining'; netErr('Joining ' + code + '…');
+  if (NET.peer) { try { NET.peer.destroy(); } catch (_) {} NET.peer = null; }
+  NET.role = 'joining'; netErr('Joining ' + code + '…' + (attempt ? ' (try ' + (attempt + 1) + ')' : ''));
+  clearTimeout(NET.joinTimer);
+  NET.joinTimer = setTimeout(() => {               // no answer from the host in time: try again with a fresh connection
+    if (NET.role === 'joining' && NET.peer === peer) retry({ type: 'timeout' });
+  }, 12000);
+  const retry = e => {
+    if (attempt < 4) {
+      try { peer.destroy(); } catch (_) {}
+      if (NET.peer === peer) NET.peer = null;
+      netErr('Connection hiccup (' + e.type + '), trying again…');
+      setTimeout(() => { if (NET.role === 'joining') netJoin(code, attempt + 1); }, 1200 + attempt * 1300);
+    } else { netLeave(); netError(e); netOpen(); }
+  };
   const peer = NET.peer = window.PAPER_SPLASH_PEER ? new Peer(window.PAPER_SPLASH_PEER) : new Peer();   // test hook: own signaling server
   peer.on('open', () => {
     NET.code = code;
     const c = NET.hostConn = peer.connect(NET_PREFIX + code, { reliable: true, label: 'c' });
     c.on('open', () => c.send({ t: 'hello', name: NET.name }));
     c.on('data', netGuestRecv);
-    c.on('close', () => { if (NET.role === 'guest' || NET.role === 'joining') { netLeave(); netErr('The room was closed.'); netOpen(); } });
+    c.on('close', () => { if (NET.hostConn === c && (NET.role === 'guest' || NET.role === 'joining')) { netLeave(); netErr('The room was closed.'); netOpen(); } });
   });
   peer.on('call', call => {
     NET.call = call; call.answer();
     call.on('stream', s => { const v = $('netVideo'); v.srcObject = s; v.play().catch(() => {}); });
   });
   peer.on('error', e => {
-    if (e.type === 'peer-unavailable') { netLeave(); netErr('No room found with code ' + code + '.'); netOpen(); }
+    if (NET.peer !== peer) return;
+    if (e.type === 'peer-unavailable') { clearTimeout(NET.joinTimer); netLeave(); netErr('No room found with code ' + code + '.'); netOpen(); }
+    else if (NET.role === 'joining' && (NET_RETRY.has(e.type))) retry(e);
+    else if (NET.role === 'guest' && NET_RETRY.has(e.type)) {   // already playing: the link to the host is direct, only re-attach to the server
+      setTimeout(() => { try { if (NET.peer === peer && !peer.destroyed && peer.disconnected) peer.reconnect(); } catch (_) {} }, 1500);
+    }
     else netError(e);
   });
   peer.on('disconnected', () => { try { if (NET.peer === peer && !peer.destroyed) peer.reconnect(); } catch (_) {} });
@@ -4572,6 +4599,7 @@ function netGuestRecv(m) {
   if (!m || typeof m !== 'object') return;
   switch (m.t) {
     case 'welcome':
+      clearTimeout(NET.joinTimer);
       NET.role = 'guest'; NET.myN = m.n | 0; NET.myC = m.c | 0; NET.aspect = +m.a || 1.5;
       for (const id of [...pointers.keys()]) ptrEnd(id);       // finish any local strokes first
       document.body.classList.add('guest'); layout(); netErr(''); netUI(); keepAwake();
@@ -4634,6 +4662,7 @@ function guestFrame(t) {
 /* ---------------- shared ---------------- */
 function netLeave() {
   const p = NET.peer, wasHost = NET.role === 'host';
+  clearTimeout(NET.joinTimer);
   if (wasHost) {
     for (const pl of NET.players) { for (const i of [...pl.ptrs.keys()]) if (pl.n) netRemoteUp(pl, i); try { pl.call && pl.call.close(); } catch (_) {} }
   }
