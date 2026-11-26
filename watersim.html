@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Paper Splash">
+<title>Paper Splash</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #1d2230;
+    font-family: -apple-system, "SF Pro Rounded", system-ui, sans-serif; color: #fff;
+    touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+    overscroll-behavior: none;
+  }
+  #stage { position: fixed; left: 0; top: 0; }
+  #gl, #ov { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+  #ov { pointer-events: none; }
+
+  #toolbar {
+    position: fixed; z-index: 10; display: flex; gap: 10px; padding: 10px;
+    background: rgba(25, 30, 45, .55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-radius: 28px; box-shadow: 0 6px 24px rgba(0,0,0,.3);
+  }
+  @media (orientation: landscape) {
+    #toolbar { left: calc(env(safe-area-inset-left) + 12px); top: 50%; transform: translateY(-50%); flex-direction: column; }
+  }
+  @media (orientation: portrait) {
+    #toolbar { bottom: calc(env(safe-area-inset-bottom) + 12px); left: 50%; transform: translateX(-50%); flex-direction: row; }
+  }
+  .sep { width: 100%; height: 2px; background: rgba(255,255,255,.15); border-radius: 1px; }
+  @media (orientation: portrait) { .sep { width: 2px; height: auto; } }
+  .tb {
+    width: 62px; height: 62px; border-radius: 20px; border: none; padding: 0;
+    background: rgba(255,255,255,.92); color: #223; font-size: 30px; line-height: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 3px 0 rgba(0,0,0,.25); transition: transform .08s, background .15s;
+    font-family: inherit; cursor: pointer;
+  }
+  .tb small { font-size: 9.5px; font-weight: 700; margin-top: 3px; letter-spacing: .3px; text-transform: uppercase; color: #556; }
+  .tb:active { transform: scale(.92); }
+  .tb.on { background: #ffd23f; box-shadow: 0 3px 0 #b8901a, 0 0 0 3px #fff; }
+  .tb.on small { color: #6a4c00; }
+  .tb.toggle.on { background: #5be37d; box-shadow: 0 3px 0 #2b9a48, 0 0 0 3px #fff; }
+  .tb.toggle.on small { color: #10551f; }
+
+  #hint {
+    position: fixed; z-index: 11; top: calc(env(safe-area-inset-top) + 36px); left: 50%;
+    transform: translateX(-50%); padding: 10px 20px; border-radius: 22px;
+    background: rgba(25,30,45,.8); font-size: 17px; font-weight: 600; pointer-events: none;
+    opacity: 0; transition: opacity .35s; white-space: nowrap;
+  }
+  #hint.show { opacity: 1; }
+  #stats {
+    position: fixed; z-index: 11; right: calc(env(safe-area-inset-right) + 10px); top: calc(env(safe-area-inset-top) + 8px);
+    font: 11px ui-monospace, Menlo, monospace; color: rgba(0,0,0,.45); pointer-events: none;
+    background: rgba(255,255,255,.5); padding: 3px 7px; border-radius: 8px;
+  }
+
+  .screen { position: fixed; inset: 0; z-index: 20; background: #000; }
+  .hidden { display: none !important; }
+  #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #camFrame { position: absolute; inset: 18px; border: 3px dashed rgba(255,255,255,.7); border-radius: 18px; pointer-events: none; }
+  #camMsg {
+    position: absolute; top: calc(env(safe-area-inset-top) + 20px); left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,.55); padding: 10px 18px; border-radius: 18px; font-size: 17px; font-weight: 600; text-align: center; max-width: 80%;
+  }
+  .camBar { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 24px); display: flex; justify-content: center; align-items: center; gap: 40px; }
+  #shutter { width: 88px; height: 88px; border-radius: 50%; border: 6px solid #fff; background: #ff5a5a; box-shadow: 0 0 0 4px rgba(0,0,0,.35); }
+  #shutter:active { transform: scale(.92); }
+  .pill {
+    min-width: 64px; height: 56px; border-radius: 28px; border: none; padding: 0 20px;
+    background: rgba(255,255,255,.9); color: #223; font-size: 18px; font-weight: 700; font-family: inherit;
+    box-shadow: 0 3px 0 rgba(0,0,0,.3);
+  }
+  .pill:active { transform: scale(.94); }
+  .pill.go { background: #5be37d; color: #0c3d18; font-size: 22px; padding: 0 30px; }
+
+  #review { background: #1d2230; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #reviewCanvas { max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+  #reviewWrap { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; padding: 14px; padding-top: calc(env(safe-area-inset-top) + 14px); }
+  #reviewPanel {
+    width: 100%; display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center; justify-content: center;
+    padding: 12px 18px calc(env(safe-area-inset-bottom) + 14px); background: rgba(0,0,0,.25);
+  }
+  .slider { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; color: #cfd6ea; }
+  .slider input { width: 190px; height: 32px; accent-color: #ffd23f; }
+  .legend { font-size: 13px; color: #cfd6ea; }
+  .legend b { color: #ff6b6b; }
+  #nogl { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px; font-size: 20px; }
+</style>
+</head>
+<body>
+
+<div id="stage"><canvas id="gl"></canvas><canvas id="ov"></canvas></div>
+
+<div id="toolbar">
+  <button class="tb" id="bPhoto"><span>📷</span><small>Photo</small></button>
+  <div class="sep"></div>
+  <button class="tb mode on" data-mode="water"><span>💧</span><small>Water</small></button>
+  <button class="tb mode" data-mode="pipe"><span>🚰</span><small>Pipe</small></button>
+  <button class="tb mode" data-mode="sewer"><span>🕳️</span><small>Sewer</small></button>
+  <button class="tb mode" data-mode="erase"><span>🧽</span><small>Erase</small></button>
+  <div class="sep"></div>
+  <button class="tb toggle" id="bTilt"><span>📱</span><small>Tilt</small></button>
+  <button class="tb" id="bColor"><span>🎨</span><small>Color</small></button>
+  <button class="tb" id="bClear"><span>🧹</span><small>Clear</small></button>
+</div>
+<div id="hint"></div>
+<div id="stats"></div>
+
+<div id="camera" class="screen hidden">
+  <video id="video" playsinline muted autoplay></video>
+  <div id="camFrame"></div>
+  <div id="camMsg">Point the camera at your drawing</div>
+  <div class="camBar">
+    <button class="pill" id="camCancel">✕</button>
+    <button id="shutter" aria-label="Take picture"></button>
+    <button class="pill" id="camGallery">🖼️</button>
+  </div>
+</div>
+
+<div id="review" class="screen hidden">
+  <div id="reviewWrap"><canvas id="reviewCanvas"></canvas></div>
+  <div id="reviewPanel">
+    <button class="pill" id="rvRetake">↩ Retake</button>
+    <div class="legend"><b>Red</b> = walls for the water</div>
+    <label class="slider">Pencil sensitivity<input type="range" id="sSens" min="0" max="100" value="55"></label>
+    <label class="slider">Wall thickness<input type="range" id="sThick" min="0" max="5" value="1"></label>
+    <label class="slider">Ignore small dots<input type="range" id="sDots" min="0" max="300" value="40"></label>
+    <button class="pill go" id="rvPlay">✓ Play!</button>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden">
+
+<script>
+'use strict';
+/* =====================================================================
+   Paper Splash — photo a pencil drawing, play with particle water on it.
+   - Walls: Sauvola local threshold (integral images, O(1)/px)
+   - Water: FLIP (PIC/FLIP hybrid) on a MAC grid + particle separation,
+            sub-pixel SDF collisions against the drawn walls
+   - Render: WebGL2 additive metaball splats -> refractive water shader
+   ===================================================================== */
+
+const CFG = {
+  maskLong: 800,          // sim/mask resolution (long side, px)
+  cell: 5,                // FLIP grid cell size in mask px
+  maxParticles: 20000,
+  gravity: 1100,          // mask px / s^2
+  flipRatio: 0.9,
+  pressureIters: 32,
+  overRelax: 1.9,
+  separateIters: 2,
+  driftK: 0.35,           // density drift compensation strength
+  vmax: 1500,
+  pipeSpeed: 280,
+  pipeWidth: 15,
+  sewerRadius: 17,
+  brushRadius: 24,
+  simDt: 1 / 60,
+};
+
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+
+/* ---------------------------------------------------------------------
+   Distance transform (Felzenszwalb–Huttenlocher), exact Euclidean
+   --------------------------------------------------------------------- */
+const EDT_INF = 1e20;
+function edt1d(f, n, d, v, z) {
+  let k = 0; v[0] = 0; z[0] = -EDT_INF; z[1] = EDT_INF;
+  for (let q = 1; q < n; q++) {
+    let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+    while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+    k++; v[k] = q; z[k] = s; z[k + 1] = EDT_INF;
+  }
+  k = 0;
+  for (let q = 0; q < n; q++) {
+    while (z[k + 1] < q) k++;
+    const dq = q - v[k];
+    d[q] = dq * dq + f[v[k]];
+  }
+}
+// returns squared distance to nearest pixel where feature(i) is true
+function edtSq(W, H, isFeature) {
+  const out = new Float32Array(W * H);
+  const n = Math.max(W, H);
+  const f = new Float64Array(n), d = new Float64Array(n), v = new Int32Array(n), z = new Float64Array(n + 1);
+  for (let x = 0; x < W; x++) {
+    for (let y = 0; y < H; y++) f[y] = isFeature(y * W + x) ? 0 : EDT_INF;
+    edt1d(f, H, d, v, z);
+    for (let y = 0; y < H; y++) out[y * W + x] = d[y];
+  }
+  for (let y = 0; y < H; y++) {
+    const row = y * W;
+    for (let x = 0; x < W; x++) f[x] = out[row + x];
+    edt1d(f, W, d, v, z);
+    for (let x = 0; x < W; x++) out[row + x] = d[x];
+  }
+  return out;
+}
+// signed distance: >0 in free space, <0 inside walls (boundary at 0)
+function computeSDF(wall, W, H) {
+  const dOut = edtSq(W, H, i => wall[i] === 1);
+  const dIn = edtSq(W, H, i => wall[i] === 0);
+  const sdf = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    sdf[i] = wall[i] ? -(Math.sqrt(dIn[i]) - 0.5) : (Math.sqrt(dOut[i]) - 0.5);
+  }
+  return sdf;
+}
+
+/* ---------------------------------------------------------------------
+   Image pipeline: crop -> gray -> Sauvola -> cleanup -> dilate
+   --------------------------------------------------------------------- */
+function coverCrop(sw, sh, aspect) {
+  if (sw / sh > aspect) { const w = sh * aspect; return { x: (sw - w) / 2, y: 0, w, h: sh }; }
+  const h = sw / aspect; return { x: 0, y: (sh - h) / 2, w: sw, h };
+}
+function domainSize(aspect) {
+  const L = CFG.maskLong, c = CFG.cell;
+  let W, H;
+  if (aspect >= 1) { W = L; H = L / aspect; } else { H = L; W = L * aspect; }
+  return { W: Math.round(W / c) * c, H: Math.round(H / c) * c };
+}
+
+// source: drawable (canvas/img/video/bitmap) with its pixel size
+function prepareCapture(src, sw, sh, aspect) {
+  const { W: MW, H: MH } = domainSize(aspect);
+  const crop = coverCrop(sw, sh, aspect);
+
+  // mask-resolution grayscale
+  const c1 = document.createElement('canvas'); c1.width = MW; c1.height = MH;
+  const x1 = c1.getContext('2d', { willReadFrequently: true });
+  x1.imageSmoothingQuality = 'high';
+  x1.drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, MW, MH);
+  const px = x1.getImageData(0, 0, MW, MH).data;
+  const N = MW * MH;
+  const gray = new Float32Array(N);
+  for (let i = 0, j = 0; i < N; i++, j += 4) gray[i] = 0.299 * px[j] + 0.587 * px[j + 1] + 0.114 * px[j + 2];
+
+  // integral images (sum, sum of squares)
+  const IW = MW + 1;
+  const S = new Float64Array(IW * (MH + 1)), S2 = new Float64Array(IW * (MH + 1));
+  for (let y = 0; y < MH; y++) {
+    let rs = 0, rs2 = 0;
+    for (let x = 0; x < MW; x++) {
+      const g = gray[y * MW + x]; rs += g; rs2 += g * g;
+      const o = (y + 1) * IW + x + 1;
+      S[o] = S[o - IW] + rs; S2[o] = S2[o - IW] + rs2;
+    }
+  }
+  const rad = Math.max(8, Math.round(Math.max(MW, MH) / 34));
+  const mean = new Float32Array(N), std = new Float32Array(N);
+  for (let y = 0; y < MH; y++) {
+    const y0 = Math.max(0, y - rad), y1 = Math.min(MH, y + rad + 1);
+    for (let x = 0; x < MW; x++) {
+      const x0 = Math.max(0, x - rad), x1b = Math.min(MW, x + rad + 1);
+      const a = y0 * IW + x0, b = y0 * IW + x1b, c = y1 * IW + x0, d = y1 * IW + x1b;
+      const cnt = (x1b - x0) * (y1 - y0);
+      const m = (S[d] - S[b] - S[c] + S[a]) / cnt;
+      const v = (S2[d] - S2[b] - S2[c] + S2[a]) / cnt - m * m;
+      mean[y * MW + x] = m; std[y * MW + x] = Math.sqrt(Math.max(0, v));
+    }
+  }
+
+  // illumination estimate from paper pixels only (ink excluded) -> no halos around lines
+  const P = new Float64Array(IW * (MH + 1)), PC = new Float64Array(IW * (MH + 1));
+  for (let y = 0; y < MH; y++) {
+    let rs = 0, rc = 0;
+    for (let x = 0; x < MW; x++) {
+      const i = y * MW + x, g = gray[i];
+      if (g > mean[i] - 0.5 * std[i] - 4) { rs += g; rc++; }
+      const o = (y + 1) * IW + x + 1;
+      P[o] = P[o - IW] + rs; PC[o] = PC[o - IW] + rc;
+    }
+  }
+  const prad = rad * 2, paper = new Float32Array(N);
+  for (let y = 0; y < MH; y++) {
+    const y0 = Math.max(0, y - prad), y1 = Math.min(MH, y + prad + 1);
+    for (let x = 0; x < MW; x++) {
+      const x0 = Math.max(0, x - prad), x1b = Math.min(MW, x + prad + 1);
+      const a = y0 * IW + x0, b = y0 * IW + x1b, c = y1 * IW + x0, d = y1 * IW + x1b;
+      const cnt = PC[d] - PC[b] - PC[c] + PC[a];
+      paper[y * MW + x] = cnt > 20 ? (P[d] - P[b] - P[c] + P[a]) / cnt : mean[y * MW + x];
+    }
+  }
+
+  // high-res background with flattened illumination ("scanned paper" look)
+  const long = Math.min(2048, Math.max(crop.w, crop.h));
+  const BW = Math.round(aspect >= 1 ? long : long * aspect), BH = Math.round(aspect >= 1 ? long / aspect : long);
+  const bg = document.createElement('canvas'); bg.width = BW; bg.height = BH;
+  const bx = bg.getContext('2d', { willReadFrequently: true });
+  bx.imageSmoothingQuality = 'high';
+  bx.drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, BW, BH);
+  const bimg = bx.getImageData(0, 0, BW, BH), bd = bimg.data;
+  const sx = MW / BW, sy = MH / BH;
+  for (let y = 0; y < BH; y++) {
+    const fy = clamp((y + 0.5) * sy - 0.5, 0, MH - 1.001), iy = fy | 0, ty = fy - iy;
+    for (let x = 0; x < BW; x++) {
+      const fx = clamp((x + 0.5) * sx - 0.5, 0, MW - 1.001), ix = fx | 0, tx = fx - ix;
+      const o = iy * MW + ix;
+      const m = (paper[o] * (1 - tx) + paper[o + 1] * tx) * (1 - ty) + (paper[o + MW] * (1 - tx) + paper[o + MW + 1] * tx) * ty;
+      const f = 246 / Math.max(m, 25);
+      const j = (y * BW + x) * 4;
+      for (let k = 0; k < 3; k++) {
+        let c = bd[j + k] * f;
+        c = 255 - (255 - c) * 1.25;          // a bit more contrast for pencil
+        bd[j + k] = c < 0 ? 0 : (c > 255 ? 255 : c);
+      }
+    }
+  }
+  bx.putImageData(bimg, 0, 0);
+  return { MW, MH, gray, mean, std, bg };
+}
+
+// params: sens 0..100, thick 0..5, dots (min component area)
+function computeWalls(cap, sens, thick, dots) {
+  const { MW, MH, gray, mean, std } = cap, N = MW * MH;
+  const k = 0.42 - (sens / 100) * 0.38;        // Sauvola k: lower = more sensitive
+  const R = 128;
+  const minDiff = 14 - sens * 0.1;
+  let m = new Uint8Array(N);
+  for (let i = 0; i < N; i++) {
+    const mu = mean[i];
+    const T = mu * (1 + k * (std[i] / R - 1));
+    m[i] = (gray[i] < T && gray[i] < mu - minDiff) ? 1 : 0;
+  }
+  // remove small specks (8-connected components)
+  if (dots > 0) {
+    const lab = new Int32Array(N), stack = new Int32Array(N), members = new Int32Array(N);
+    let id = 0;
+    for (let s = 0; s < N; s++) {
+      if (!m[s] || lab[s]) continue;
+      id++; let sp = 0, cnt = 0; stack[sp++] = s; lab[s] = id;
+      while (sp) {
+        const p = stack[--sp]; members[cnt++] = p;
+        const x = p % MW, y = (p / MW) | 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          const yy = y + dy; if (yy < 0 || yy >= MH) continue;
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = x + dx; if (xx < 0 || xx >= MW) continue;
+            const q = yy * MW + xx;
+            if (m[q] && !lab[q]) { lab[q] = id; stack[sp++] = q; }
+          }
+        }
+      }
+      if (cnt < dots) for (let i = 0; i < cnt; i++) m[members[i]] = 0;
+    }
+  }
+  // circular dilation via distance transform
+  if (thick > 0) {
+    const d = edtSq(MW, MH, i => m[i] === 1);
+    const t2 = (thick + 0.5) * (thick + 0.5);
+    const out = new Uint8Array(N);
+    for (let i = 0; i < N; i++) out[i] = d[i] <= t2 ? 1 : 0;
+    m = out;
+  }
+  return m;
+}
+
+function maskCanvas(mask, W, H, r, g, b, a) {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d'); const img = x.createImageData(W, H), d = img.data;
+  for (let i = 0, j = 0; i < W * H; i++, j += 4) if (mask[i]) { d[j] = r; d[j + 1] = g; d[j + 2] = b; d[j + 3] = a; }
+  x.putImageData(img, 0, 0); return c;
+}
+
+/* ---------------------------------------------------------------------
+   FLIP water world
+   --------------------------------------------------------------------- */
+const FLUID = 0, AIR = 1, SOLID = 2;
+
+class World {
+  constructor(MW, MH, wallIn) {
+    const h = CFG.cell;
+    this.MW = MW; this.MH = MH; this.h = h; this.inv = 1 / h; this.r = 0.3 * h;
+    const wall = new Uint8Array(wallIn);
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++)
+      if (x < h || y < h || x >= MW - h || y >= MH - h) wall[y * MW + x] = 1;
+    this.wall = wall;
+    this.sdf = computeSDF(wall, MW, MH);
+
+    const NX = this.NX = Math.ceil(MW / h), NY = this.NY = Math.ceil(MH / h), n = NX * NY;
+    this.u = new Float32Array(n); this.v = new Float32Array(n);
+    this.du = new Float32Array(n); this.dv = new Float32Array(n);
+    this.prevU = new Float32Array(n); this.prevV = new Float32Array(n);
+    this.s = new Float32Array(n);
+    this.solid = new Uint8Array(n);
+    this.type = new Uint8Array(n);
+    this.validU = new Uint8Array(n); this.validV = new Uint8Array(n);
+    this.fixU = new Uint8Array(n); this.fixV = new Uint8Array(n);
+    this.density = new Float32Array(n);
+    this.fluidList = new Int32Array(n);
+    this.restDensity = (h * h) / (2 * Math.sqrt(3) * this.r * this.r);
+
+    // solid cells: border, or wall coverage >= 20%
+    const thr = 0.2 * h * h;
+    for (let cy = 0; cy < NY; cy++) for (let cx = 0; cx < NX; cx++) {
+      const c = cy * NX + cx;
+      let sol = cx === 0 || cy === 0 || cx === NX - 1 || cy === NY - 1;
+      if (!sol) {
+        let cnt = 0;
+        for (let y = cy * h; y < (cy + 1) * h; y++) for (let x = cx * h; x < (cx + 1) * h; x++)
+          cnt += (x >= MW || y >= MH) ? 1 : wall[y * MW + x];
+        sol = cnt >= thr;
+      }
+      this.solid[c] = sol ? 1 : 0; this.s[c] = sol ? 0 : 1;
+    }
+    for (let cy = 0; cy < NY; cy++) for (let cx = 0; cx < NX; cx++) {
+      const c = cy * NX + cx;
+      this.fixU[c] = (cx === 0 || this.solid[c] || this.solid[c - 1]) ? 1 : 0;
+      this.fixV[c] = (cy === 0 || this.solid[c] || this.solid[c - NX]) ? 1 : 0;
+    }
+
+    // particles (SoA), double-buffered for spatial reordering
+    const P = CFG.maxParticles;
+    this.N = 0;
+    this.px = new Float32Array(P); this.py = new Float32Array(P);
+    this.vx = new Float32Array(P); this.vy = new Float32Array(P);
+    this.tpx = new Float32Array(P); this.tpy = new Float32Array(P);
+    this.tvx = new Float32Array(P); this.tvy = new Float32Array(P);
+    // separation hash
+    this.pSpacing = 2.2 * this.r; this.pInv = 1 / this.pSpacing;
+    this.pNX = Math.ceil(MW * this.pInv) + 1; this.pNY = Math.ceil(MH * this.pInv) + 1;
+    this.cellStart = new Int32Array(this.pNX * this.pNY + 1);
+    this.cellEntries = new Int32Array(P);
+
+    this.pipes = []; this.sewers = [];
+    this.brushes = []; // {x,y,vx,vy,erase}
+    this.stepCount = 0;
+  }
+
+  sdfAt(x, y) {
+    const MW = this.MW, MH = this.MH;
+    const fx = clamp(x - 0.5, 0, MW - 1.001), fy = clamp(y - 0.5, 0, MH - 1.001);
+    const ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy, o = iy * MW + ix, s = this.sdf;
+    return (s[o] * (1 - tx) + s[o + 1] * tx) * (1 - ty) + (s[o + MW] * (1 - tx) + s[o + MW + 1] * tx) * ty;
+  }
+  densityAt(x, y) {
+    const cx = clamp((x * this.inv) | 0, 0, this.NX - 1), cy = clamp((y * this.inv) | 0, 0, this.NY - 1);
+    return this.density[cy * this.NX + cx];
+  }
+  add(x, y, vx, vy) {
+    if (this.N >= CFG.maxParticles) return false;
+    if (this.sdfAt(x, y) < this.r) return false;
+    const i = this.N++;
+    this.px[i] = x; this.py[i] = y; this.vx[i] = vx; this.vy[i] = vy;
+    return true;
+  }
+  removeAt(i) {
+    const l = --this.N;
+    this.px[i] = this.px[l]; this.py[i] = this.py[l]; this.vx[i] = this.vx[l]; this.vy[i] = this.vy[l];
+  }
+  clearWater() { this.N = 0; this.density.fill(0); }
+
+  /* ---- sources & sinks ---- */
+  emit(dt) {
+    const r = this.r, sp = 2 * r, rowH = Math.sqrt(3) * r;
+    for (const p of this.pipes) {
+      const dx = Math.cos(p.a), dy = Math.sin(p.a), nx = -dy, ny = dx;
+      p.acc += CFG.pipeSpeed * dt / rowH;
+      while (p.acc >= 1) {
+        p.acc -= 1; p.row ^= 1;
+        const off = p.acc * rowH + 2;
+        const half = CFG.pipeWidth / 2 - r;
+        for (let t = -half + (p.row ? r : 0); t <= half; t += sp) {
+          const j = (Math.random() - 0.5) * 0.2;
+          this.add(p.x + dx * off + nx * (t + j), p.y + dy * off + ny * (t + j),
+                   dx * CFG.pipeSpeed, dy * CFG.pipeSpeed);
+        }
+      }
+    }
+    // finger brushes (pour / erase)
+    for (const b of this.brushes) {
+      const R = CFG.brushRadius, R2 = R * R;
+      if (b.erase) {
+        for (let i = this.N - 1; i >= 0; i--) {
+          const dx = this.px[i] - b.x, dy = this.py[i] - b.y;
+          if (dx * dx + dy * dy < R2) this.removeAt(i);
+        }
+        continue;
+      }
+      const ox = Math.random() * sp, oy = Math.random() * rowH, lim = this.restDensity * 0.55;
+      let row = 0;
+      for (let y = b.y - R + oy; y < b.y + R; y += rowH, row++) {
+        for (let x = b.x - R + ox + (row & 1 ? r : 0); x < b.x + R; x += sp) {
+          const dx = x - b.x, dy = y - b.y;
+          if (dx * dx + dy * dy > R2) continue;
+          if (this.densityAt(x, y) > lim) continue;
+          this.add(x, y, b.vx, b.vy);
+        }
+      }
+    }
+  }
+  drain(dt) {
+    if (!this.sewers.length) return;
+    const R = CFG.sewerRadius, R2 = R * R, P2 = (R * 3) * (R * 3), pull = 2200 * dt;
+    const px = this.px, py = this.py, vx = this.vx, vy = this.vy;
+    for (const s of this.sewers) {
+      for (let i = this.N - 1; i >= 0; i--) {
+        const dx = s.x - px[i], dy = s.y - py[i], d2 = dx * dx + dy * dy;
+        if (d2 < R2) { this.removeAt(i); continue; }
+        if (d2 < P2) { const k = pull / Math.sqrt(d2); vx[i] += dx * k; vy[i] += dy * k; }
+      }
+    }
+  }
+
+  /* ---- particle integration with anti-tunneling ---- */
+  integrate(dt, gx, gy) {
+    const { px, py, vx, vy, sdf, MW } = this, N = this.N;
+    const vmax = CFG.vmax, vmax2 = vmax * vmax, thr = this.r * 0.5;
+    for (let i = 0; i < N; i++) {
+      let ux = vx[i] + gx * dt, uy = vy[i] + gy * dt;
+      const s2 = ux * ux + uy * uy;
+      if (s2 > vmax2) { const k = vmax / Math.sqrt(s2); ux *= k; uy *= k; }
+      vx[i] = ux; vy[i] = uy;
+      let x = px[i], y = py[i];
+      const dx = ux * dt, dy = uy * dt;
+      const len = (dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy);
+      if (len > 1.2) {
+        const steps = Math.ceil(len), sx = dx / steps, sy = dy / steps;
+        for (let k = 0; k < steps; k++) {
+          const nx = x + sx, ny = y + sy;
+          if (sdf[(ny | 0) * MW + (nx | 0)] < thr) break;
+          x = nx; y = ny;
+        }
+      } else { x += dx; y += dy; }
+      px[i] = x; py[i] = y;
+    }
+  }
+
+  /* ---- push particles out of the walls (SDF) ---- */
+  collide() {
+    const { px, py, vx, vy, sdf, MW, MH } = this, N = this.N, r = this.r;
+    const xmax = MW - 2, ymax = MH - 2;
+    for (let i = 0; i < N; i++) {
+      let x = px[i], y = py[i];
+      if (x < 1) x = 1; else if (x > xmax) x = xmax;
+      if (y < 1) y = 1; else if (y > ymax) y = ymax;
+      const fx = x - 0.5, fy = y - 0.5;
+      const ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy, o = iy * MW + ix;
+      const s00 = sdf[o], s10 = sdf[o + 1], s01 = sdf[o + MW], s11 = sdf[o + MW + 1];
+      const d = (s00 * (1 - tx) + s10 * tx) * (1 - ty) + (s01 * (1 - tx) + s11 * tx) * ty;
+      if (d < r) {
+        let gx = (s10 - s00) * (1 - ty) + (s11 - s01) * ty;
+        let gy = (s01 - s00) * (1 - tx) + (s11 - s10) * tx;
+        const gl = Math.sqrt(gx * gx + gy * gy);
+        if (gl > 1e-5) {
+          gx /= gl; gy /= gl;
+          const push = r - d;
+          x += gx * push; y += gy * push;
+          const vn = vx[i] * gx + vy[i] * gy;
+          if (vn < 0) { vx[i] -= vn * gx; vy[i] -= vn * gy; }
+        }
+      }
+      px[i] = x; py[i] = y;
+    }
+  }
+
+  /* ---- particle separation (spatial hash, counting sort) ---- */
+  separate() {
+    const N = this.N; if (!N) return;
+    const { pNX, pNY, pInv, cellStart, cellEntries } = this;
+    let { px, py } = this;
+    const nc = pNX * pNY;
+    cellStart.fill(0);
+    for (let i = 0; i < N; i++) {
+      const xi = clamp((px[i] * pInv) | 0, 0, pNX - 1), yi = clamp((py[i] * pInv) | 0, 0, pNY - 1);
+      cellStart[yi * pNX + xi]++;
+    }
+    let first = 0;
+    for (let c = 0; c < nc; c++) { first += cellStart[c]; cellStart[c] = first; }
+    cellStart[nc] = first;
+    for (let i = 0; i < N; i++) {
+      const xi = clamp((px[i] * pInv) | 0, 0, pNX - 1), yi = clamp((py[i] * pInv) | 0, 0, pNY - 1);
+      const c = yi * pNX + xi;
+      cellEntries[--cellStart[c]] = i;
+    }
+    // periodically reorder particles in memory by cell -> cache-friendly neighbor loops
+    if ((this.stepCount & 31) === 0) {
+      const { tpx, tpy, tvx, tvy, vx, vy } = this;
+      for (let k = 0; k < N; k++) {
+        const j = cellEntries[k];
+        tpx[k] = px[j]; tpy[k] = py[j]; tvx[k] = vx[j]; tvy[k] = vy[j];
+        cellEntries[k] = k;
+      }
+      this.tpx = px; this.tpy = py; this.tvx = vx; this.tvy = vy;
+      this.px = px = tpx; this.py = py = tpy; this.vx = tvx; this.vy = tvy;
+    }
+    // half-stencil sweep over cells: every pair handled exactly once per iteration,
+    // particle i kept in registers while its neighbors are visited
+    const minDist = 2 * this.r, minDist2 = minDist * minDist;
+    for (let it = 0; it < CFG.separateIters; it++) {
+      for (let cy = 0; cy < pNY; cy++) {
+        for (let cx = 0; cx < pNX; cx++) {
+          const c = cy * pNX + cx, cs = cellStart[c], ce = cellStart[c + 1];
+          if (cs === ce) continue;
+          const hasR = cx < pNX - 1, hasD = cy < pNY - 1, hasL = cx > 0;
+          for (let k = cs; k < ce; k++) {
+            const i = cellEntries[k];
+            let xi = px[i], yi = py[i];
+            // neighbor ranges: rest of own cell, right cell, and the 3 cells below
+            for (let nb = 0; nb < 5; nb++) {
+              let a, e;
+              if (nb === 0) { a = k + 1; e = ce; }
+              else if (nb === 1) { if (!hasR) continue; a = cellStart[c + 1]; e = cellStart[c + 2]; }
+              else {
+                if (!hasD) break;
+                const dc = nb === 2 ? -1 : (nb === 3 ? 0 : 1);
+                if ((dc === -1 && !hasL) || (dc === 1 && !hasR)) continue;
+                const cc = c + pNX + dc; a = cellStart[cc]; e = cellStart[cc + 1];
+              }
+              for (let q = a; q < e; q++) {
+                const j = cellEntries[q];
+                let dx = px[j] - xi, dy = py[j] - yi;
+                const d2 = dx * dx + dy * dy;
+                if (d2 > minDist2 || d2 === 0) continue;
+                const d = Math.sqrt(d2), s = 0.5 * (minDist - d) / d;
+                dx *= s; dy *= s;
+                xi -= dx; yi -= dy; px[j] += dx; py[j] += dy;
+              }
+            }
+            px[i] = xi; py[i] = yi;
+          }
+        }
+      }
+    }
+  }
+
+  /* ---- particles -> grid ---- */
+  p2g() {
+    const { NX, NY, h, inv, u, v, du, dv, type, solid, fixU, fixV, validU, validV, px, py, vx, vy } = this;
+    const N = this.N, n = NX * NY, h2 = h * 0.5;
+    u.fill(0); v.fill(0); du.fill(0); dv.fill(0);
+    for (let c = 0; c < n; c++) type[c] = solid[c] ? SOLID : AIR;
+    for (let i = 0; i < N; i++) {
+      const xi = clamp((px[i] * inv) | 0, 0, NX - 1), yi = clamp((py[i] * inv) | 0, 0, NY - 1);
+      const c = yi * NX + xi;
+      if (type[c] === AIR) type[c] = FLUID;
+    }
+    const lo = h, hx = (NX - 1) * h, hy = (NY - 1) * h;
+    for (let i = 0; i < N; i++) {
+      const x = clamp(px[i], lo, hx), y = clamp(py[i], lo, hy);
+      // u (faces at x = i*h, y = (j+.5)h)
+      let fx = x * inv, fy = (y - h2) * inv;
+      let x0 = Math.min(fx | 0, NX - 2), y0 = Math.min(fy | 0, NY - 2);
+      let tx = fx - x0, ty = fy - y0, sx = 1 - tx, sy = 1 - ty;
+      let c = y0 * NX + x0, w;
+      const pu = vx[i];
+      w = sx * sy; u[c] += pu * w; du[c] += w;
+      w = tx * sy; u[c + 1] += pu * w; du[c + 1] += w;
+      w = sx * ty; u[c + NX] += pu * w; du[c + NX] += w;
+      w = tx * ty; u[c + NX + 1] += pu * w; du[c + NX + 1] += w;
+      // v (faces at x = (i+.5)h, y = j*h)
+      fx = (x - h2) * inv; fy = y * inv;
+      x0 = Math.min(fx | 0, NX - 2); y0 = Math.min(fy | 0, NY - 2);
+      tx = fx - x0; ty = fy - y0; sx = 1 - tx; sy = 1 - ty;
+      c = y0 * NX + x0;
+      const pv = vy[i];
+      w = sx * sy; v[c] += pv * w; dv[c] += w;
+      w = tx * sy; v[c + 1] += pv * w; dv[c + 1] += w;
+      w = sx * ty; v[c + NX] += pv * w; dv[c + NX] += w;
+      w = tx * ty; v[c + NX + 1] += pv * w; dv[c + NX + 1] += w;
+    }
+    for (let c = 0; c < n; c++) {
+      u[c] = (fixU[c] || du[c] === 0) ? 0 : u[c] / du[c];
+      v[c] = (fixV[c] || dv[c] === 0) ? 0 : v[c] / dv[c];
+      const x = c % NX;
+      // free-slip validity: a face is valid only if it touches a fluid cell
+      validU[c] = (type[c] === FLUID || (x > 0 && type[c - 1] === FLUID)) ? 1 : 0;
+      validV[c] = (type[c] === FLUID || (c >= NX && type[c - NX] === FLUID)) ? 1 : 0;
+    }
+  }
+
+  computeDensity() {
+    const { NX, NY, h, inv, density, px, py } = this, N = this.N, h2 = h * 0.5;
+    density.fill(0);
+    const lo = h, hx = (NX - 1) * h, hy = (NY - 1) * h;
+    for (let i = 0; i < N; i++) {
+      const x = clamp(px[i], lo, hx), y = clamp(py[i], lo, hy);
+      const fx = (x - h2) * inv, fy = (y - h2) * inv;
+      const x0 = fx | 0, y0 = fy | 0, tx = fx - x0, ty = fy - y0, sx = 1 - tx, sy = 1 - ty;
+      const c = y0 * NX + x0;
+      density[c] += sx * sy; density[c + 1] += tx * sy;
+      density[c + NX] += sx * ty; density[c + NX + 1] += tx * ty;
+    }
+  }
+
+  /* ---- pressure projection (Gauss-Seidel + SOR, drift compensation) ---- */
+  project(dt) {
+    const { NX, type, s, u, v, density, fluidList } = this, n = NX * this.NY;
+    let nf = 0;
+    for (let c = 0; c < n; c++) if (type[c] === FLUID) fluidList[nf++] = c;
+    this.prevU.set(u); this.prevV.set(v);
+    const rest = this.restDensity, kd = CFG.driftK * this.h / dt, omega = CFG.overRelax;
+    for (let it = 0; it < CFG.pressureIters; it++) {
+      for (let f = 0; f < nf; f++) {
+        const c = fluidList[f];
+        const sx0 = s[c - 1], sx1 = s[c + 1], sy0 = s[c - NX], sy1 = s[c + NX];
+        const ss = sx0 + sx1 + sy0 + sy1;
+        if (ss === 0) continue;
+        let div = u[c + 1] - u[c] + v[c + NX] - v[c];
+        const comp = density[c] - rest;
+        if (comp > 0) div -= kd * comp;
+        const p = -div / ss * omega;
+        u[c] -= sx0 * p; u[c + 1] += sx1 * p;
+        v[c] -= sy0 * p; v[c + NX] += sy1 * p;
+      }
+    }
+  }
+
+  /* ---- grid -> particles (PIC/FLIP blend) ---- */
+  g2p() {
+    const { NX, NY, h, inv, u, v, prevU, prevV, validU, validV, px, py, vx, vy } = this;
+    const N = this.N, h2 = h * 0.5, flip = CFG.flipRatio, pic = 1 - flip;
+    const lo = h, hx = (NX - 1) * h, hy = (NY - 1) * h;
+    for (let i = 0; i < N; i++) {
+      const x = clamp(px[i], lo, hx), y = clamp(py[i], lo, hy);
+      // u
+      let fx = x * inv, fy = (y - h2) * inv;
+      let x0 = Math.min(fx | 0, NX - 2), y0 = Math.min(fy | 0, NY - 2);
+      let tx = fx - x0, ty = fy - y0, sx = 1 - tx, sy = 1 - ty;
+      let c0 = y0 * NX + x0, c1 = c0 + 1, c2 = c0 + NX, c3 = c2 + 1;
+      let w0 = validU[c0] * sx * sy, w1 = validU[c1] * tx * sy, w2 = validU[c2] * sx * ty, w3 = validU[c3] * tx * ty;
+      let d = w0 + w1 + w2 + w3;
+      if (d > 0) {
+        const picV = (w0 * u[c0] + w1 * u[c1] + w2 * u[c2] + w3 * u[c3]) / d;
+        const corr = (w0 * (u[c0] - prevU[c0]) + w1 * (u[c1] - prevU[c1]) + w2 * (u[c2] - prevU[c2]) + w3 * (u[c3] - prevU[c3])) / d;
+        vx[i] = pic * picV + flip * (vx[i] + corr);
+      }
+      // v
+      fx = (x - h2) * inv; fy = y * inv;
+      x0 = Math.min(fx | 0, NX - 2); y0 = Math.min(fy | 0, NY - 2);
+      tx = fx - x0; ty = fy - y0; sx = 1 - tx; sy = 1 - ty;
+      c0 = y0 * NX + x0; c1 = c0 + 1; c2 = c0 + NX; c3 = c2 + 1;
+      w0 = validV[c0] * sx * sy; w1 = validV[c1] * tx * sy; w2 = validV[c2] * sx * ty; w3 = validV[c3] * tx * ty;
+      d = w0 + w1 + w2 + w3;
+      if (d > 0) {
+        const picV = (w0 * v[c0] + w1 * v[c1] + w2 * v[c2] + w3 * v[c3]) / d;
+        const corr = (w0 * (v[c0] - prevV[c0]) + w1 * (v[c1] - prevV[c1]) + w2 * (v[c2] - prevV[c2]) + w3 * (v[c3] - prevV[c3])) / d;
+        vy[i] = pic * picV + flip * (vy[i] + corr);
+      }
+    }
+  }
+
+  step(dt, gx, gy) {
+    this.emit(dt);
+    this.integrate(dt, gx, gy);
+    this.separate();
+    this.collide();
+    this.drain(dt);
+    this.p2g();
+    this.computeDensity();
+    this.project(dt);
+    this.g2p();
+    this.stepCount++;
+  }
+
+  fillRender(out) {
+    const { px, py, vx, vy } = this, N = this.N, inv = 1 / 650;
+    for (let i = 0, j = 0; i < N; i++, j += 3) {
+      out[j] = px[i]; out[j + 1] = py[i];
+      const s = Math.sqrt(vx[i] * vx[i] + vy[i] * vy[i]) * inv;
+      out[j + 2] = s > 1 ? 1 : s;
+    }
+    return N;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   WebGL2 renderer
+   --------------------------------------------------------------------- */
+const VS_POINTS = `#version 300 es
+in vec3 aP;
+uniform vec2 uInvDomain;
+uniform float uSize;
+out float vS;
+void main(){
+  vec2 c = aP.xy * uInvDomain;
+  gl_Position = vec4(c.x * 2.0 - 1.0, 1.0 - c.y * 2.0, 0.0, 1.0);
+  gl_PointSize = uSize;
+  vS = aP.z;
+}`;
+const FS_POINTS = `#version 300 es
+precision mediump float;
+in float vS;
+out vec4 o;
+void main(){
+  vec2 q = gl_PointCoord * 2.0 - 1.0;
+  float r2 = dot(q, q);
+  if (r2 > 1.0) discard;
+  float w = 1.0 - r2; w = w * w * w * 0.28;
+  o = vec4(w, w * vS, 0.0, 0.0);
+}`;
+const VS_FULL = `#version 300 es
+out vec2 vUv;
+void main(){
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  vUv = p;
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`;
+const FS_WATER = `#version 300 es
+precision highp float;
+in vec2 vUv;
+uniform sampler2D uBg, uDen;
+uniform vec2 uTexel;     // density texel size
+uniform float uTime, uAspect;
+uniform vec3 uShallow, uDeep;
+out vec4 o;
+const float T = 0.22;
+float caustic(vec2 p, float t){
+  p *= 7.0;
+  vec2 q = p + vec2(sin(p.y * 1.3 + t * 0.9), cos(p.x * 1.1 - t * 0.7)) * 0.7;
+  float v = sin(q.x * 2.0 + t) * sin(q.y * 2.0 - t * 1.2);
+  v += 0.5 * sin((q.x + q.y) * 3.1 + t * 1.7);
+  return pow(clamp(1.0 - abs(v), 0.0, 1.0), 7.0);
+}
+vec3 bgAt(vec2 uv){ return texture(uBg, vec2(uv.x, 1.0 - uv.y)).rgb; }
+void main(){
+  vec4 D = texture(uDen, vUv);
+  float d = D.r;
+  vec3 bg = bgAt(vUv);
+  // soft drop shadow of the water on the paper
+  float sh = texture(uDen, vUv + vec2(-uTexel.x * 3.0, uTexel.y * 4.0)).r;
+  float shadow = smoothstep(0.05, 0.5, sh) * 0.22;
+  if (d < T - 0.06) { o = vec4(bg * (1.0 - shadow), 1.0); return; }
+
+  // wide, diagonal-sampled gradient = smooth normals (no per-particle bumps)
+  vec2 o1 = uTexel * 2.5, o2 = vec2(uTexel.x, -uTexel.y) * 2.5;
+  float a1 = texture(uDen, vUv + o1).r, b1 = texture(uDen, vUv - o1).r;
+  float a2 = texture(uDen, vUv + o2).r, b2 = texture(uDen, vUv - o2).r;
+  vec2 g = vec2((a1 - b1) + (a2 - b2), (a1 - b1) - (a2 - b2)) * 0.5;
+  float a = smoothstep(T - 0.05, T + 0.03, d);
+  float thick = clamp((d - T) * 1.4, 0.0, 1.0);
+  // strong curvature at the edges, calm flat surface in deep water
+  vec3 n = normalize(vec3(-g * mix(2.2, 0.45, thick), 1.0));
+
+  // refraction of the drawing under the water
+  vec2 off = n.xy * (0.006 + 0.01 * thick);
+  vec3 refr = bgAt(vUv + off);
+  vec3 tint = mix(uShallow, uDeep, thick);
+  vec3 col = refr * mix(vec3(1.0), tint, 0.55 + 0.35 * thick);
+  col = mix(col, tint, 0.18 + 0.32 * thick);
+
+  // caustics
+  float c = caustic(vec2((vUv.x + off.x) * uAspect, vUv.y + off.y), uTime);
+  col += c * 0.22 * (1.0 - thick * 0.5) * a;
+
+  // lighting
+  vec3 L = normalize(vec3(-0.45, 0.55, 0.75));
+  vec3 H = normalize(L + vec3(0.0, 0.0, 1.0));
+  float spec = pow(max(dot(n, H), 0.0), 70.0);
+  float fres = pow(1.0 - n.z, 2.0);
+  col += spec * 0.85 + fres * 0.35;
+
+  // rim line for a crisp cartoon edge
+  float rim = smoothstep(T - 0.05, T + 0.02, d) * (1.0 - smoothstep(T + 0.02, T + 0.13, d));
+  col = mix(col, uDeep * 0.75, rim * 0.45);
+
+  // foam on fast water
+  float sp = D.g / max(d, 1e-4);
+  float foam = smoothstep(0.5, 0.95, sp);
+  col = mix(col, vec3(1.0), foam * 0.65);
+
+  o = vec4(mix(bg * (1.0 - shadow), col, a), 1.0);
+}`;
+
+const PALETTES = [
+  { name: 'Blue',   shallow: [0.55, 0.85, 1.0],  deep: [0.07, 0.38, 0.85] },
+  { name: 'Green',  shallow: [0.70, 1.0, 0.55],  deep: [0.12, 0.62, 0.20] },
+  { name: 'Pink',   shallow: [1.0, 0.72, 0.90],  deep: [0.88, 0.20, 0.58] },
+  { name: 'Lava',   shallow: [1.0, 0.88, 0.40],  deep: [0.95, 0.30, 0.05] },
+  { name: 'Purple', shallow: [0.85, 0.75, 1.0],  deep: [0.45, 0.20, 0.85] },
+];
+
+class Renderer {
+  constructor(canvas) {
+    const gl = canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, stencil: false,
+      premultipliedAlpha: false, powerPreference: 'high-performance' });
+    if (!gl) throw new Error('WebGL2 not available');
+    this.gl = gl; this.canvas = canvas;
+    this.floatFB = !!gl.getExtension('EXT_color_buffer_float') || !!gl.getExtension('EXT_color_buffer_half_float');
+    this.pPoints = this.program(VS_POINTS, FS_POINTS);
+    this.pWater = this.program(VS_FULL, FS_WATER);
+    this.uP = this.uniforms(this.pPoints, ['uInvDomain', 'uSize']);
+    this.uW = this.uniforms(this.pWater, ['uBg', 'uDen', 'uTexel', 'uTime', 'uAspect', 'uShallow', 'uDeep']);
+    this.vao = gl.createVertexArray();
+    gl.bindVertexArray(this.vao);
+    this.vbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, CFG.maxParticles * 12, gl.DYNAMIC_DRAW);
+    const loc = gl.getAttribLocation(this.pPoints, 'aP');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 3, gl.FLOAT, false, 12, 0);
+    gl.bindVertexArray(null);
+    this.emptyVao = gl.createVertexArray();
+    this.buf = new Float32Array(CFG.maxParticles * 3);
+    this.bgTex = gl.createTexture();
+    this.denTex = null; this.fbo = null; this.dw = 0; this.dh = 0;
+    this.palette = 0;
+  }
+  program(vs, fs) {
+    const gl = this.gl;
+    const mk = (t, s) => { const sh = gl.createShader(t); gl.shaderSource(sh, s); gl.compileShader(sh);
+      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); return sh; };
+    const p = gl.createProgram();
+    gl.attachShader(p, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(p, mk(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    return p;
+  }
+  uniforms(p, names) { const o = {}; for (const n of names) o[n] = this.gl.getUniformLocation(p, n); return o; }
+  setBackground(canvas) {
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, this.bgTex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+  resizeDensity(w, h) {
+    if (w === this.dw && h === this.dh) return;
+    const gl = this.gl; this.dw = w; this.dh = h;
+    if (this.denTex) { gl.deleteTexture(this.denTex); gl.deleteFramebuffer(this.fbo); }
+    const make = (internal, type) => {
+      const t = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texImage2D(gl.TEXTURE_2D, 0, internal, w, h, 0, gl.RGBA, type, null);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      const f = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+      const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+      if (!ok) { gl.deleteTexture(t); gl.deleteFramebuffer(f); return null; }
+      return [t, f];
+    };
+    let r = this.floatFB ? make(gl.RGBA16F, gl.HALF_FLOAT) : null;
+    if (!r) r = make(gl.RGBA8, gl.UNSIGNED_BYTE);
+    [this.denTex, this.fbo] = r;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+  render(world, time) {
+    const gl = this.gl, cw = this.canvas.width, ch = this.canvas.height;
+    const N = world.fillRender(this.buf);
+    // 1) density splats
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.viewport(0, 0, this.dw, this.dh);
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    if (N > 0) {
+      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+      gl.useProgram(this.pPoints);
+      gl.uniform2f(this.uP.uInvDomain, 1 / world.MW, 1 / world.MH);
+      gl.uniform1f(this.uP.uSize, 2 * 3.9 * world.r * this.dw / world.MW);
+      gl.bindVertexArray(this.vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.buf, 0, N * 3);
+      gl.drawArrays(gl.POINTS, 0, N);
+      gl.disable(gl.BLEND);
+    }
+    // 2) water composite
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, cw, ch);
+    gl.useProgram(this.pWater);
+    gl.bindVertexArray(this.emptyVao);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.bgTex);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.denTex);
+    gl.uniform1i(this.uW.uBg, 0); gl.uniform1i(this.uW.uDen, 1);
+    gl.uniform2f(this.uW.uTexel, 1 / this.dw, 1 / this.dh);
+    gl.uniform1f(this.uW.uTime, time);
+    gl.uniform1f(this.uW.uAspect, world.MW / world.MH);
+    const pal = PALETTES[this.palette];
+    gl.uniform3fv(this.uW.uShallow, pal.shallow); gl.uniform3fv(this.uW.uDeep, pal.deep);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   App state, layout, overlay
+   --------------------------------------------------------------------- */
+let world = null, renderer = null, bgCanvas = null;
+let mode = 'water';
+let tiltOn = false;
+const grav = { x: 0, y: CFG.gravity }, gravTarget = { x: 0, y: 1 };
+const stage = $('stage'), glc = $('gl'), ov = $('ov'), octx = ov.getContext('2d');
+let view = { x: 0, y: 0, w: 1, h: 1, dpr: 1 };
+
+function layout() {
+  if (!world) return;
+  const ww = window.innerWidth, wh = window.innerHeight, A = world.MW / world.MH;
+  let w, h;
+  if (ww / wh > A) { h = wh; w = wh * A; } else { w = ww; h = ww / A; }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  view = { x: (ww - w) / 2, y: (wh - h) / 2, w, h, dpr };
+  Object.assign(stage.style, { left: view.x + 'px', top: view.y + 'px', width: w + 'px', height: h + 'px' });
+  glc.width = Math.round(w * dpr); glc.height = Math.round(h * dpr);
+  ov.width = glc.width; ov.height = glc.height;
+  renderer.resizeDensity(Math.round(w), Math.round(h));
+  drawOverlay();
+}
+
+function drawOverlay() {
+  octx.setTransform(1, 0, 0, 1, 0, 0);
+  octx.clearRect(0, 0, ov.width, ov.height);
+  if (!world) return;
+  const k = ov.width / world.MW;
+  octx.setTransform(k, 0, 0, k, 0, 0);
+  for (const s of world.sewers) drawSewer(s);
+  for (const p of world.pipes) drawPipe(p);
+}
+function drawSewer(s) {
+  const R = CFG.sewerRadius + 3, c = octx;
+  c.save(); c.translate(s.x, s.y);
+  c.beginPath(); c.arc(0, 2, R + 3, 0, Math.PI * 2); c.fillStyle = 'rgba(0,0,0,.25)'; c.fill();
+  c.beginPath(); c.arc(0, 0, R + 3, 0, Math.PI * 2); c.fillStyle = '#8b95a5'; c.fill();
+  c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fillStyle = '#1f2430'; c.fill();
+  c.save(); c.clip();
+  c.strokeStyle = '#6c7686'; c.lineWidth = 2.6;
+  for (let x = -R; x <= R; x += 6.5) { c.beginPath(); c.moveTo(x, -R); c.lineTo(x, R); c.stroke(); }
+  c.restore();
+  c.beginPath(); c.arc(0, 0, R + 3, 0, Math.PI * 2); c.strokeStyle = '#555f6f'; c.lineWidth = 1.5; c.stroke();
+  c.restore();
+}
+function drawPipe(p) {
+  const c = octx, W = CFG.pipeWidth + 6, L = 34;
+  c.save(); c.translate(p.x, p.y); c.rotate(p.a);
+  c.fillStyle = 'rgba(0,0,0,.22)'; c.fillRect(-L + 2, -W / 2 + 3, L, W);
+  const g = c.createLinearGradient(0, -W / 2, 0, W / 2);
+  g.addColorStop(0, '#ffb15a'); g.addColorStop(0.35, '#ffd9a8'); g.addColorStop(1, '#c4621c');
+  c.fillStyle = g; c.fillRect(-L, -W / 2, L, W);
+  const g2 = c.createLinearGradient(0, -W / 2 - 4, 0, W / 2 + 4);
+  g2.addColorStop(0, '#ff9a3a'); g2.addColorStop(0.35, '#ffe0b8'); g2.addColorStop(1, '#a94e12');
+  c.fillStyle = g2; c.fillRect(-9, -W / 2 - 4, 9, W + 8);
+  c.strokeStyle = '#7a3608'; c.lineWidth = 1.4;
+  c.strokeRect(-L, -W / 2, L - 9, W); c.strokeRect(-9, -W / 2 - 4, 9, W + 8);
+  c.restore();
+}
+
+let hintTimer = 0;
+function hint(text, ms = 2600) {
+  const h = $('hint'); h.textContent = text; h.classList.add('show');
+  clearTimeout(hintTimer); hintTimer = setTimeout(() => h.classList.remove('show'), ms);
+}
+const HINTS = {
+  water: 'Drag your finger to pour water 💧',
+  pipe: 'Tap to place a pipe · drag to aim it',
+  sewer: 'Tap to place a drain · drag to move it',
+  erase: 'Rub to remove water · tap pipes & drains to remove',
+};
+
+/* ---------------------------------------------------------------------
+   Input
+   --------------------------------------------------------------------- */
+const pointers = new Map();
+function toDomain(e) {
+  const r = glc.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width * world.MW, y: (e.clientY - r.top) / r.height * world.MH, t: performance.now() };
+}
+function findNear(list, p, R) {
+  let best = -1, bd = R * R;
+  list.forEach((o, i) => { const d = (o.x - p.x) ** 2 + (o.y - p.y) ** 2; if (d < bd) { bd = d; best = i; } });
+  return best;
+}
+glc.addEventListener('pointerdown', e => {
+  if (!world) return;
+  e.preventDefault();
+  try { glc.setPointerCapture(e.pointerId); } catch (_) {}
+  const p = toDomain(e);
+  const st = { start: p, last: p, vx: 0, vy: 0, brush: null, target: null, moved: false };
+  if (mode === 'water' || mode === 'erase') {
+    if (mode === 'erase') {
+      const ip = findNear(world.pipes, p, 30), is = findNear(world.sewers, p, 30);
+      if (ip >= 0) { world.pipes.splice(ip, 1); drawOverlay(); }
+      else if (is >= 0) { world.sewers.splice(is, 1); drawOverlay(); }
+    }
+    st.brush = { x: p.x, y: p.y, vx: 0, vy: 0, erase: mode === 'erase' };
+    world.brushes.push(st.brush);
+  } else if (mode === 'pipe') {
+    const i = findNear(world.pipes, p, 28);
+    if (i >= 0) st.target = world.pipes[i];
+    else if (world.pipes.length < 8) {
+      st.target = { x: p.x, y: p.y, a: Math.PI / 2, acc: 0, row: 0 };
+      world.pipes.push(st.target);
+    } else hint('That’s a lot of pipes! Erase one first.');
+    st.aim = true;
+    drawOverlay();
+  } else if (mode === 'sewer') {
+    const i = findNear(world.sewers, p, 30);
+    if (i >= 0) st.target = world.sewers[i];
+    else if (world.sewers.length < 8) { st.target = { x: p.x, y: p.y }; world.sewers.push(st.target); }
+    else hint('That’s a lot of drains! Erase one first.');
+    drawOverlay();
+  }
+  pointers.set(e.pointerId, st);
+});
+glc.addEventListener('pointermove', e => {
+  const st = pointers.get(e.pointerId); if (!st || !world) return;
+  const p = toDomain(e);
+  const dt = Math.max(1, p.t - st.last.t) / 1000;
+  st.vx = st.vx * 0.6 + 0.4 * (p.x - st.last.x) / dt;
+  st.vy = st.vy * 0.6 + 0.4 * (p.y - st.last.y) / dt;
+  st.last = p;
+  if (st.brush) {
+    st.brush.x = p.x; st.brush.y = p.y;
+    st.brush.vx = clamp(st.vx * 0.6, -500, 500); st.brush.vy = clamp(st.vy * 0.6, -500, 500);
+  } else if (st.target) {
+    const dx = p.x - st.start.x, dy = p.y - st.start.y;
+    if (dx * dx + dy * dy > 64) st.moved = true;
+    if (st.aim) { if (st.moved) st.target.a = Math.atan2(dy, dx); }
+    else { st.target.x = clamp(p.x, 10, world.MW - 10); st.target.y = clamp(p.y, 10, world.MH - 10); }
+    drawOverlay();
+  }
+});
+function endPointer(e) {
+  const st = pointers.get(e.pointerId); if (!st) return;
+  if (st.brush && world) { const i = world.brushes.indexOf(st.brush); if (i >= 0) world.brushes.splice(i, 1); }
+  pointers.delete(e.pointerId);
+}
+glc.addEventListener('pointerup', endPointer);
+glc.addEventListener('pointercancel', endPointer);
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+document.querySelectorAll('.tb.mode').forEach(b => b.addEventListener('click', () => {
+  mode = b.dataset.mode;
+  document.querySelectorAll('.tb.mode').forEach(x => x.classList.toggle('on', x === b));
+  hint(HINTS[mode]);
+}));
+$('bClear').addEventListener('click', () => { if (world) { world.clearWater(); hint('All clean! 🧹', 1400); } });
+$('bColor').addEventListener('click', () => {
+  renderer.palette = (renderer.palette + 1) % PALETTES.length;
+  hint(PALETTES[renderer.palette].name + ' water', 1200);
+});
+
+/* ---- tilt (accelerometer via device orientation) ---- */
+function onOrientation(e) {
+  if (e.beta == null || e.gamma == null) return;
+  const D = Math.PI / 180, b = e.beta * D, g = e.gamma * D;
+  // gravity in device frame (x right, y toward top of device)
+  const gx = Math.cos(b) * Math.sin(g), gy = -Math.sin(b);
+  const ang = (typeof window.orientation === 'number' ? window.orientation
+    : (screen.orientation && screen.orientation.angle) || 0) * D;
+  const ca = Math.cos(ang), sa = Math.sin(ang);
+  gravTarget.x = gx * ca - gy * sa;
+  gravTarget.y = -(gx * sa + gy * ca);
+}
+$('bTilt').addEventListener('click', async () => {
+  if (tiltOn) {
+    tiltOn = false; $('bTilt').classList.remove('on');
+    window.removeEventListener('deviceorientation', onOrientation);
+    hint('Tilt off – water falls down', 1500); return;
+  }
+  try {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      const r = await DeviceOrientationEvent.requestPermission();
+      if (r !== 'granted') { hint('Motion access was not allowed'); return; }
+    }
+  } catch (err) { hint('Tilt needs HTTPS and motion access'); return; }
+  tiltOn = true; $('bTilt').classList.add('on');
+  window.addEventListener('deviceorientation', onOrientation);
+  hint('Tilt the iPad to move the water! 📱');
+});
+
+/* ---------------------------------------------------------------------
+   Camera / photo / review flow
+   --------------------------------------------------------------------- */
+let stream = null, capture = null;
+const video = $('video');
+function stageAspect() { return window.innerWidth / window.innerHeight; }
+
+async function openCamera() {
+  $('camera').classList.remove('hidden');
+  $('camMsg').textContent = 'Point the camera at your drawing';
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    $('camMsg').textContent = 'Live camera not available here – tap 🖼️ to take or pick a photo';
+    return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false });
+    video.srcObject = stream;
+    await video.play().catch(() => {});
+  } catch (err) {
+    $('camMsg').textContent = 'Camera blocked (needs HTTPS + permission) – tap 🖼️ to take or pick a photo';
+  }
+}
+function closeCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.srcObject = null;
+  $('camera').classList.add('hidden');
+}
+$('bPhoto').addEventListener('click', openCamera);
+$('camCancel').addEventListener('click', closeCamera);
+$('camGallery').addEventListener('click', () => $('fileInput').click());
+$('shutter').addEventListener('click', () => {
+  if (!stream || !video.videoWidth) { $('fileInput').click(); return; }
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const c = document.createElement('canvas'); c.width = vw; c.height = vh;
+  c.getContext('2d').drawImage(video, 0, 0);
+  closeCamera();
+  startReview(c, vw, vh);
+});
+$('fileInput').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  const img = new Image();
+  img.onload = () => { closeCamera(); startReview(img, img.naturalWidth, img.naturalHeight); URL.revokeObjectURL(img.src); };
+  img.onerror = () => hint('Could not open that picture');
+  img.src = URL.createObjectURL(f);
+});
+
+function startReview(src, w, h) {
+  capture = prepareCapture(src, w, h, stageAspect());
+  $('review').classList.remove('hidden');
+  updateReview();
+}
+let reviewMask = null, reviewPending = 0;
+function readSliders() { return [+$('sSens').value, +$('sThick').value, +$('sDots').value]; }
+function updateReview() {
+  if (!capture) return;
+  reviewMask = computeWalls(capture, ...readSliders());
+  const rc = $('reviewCanvas');
+  rc.width = capture.bg.width; rc.height = capture.bg.height;
+  const x = rc.getContext('2d');
+  x.drawImage(capture.bg, 0, 0);
+  x.globalAlpha = 0.75; x.imageSmoothingEnabled = false;
+  x.drawImage(maskCanvas(reviewMask, capture.MW, capture.MH, 255, 50, 50, 255), 0, 0, rc.width, rc.height);
+  x.globalAlpha = 1;
+}
+['sSens', 'sThick', 'sDots'].forEach(id => $(id).addEventListener('input', () => {
+  cancelAnimationFrame(reviewPending); reviewPending = requestAnimationFrame(updateReview);
+}));
+$('rvRetake').addEventListener('click', () => { $('review').classList.add('hidden'); capture = null; openCamera(); });
+$('rvPlay').addEventListener('click', () => {
+  $('review').classList.add('hidden');
+  buildWorld(capture, reviewMask, false);
+  capture = null;
+});
+
+// bake the background: flattened photo + inked walls so kids see what blocks water
+function bakeBackground(cap, mask) {
+  const c = document.createElement('canvas'); c.width = cap.bg.width; c.height = cap.bg.height;
+  const x = c.getContext('2d');
+  x.drawImage(cap.bg, 0, 0);
+  x.globalAlpha = 0.55; x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  x.drawImage(maskCanvas(mask, cap.MW, cap.MH, 38, 40, 58, 255), 0, 0, c.width, c.height);
+  x.globalAlpha = 1;
+  return c;
+}
+
+function buildWorld(cap, mask, demo) {
+  world = new World(cap.MW, cap.MH, mask);
+  bgCanvas = bakeBackground(cap, mask);
+  renderer.setBackground(bgCanvas);
+  if (demo) {
+    const W = cap.MW, H = cap.MH;
+    world.pipes.push({ x: W * 0.215, y: H * 0.08, a: Math.PI / 2, acc: 0, row: 0 });
+    world.sewers.push({ x: W * 0.9, y: H * 0.88 });
+  }
+  layout();
+}
+
+/* ---- demo drawing (procedural "pencil on paper" photo) ---- */
+function makeDemoPhoto(aspect) {
+  const W = 1600, H = Math.round(W / aspect);
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  const g = x.createRadialGradient(W * 0.35, H * 0.3, 50, W * 0.5, H * 0.5, W * 0.85);
+  g.addColorStop(0, '#f6f1e7'); g.addColorStop(1, '#a9a092');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  // paper grain
+  const img = x.getImageData(0, 0, W, H), d = img.data;
+  for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - 0.5) * 14; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+  x.putImageData(img, 0, 0);
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const pencil = (pts, wdt = 4.2) => {
+    for (let pass = 0; pass < 2; pass++) {
+      x.beginPath();
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [ax, ay] = pts[i], [bx, by] = pts[i + 1];
+        const segs = Math.ceil(Math.hypot((bx - ax) * W, (by - ay) * H) / 12);
+        for (let s = 0; s <= segs; s++) {
+          const t = s / segs, jx = (rnd() - 0.5) * 2.2, jy = (rnd() - 0.5) * 2.2;
+          const X = (ax + (bx - ax) * t) * W + jx, Y = (ay + (by - ay) * t) * H + jy;
+          if (i === 0 && s === 0) x.moveTo(X, Y); else x.lineTo(X, Y);
+        }
+      }
+      x.strokeStyle = pass ? 'rgba(70,70,80,.55)' : 'rgba(60,60,70,.75)';
+      x.lineWidth = wdt * (pass ? 0.6 : 1); x.lineCap = 'round'; x.lineJoin = 'round';
+      x.stroke();
+    }
+  };
+  const circle = (cx, cy, r) => {
+    const pts = []; for (let a = 0; a <= 24; a++) pts.push([cx + Math.cos(a / 24 * 6.283) * r / aspect, cy + Math.sin(a / 24 * 6.283) * r]);
+    pencil(pts);
+  };
+  pencil([[0.12, 0.13], [0.19, 0.28]]); pencil([[0.31, 0.13], [0.24, 0.28]]);          // funnel
+  pencil([[0.10, 0.40], [0.52, 0.52]]);                                               // ramp 1
+  pencil([[0.88, 0.50], [0.50, 0.64]]);                                               // ramp 2
+  pencil([[0.06, 0.70], [0.06, 0.93], [0.36, 0.93], [0.36, 0.72]]);                   // cup
+  pencil([[0.62, 0.12], [0.62, 0.30], [0.80, 0.30]]);                                 // L-tube
+  pencil([[0.68, 0.12], [0.68, 0.245], [0.80, 0.245]]);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) circle(0.42 + i * 0.07 + j * 0.035, 0.74 + j * 0.08, 0.022);
+  pencil([[0.6, 0.97], [0.96, 0.78]]);                                                // ramp to drain
+  return c;
+}
+
+/* ---------------------------------------------------------------------
+   Main loop
+   --------------------------------------------------------------------- */
+let last = performance.now(), acc = 0, fpsT = 0, frames = 0, simMs = 0;
+function frame(t) {
+  requestAnimationFrame(frame);
+  if (!world) return;
+  let dt = (t - last) / 1000; last = t;
+  if (dt > 0.1) dt = 0.1;
+  // gravity
+  if (tiltOn) {
+    grav.x += (gravTarget.x * CFG.gravity - grav.x) * 0.25;
+    grav.y += (gravTarget.y * CFG.gravity - grav.y) * 0.25;
+  } else { grav.x += (0 - grav.x) * 0.2; grav.y += (CFG.gravity - grav.y) * 0.2; }
+  acc += dt;
+  let steps = 0;
+  const t0 = performance.now();
+  while (acc >= CFG.simDt && steps < 2) { world.step(CFG.simDt, grav.x, grav.y); acc -= CFG.simDt; steps++; }
+  if (acc > CFG.simDt) acc = 0;
+  if (steps) simMs = simMs * 0.9 + 0.1 * (performance.now() - t0) / steps;
+  renderer.render(world, t / 1000);
+  frames++;
+  if (t - fpsT > 500) {
+    $('stats').textContent = `${Math.round(frames * 1000 / (t - fpsT))} fps · sim ${simMs.toFixed(1)} ms · ${world.N} drops`;
+    fpsT = t; frames = 0;
+  }
+}
+
+function init() {
+  try { renderer = new Renderer(glc); }
+  catch (e) {
+    document.body.innerHTML = '<div id="nogl">Sorry, this device needs WebGL2 to run Paper Splash.<br><small>' + e.message + '</small></div>';
+    return;
+  }
+  const a = stageAspect();
+  const demo = makeDemoPhoto(a);
+  const cap = prepareCapture(demo, demo.width, demo.height, a);
+  buildWorld(cap, computeWalls(cap, 55, 1, 40), true);
+  window.addEventListener('resize', layout);
+  window.addEventListener('orientationchange', () => setTimeout(layout, 200));
+  hint('Take a 📷 photo of your drawing, or play with this one!', 4000);
+  requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden && stream) closeCamera(); last = performance.now(); });
+init();
+</script>
+</body>
+</html>
