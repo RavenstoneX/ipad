@@ -152,7 +152,7 @@
     <button class="tb mode" data-mode="bomb"><div class="in"><span>💣</span><small>Bomb</small></div></button>
     <button class="tb mode" data-mode="erase"><div class="in"><span>🧽</span><small>Erase</small></div></button>
     <button class="tb toggle" id="bTilt"><div class="in"><span>📱</span><small>Tilt</small></div></button>
-    <button class="tb" id="bColor"><div class="in"><span>🎨</span><small>Color</small></div></button>
+    <button class="tb mode" data-mode="object"><div class="in"><span>📦</span><small>Object</small></div></button>
     <button class="tb" id="bClear"><div class="in"><span>🧹</span><small>Clear</small></div></button>
     <button class="tb" id="bSettings"><div class="in"><span>⚙️</span><small>Setup</small></div></button>
   </div>
@@ -241,12 +241,13 @@ const DEFAULTS = {
   windSpeed: 420, windAccel: 3000, windWidth: 14, windOnAnimals: 0.5,
   millSize: 34, millFriction: 0.6, millMass: 2500,
   maxCreatures: 40, creatureSize: 28, creatureSwim: 60, dryTime: 10,
-  fireSpread: 1, woodBurnTime: 8, oilBurnTime: 6, fireBrush: 16,
+  fireSpread: 1, woodBurnTime: 3, oilBurnTime: 4, fireBrush: 16, fireSize: 1.4,
+  ropeSpeed: 70, plastSpeed: 300, sandFriction: 0.8,
   fuseTime: 5, bombRadius: 42, fireBombGlobs: 26,
-  fireFx: 1, fireRes: 3, bgBright: 0.8,
+  fireFx: 1, fireRes: 3, bgBright: 0.64,
   dprCap: 2, denScale: 1, blobSize: 3.9, showStats: 1,
 };
-const CFG_KEY = 'paperSplash.cfg4';
+const CFG_KEY = 'paperSplash.cfg5';
 const CFG = Object.assign({}, DEFAULTS);
 try {
   const saved = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
@@ -266,17 +267,21 @@ const SETTINGS = [
   { k: 'gravity', l: 'Gravity', min: 100, max: 3000, step: 50 },
   { k: 'vmax', l: 'Max speed', min: 300, max: 3000, step: 50 },
   { k: 'timeScale', l: 'Simulation speed (slow motion < 1)', min: 0.2, max: 2, step: 0.05 },
-  { g: 'Oil & foam' },
+  { g: 'Oil, foam & sand' },
+  { k: 'sandFriction', l: 'Sand stickiness (how steep piles get)', min: 0, max: 1, step: 0.05 },
   { k: 'oilLift', l: 'Oil floats up (buoyancy)', min: 0, max: 4, step: 0.1 },
   { k: 'oilFlip', l: 'Oil runniness', min: 0.2, max: 0.99, step: 0.01 },
   { k: 'foamLift', l: 'Foam floats up', min: 0, max: 5, step: 0.1 },
   { k: 'foamLife', l: 'Foam lifetime (s)', min: 1, max: 60, step: 1 },
   { g: 'Fire & bombs' },
+  { k: 'fireSize', l: 'Fire size (flames)', min: 0.3, max: 3, step: 0.05 },
   { k: 'fireSpread', l: 'Fire spreading speed', min: 0.2, max: 3, step: 0.05 },
   { k: 'woodBurnTime', l: 'Wood burning time – how long each piece burns before it is gone (s)', min: 1, max: 40, step: 0.5 },
   { k: 'oilBurnTime', l: 'Oil burn time (s)', min: 1, max: 20, step: 0.5 },
   { k: 'fireBrush', l: 'Fire finger size', min: 5, max: 50, step: 1 },
   { k: 'fuseTime', l: 'Bomb fuse time (s)', min: 0.5, max: 15, step: 0.5 },
+  { k: 'ropeSpeed', l: 'Rope burning speed', min: 10, max: 400, step: 5 },
+  { k: 'plastSpeed', l: 'Plasteline blast speed', min: 40, max: 1500, step: 10 },
   { k: 'bombRadius', l: 'Bomb blast size', min: 15, max: 110, step: 1 },
   { k: 'fireBombGlobs', l: 'Fire bomb flames', min: 4, max: 80, step: 1 },
   { g: 'Tools' },
@@ -317,6 +322,7 @@ const LIQUIDS = [
   { name: 'Water', icon: '💧', color: '#3fa9ff' },
   { name: 'Oil',   icon: '🛢️', color: '#7a4a10' },
   { name: 'Foam',  icon: '🫧', color: '#ffffff' },
+  { name: 'Sand',  icon: '🏖️', color: '#e6c35a' },
 ];
 const SDF_CLAMP = 12;
 const MAX_EMBERS = 1500;
@@ -425,7 +431,7 @@ function applyStroke(A, MW, MH, ax, ay, bx, by, rad, mode, frame) {
       const px = x + 0.5, py = y + 0.5, i = y * MW + x;
       if (mode === 'burn') {
         if (!wall[i] || mat[i] !== 2) continue;
-        const rr = rad * (0.7 + 0.6 * vnoise(x * 0.35, y * 0.35));
+        const rr = rad * (0.85 + 0.4 * vnoise(x * 0.35, y * 0.35));
         if ((px - ax) * (px - ax) + (py - ay) * (py - ay) > rr * rr) continue;
         wall[i] = 0; burnt[i] = 1; continue;
       }
@@ -491,6 +497,17 @@ function initBG(cap, mask) {
     }
   }
 }
+const COL = [0, 0, 0];
+function woodRGB(mx, my, out) {
+  const nn = vnoise(mx * 0.08, my * 0.5);
+  const t = 0.5 + 0.5 * Math.sin(my * 1.3 + nn * 7 + vnoise(mx * 0.02, my * 0.06) * 9);
+  out[0] = 172 - 34 * t + 14 * nn; out[1] = 108 - 24 * t + 8 * nn; out[2] = 54 - 14 * t;
+}
+function stoneRGB(mx, my, out) {
+  const nn = vnoise(mx * 0.3, my * 0.3) * 0.6 + vnoise(mx * 0.9, my * 0.9) * 0.4;
+  const v = 98 + 74 * nn - (hash2(mx | 0, my | 0) > 0.93 ? 26 : 0);
+  out[0] = v; out[1] = v + 3; out[2] = v + 9;
+}
 function renderBG(x0, y0, x1, y1) {      // box in mask px
   const { W, H, MW, MH, kx, ky, img, photo, paper } = BG, w = world;
   const wall = w.wall, mat = w.mat, burnt = w.burnt, pw = w.photoWall, fr = w.frame;
@@ -506,21 +523,17 @@ function renderBG(x0, y0, x1, y1) {      // box in mask px
       const r = photo[j], g = photo[j + 1], b = photo[j + 2];
       let gr = r, gg = g, gb = b;
       if (burnt[n] || (pw[n] && !wall[n])) { const q = n * 3; gr = paper[q]; gg = paper[q + 1]; gb = paper[q + 2]; }
-      if (burnt[n]) { const sc = 0.66 + 0.2 * vnoise(bx * 0.12, by * 0.12); gr *= sc; gg *= sc * 0.9; gb *= sc * 0.8; }
+      if (w.plast[n]) { const nn = vnoise(bx * 0.25, by * 0.25); gr = 140 + 34 * nn; gg = 64 + 22 * nn; gb = 200 + 30 * nn; }
       const cov = (wv(ix, iy) * (1 - tx) + wv(ix + 1, iy) * tx) * (1 - ty) + (wv(ix, iy + 1) * (1 - tx) + wv(ix + 1, iy + 1) * tx) * ty;
       if (cov <= 0.001) { img[j] = gr; img[j + 1] = gg; img[j + 2] = gb; img[j + 3] = 255; continue; }
       let wr, wg, wb;
       const m = mat[n], mx = (bx + 0.5) / kx;
       if (m === 2) {          // wood: grain along x, darker rings; blackens while burning
-        const nn = vnoise(mx * 0.08, my * 0.5);
-        const t = 0.5 + 0.5 * Math.sin(my * 1.3 + nn * 7 + vnoise(mx * 0.02, my * 0.06) * 9);
-        wr = 172 - 34 * t + 14 * nn; wg = 108 - 24 * t + 8 * nn; wb = 54 - 14 * t;
+        woodRGB(mx, my, COL); wr = COL[0]; wg = COL[1]; wb = COL[2];
         const ch = w.char[clamp((my / w.h) | 0, 0, w.NY - 1) * w.NX + clamp((mx / w.h) | 0, 0, w.NX - 1)];
         if (ch < 1) { const k = 0.18 + 0.82 * ch; wr = wr * k + 30 * (1 - k); wg *= k; wb *= k; }
       } else if (m === 1) {   // stone: speckled grey
-        const nn = vnoise(mx * 0.3, my * 0.3) * 0.6 + vnoise(mx * 0.9, my * 0.9) * 0.4;
-        const v = 98 + 74 * nn - (hash2(mx | 0, my | 0) > 0.93 ? 26 : 0);
-        wr = v; wg = v + 3; wb = v + 9;
+        stoneRGB(mx, my, COL); wr = COL[0]; wg = COL[1]; wb = COL[2];
       } else { wr = r * r / 255; wg = g * g / 255; wb = b * b / 255; }   // pencil: deepen its own colour
       const ic = 1 - cov;
       img[j] = gr * ic + wr * cov; img[j + 1] = gg * ic + wg * cov; img[j + 2] = gb * ic + wb * cov; img[j + 3] = 255;
@@ -802,6 +815,81 @@ function fusePoint(rb, t) {
   return [u * u * p0x + 2 * u * t * cx + t * t * p2x, u * u * p0y + 2 * u * t * cy + t * t * p2y];
 }
 
+/* ---- rigid body helpers ---- */
+const MAT_DENS = [0, 2.4, 0.55];          // per body pixel: 1 stone (sinks), 2 wood (floats)
+let SB_NX = 0, SB_NY = 0;
+function sampleBody(b, wx, wy) {           // signed distance to body b at a world point; normal -> SB_NX/NY
+  const dx = wx - b.x, dy = wy - b.y, c = b.c, s = b.s;
+  const fx = dx * c + dy * s + b.cx - 0.5 + b.P, fy = -dx * s + dy * c + b.cy - 0.5 + b.P;
+  const SW = b.SW, SH = b.SH;
+  if (fx < 0 || fy < 0 || fx >= SW - 1.001 || fy >= SH - 1.001) return 99;
+  const ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy, o = iy * SW + ix, S = b.sdf;
+  const s00 = S[o], s10 = S[o + 1], s01 = S[o + SW], s11 = S[o + SW + 1];
+  let gx = (s10 - s00) * (1 - ty) + (s11 - s01) * ty, gy = (s01 - s00) * (1 - tx) + (s11 - s10) * tx;
+  const gl = Math.hypot(gx, gy) || 1; gx /= gl; gy /= gl;
+  SB_NX = gx * c - gy * s; SB_NY = gx * s + gy * c;
+  return (s00 * (1 - tx) + s10 * tx) * (1 - ty) + (s01 * (1 - tx) + s11 * tx) * ty;
+}
+function bodyImpulse(A, B, px, py, nx, ny, e, mu) {   // n points from B (or wall) toward A
+  const rax = px - A.x, ray = py - A.y;
+  let vx = A.vx - A.w * ray, vy = A.vy + A.w * rax, rbx = 0, rby = 0, bM = 0, bI = 0;
+  const aM = A.grab ? 0 : A.invM, aI = A.grab ? 0 : A.invI;
+  if (B) { rbx = px - B.x; rby = py - B.y; vx -= B.vx - B.w * rby; vy -= B.vy + B.w * rbx; bM = B.grab ? 0 : B.invM; bI = B.grab ? 0 : B.invI; }
+  const vn = vx * nx + vy * ny;
+  if (vn >= 0) return;
+  const ra = rax * ny - ray * nx, rb = rbx * ny - rby * nx, k = aM + bM + ra * ra * aI + rb * rb * bI;
+  if (k <= 0) return;
+  const j = -(1 + e) * vn / k;
+  const tx = -ny, ty = nx, vt = vx * tx + vy * ty;
+  const rta = rax * ty - ray * tx, rtb = rbx * ty - rby * tx, kt = aM + bM + rta * rta * aI + rtb * rtb * bI;
+  const jt = kt > 0 ? clamp(-vt / kt, -mu * j, mu * j) : 0;
+  const Jx = j * nx + jt * tx, Jy = j * ny + jt * ty;
+  A.vx += Jx * aM; A.vy += Jy * aM; A.w += (rax * Jy - ray * Jx) * aI;
+  if (B) { B.vx -= Jx * bM; B.vy -= Jy * bM; B.w -= (rbx * Jy - rby * Jx) * bI; }
+}
+function buildBodyProps(b) {
+  const { W, H, m } = b;
+  let mass = 0, sx = 0, sy = 0, n = 0, wood = 0;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const t = m[j * W + i]; if (!t) continue;
+    const d = MAT_DENS[t]; mass += d; sx += d * (i + 0.5); sy += d * (j + 0.5); n++; if (t === 2) wood++;
+  }
+  if (n < 6) return false;
+  const cx = sx / mass, cy = sy / mass;
+  let I = 0, R2 = 0;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const t = m[j * W + i]; if (!t) continue;
+    const dx = i + 0.5 - cx, dy = j + 0.5 - cy, r2 = dx * dx + dy * dy;
+    I += MAT_DENS[t] * (r2 + 1 / 6); if (r2 > R2) R2 = r2;
+  }
+  if (b.cx !== undefined) { const dx = cx - b.cx, dy = cy - b.cy; b.x += dx * b.c - dy * b.s; b.y += dx * b.s + dy * b.c; }
+  b.cx = cx; b.cy = cy; b.mass = mass; b.invM = 1 / mass; b.invI = 1 / I; b.n = n; b.hasWood = wood > 0; b.R = Math.sqrt(R2) + 1.5;
+  const P = 4, SW = W + 2 * P, SH = H + 2 * P, pm = new Uint8Array(SW * SH);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (m[j * W + i]) pm[(j + P) * SW + i + P] = 1;
+  const dO = edtSq(SW, SH, pm, 1), dI = edtSq(SW, SH, pm, 0), sdf = new Float32Array(SW * SH);
+  for (let k = 0; k < SW * SH; k++) sdf[k] = pm[k] ? -(Math.sqrt(dI[k]) - 0.5) : Math.sqrt(dO[k]) - 0.5;
+  b.P = P; b.SW = SW; b.SH = SH; b.sdf = sdf;
+  const bp = [];
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    if (!m[j * W + i]) continue;
+    if (i === 0 || j === 0 || i === W - 1 || j === H - 1 || !m[j * W + i - 1] || !m[j * W + i + 1] || !m[(j - 1) * W + i] || !m[(j + 1) * W + i])
+      bp.push(i + 0.5 - cx, j + 0.5 - cy);
+  }
+  const np = bp.length / 2, stride = Math.max(1, Math.ceil(np / 140)), bnd = [];
+  for (let k = 0; k < np; k += stride) bnd.push(bp[2 * k], bp[2 * k + 1]);
+  b.bnd = new Float32Array(bnd);
+  const BW = Math.ceil(W / 2), smp = [];
+  for (let bj = 0; bj < H; bj += 2) for (let bi = 0; bi < W; bi += 2) {
+    let a = 0, ax = 0, ay = 0, wd = 0;
+    for (let j = bj; j < Math.min(H, bj + 2); j++) for (let i = bi; i < Math.min(W, bi + 2); i++) {
+      const t = m[j * W + i]; if (t) { a++; ax += i + 0.5; ay += j + 0.5; if (t === 2) wd = 1; }
+    }
+    if (a) smp.push(ax / a - cx, ay / a - cy, a, (bj >> 1) * BW + (bi >> 1), wd);
+  }
+  b.smp = new Float32Array(smp);
+  return true;
+}
+
 class World {
   constructor(MW, MH, A) {
     const h = CFG.cell;
@@ -820,7 +908,7 @@ class World {
     this.u = F(); this.v = F(); this.du = F(); this.dv = F(); this.prevU = F(); this.prevV = F();
     this.s = F(); this.density = F(); this.denW = F(); this.denO = F();
     this.windX = F(); this.windY = F();
-    this.denF = F(); this.heat = F(); this.heatTmp = F(); this.fuel = F();
+    this.denF = F(); this.denS = F(); this.heat = F(); this.heatTmp = F(); this.fuel = F();
     this.fireSrc = F(); this.smokeSrc = F(); this.steamSrc = F(); this.flashSrc = F(); this.oilHeat = F();
     this.burn = new Uint8Array(n); this.evap = new Uint8Array(n); this.smother = new Uint8Array(n);
     this.char = new Float32Array(n).fill(1); this.charList = [];
@@ -839,6 +927,7 @@ class World {
     this.tpx = new Float32Array(P); this.tpy = new Float32Array(P);
     this.tvx = new Float32Array(P); this.tvy = new Float32Array(P);
     this.tpt = new Uint8Array(P); this.tpl = new Float32Array(P);
+    this.ox = new Float32Array(P); this.oy = new Float32Array(P); this.tox = new Float32Array(P); this.toy = new Float32Array(P);
     this.kill = new Int32Array(P);
     this.pSpacing = 2.2 * this.r; this.pInv = 1 / this.pSpacing;
     this.pNX = Math.ceil(MW * this.pInv) + 1; this.pNY = Math.ceil(MH * this.pInv) + 1;
@@ -853,7 +942,10 @@ class World {
     this.burning = 0; this.oilBurning = 0; this.hot = false; this.flashOn = false; this.evapAny = false;
     this.fxLinger = 0; this.srcDirty = false; this.wallsVersion = 0;
     this.upX = 0; this.upY = -1; this.upAng = 0; this.gx = 0; this.gy = CFG.gravity * this.U;
-    this.onBurn = null;
+    this.onBurn = null; this.onBg = null;
+    this.bodies = []; this.grabs = []; this.ropes = []; this.bodyBurning = 0; this.ropeBurning = 0; this.sandN = 0;
+    this.plast = new Uint8Array(MW * MH); this.plastCnt = new Int32Array(n); this.detMark = new Uint8Array(n);
+    this.detQ = []; this.detCount = 0;
   }
 
   /* ---- walls ---- */
@@ -928,16 +1020,16 @@ class World {
     if (this.N >= this.maxP) return false;
     if (this.sdfAt(x, y) < this.r) return false;
     const i = this.N++;
-    this.px[i] = x; this.py[i] = y; this.vx[i] = vx; this.vy[i] = vy;
+    this.px[i] = x; this.py[i] = y; this.vx[i] = vx; this.vy[i] = vy; this.ox[i] = x; this.oy[i] = y;
     this.pt[i] = t; this.pl[i] = t === 2 ? CFG.foamLife * (0.7 + 0.6 * Math.random()) : 0;
     return true;
   }
   removeAt(i) {
     const l = --this.N;
     this.px[i] = this.px[l]; this.py[i] = this.py[l]; this.vx[i] = this.vx[l]; this.vy[i] = this.vy[l];
-    this.pt[i] = this.pt[l]; this.pl[i] = this.pl[l];
+    this.pt[i] = this.pt[l]; this.pl[i] = this.pl[l]; this.ox[i] = this.ox[l]; this.oy[i] = this.oy[l];
   }
-  clearLiquids() { this.N = 0; this.density.fill(0); this.denW.fill(0); this.denO.fill(0); this.denF.fill(0); }
+  clearLiquids() { this.N = 0; this.density.fill(0); this.denW.fill(0); this.denO.fill(0); this.denF.fill(0); this.denS.fill(0); }
 
   /* ---- wind field (velocity targets on the grid) ---- */
   rebuildWind() {
@@ -997,7 +1089,8 @@ class World {
         for (let x = b.x - R + ox + (row & 1 ? r : 0); x < b.x + R; x += sp) {
           const dx = x - b.x, dy = y - b.y;
           if (dx * dx + dy * dy > R2) continue;
-          if (this.densityAt(x, y) > lim) continue;
+          const cc = this.cellOf(x, y);
+          if (this.density[cc] + this.denS[cc] > lim) continue;
           this.add(x, y, b.vx, b.vy, b.type);
         }
       }
@@ -1007,9 +1100,9 @@ class World {
   /* ---- integrate: gravity, buoyancy, wind, foam aging, anti-tunneling ---- */
   integrate(dt, gx, gy) {
     const { px, py, vx, vy, pt, pl, sdf, MW, NX, NY, inv, denW, denO, denF, heat, oilHeat, windX, windY, smother } = this, N = this.N;
-    const foamLim = this.restDensity * 0.1, oilBurn = CFG.oilBurnTime, airLim = this.restDensity * 0.45;
+    const foamLim = this.restDensity * 0.1, oilBurn = CFG.oilBurnTime, airLim = this.restDensity * 0.7;
     const upO = Math.abs(this.upX) > Math.abs(this.upY) ? (this.upX > 0 ? 1 : -1) : (this.upY > 0 ? NX : -NX), nCells = NX * NY;
-    const density = this.density;
+    const density = this.density, { ox, oy, u, v } = this;
     let nb = 0;
     const vmax = CFG.vmax * this.U, vmax2 = vmax * vmax, thr = this.r * 0.5;
     const irest = 1 / this.restDensity, oilLift = CFG.oilLift, foamLift = CFG.foamLift;
@@ -1021,6 +1114,7 @@ class World {
     const foamSlip = CFG.foamLift * 45 * this.U * dt * (gl / (CFG.gravity * this.U) || 0);
     for (let i = 0; i < N; i++) {
       let x = px[i], y = py[i], ux = vx[i], uy = vy[i];
+      ox[i] = x; oy[i] = y;
       const t = pt[i];
       let ax = gx, ay = gy;
       if (t !== 0 || hasWind || hasOil) {
@@ -1035,11 +1129,18 @@ class World {
           const k = 1 - f * oilLift; ax = gx * k; ay = gy * k;
           x += ux0 * oilSlip * f; y += uy0 * oilSlip * f;
           const lf = pl[i];                  // > 0 burning, 0 fresh, < 0 burnt out
-          const ca = c + upO, air = ca < 0 || ca >= nCells || density[ca] < airLim;   // oil burns only where it meets air
+          const ca = c + upO, air = ca < 0 || ca >= nCells || density[ca] < airLim;   // oil catches fire where it meets air
           if (lf > 0) {
-            if (smother[c] || !air) pl[i] = 0;          // foam blanket / submerged: flame goes out
-            else { nb++; oilHeat[c] += 0.22; const r = lf - dt; pl[i] = r > 0 ? r : -1; }
+            if (smother[c]) pl[i] = 0;                  // foam blanket smothers the flame
+            else { nb++; oilHeat[c] += 0.25; const r = lf - dt; pl[i] = r > 0 ? r : -1; }   // burns until used up
           } else if (lf === 0 && air && heat[c] > 0.45 && !smother[c]) pl[i] = oilBurn * (0.6 + 0.8 * Math.random());
+        } else if (t === 3) {                // sand: heavy grains, sink in water and get dragged by it
+          let f = denW[c] * irest; if (f > 1) f = 1;
+          const k = 1 - 0.4 * f; ax = gx * k; ay = gy * k;
+          if (f > 0.1) {
+            const a = Math.min(1, 3 * dt) * f;
+            ux += ((u[c] + u[c + 1]) * 0.5 - ux) * a; uy += ((v[c] + v[c + NX]) * 0.5 - uy) * a;
+          }
         } else if (t === 2) {                // foam rises through any liquid, dies over time
           let f = (denW[c] + denO[c]) * irest; if (f > 1) f = 1;
           const k = f < 0.15 ? 0.45 : 1 - f * foamLift; ax = gx * k; ay = gy * k;
@@ -1076,7 +1177,7 @@ class World {
 
   /* ---- push particles out of the walls (SDF) ---- */
   collide() {
-    const { px, py, vx, vy, sdf, MW, MH, kill } = this, N = this.N, r = this.r;
+    const { px, py, vx, vy, sdf, MW, MH, kill, pt, ox, oy } = this, N = this.N, r = this.r;
     const xmax = MW - 2, ymax = MH - 2;
     let nk = 0;
     for (let i = 0; i < N; i++) {
@@ -1097,7 +1198,15 @@ class World {
           x += gx * push; y += gy * push;
           const vn = vx[i] * gx + vy[i] * gy;
           if (vn < 0) { vx[i] -= vn * gx; vy[i] -= vn * gy; }
-        } else if (d < -1) kill[nk++] = i;   // stuck deep inside a thick wall
+          if (pt[i] === 3) {                 // sand grips walls
+            const dx = x - ox[i], dy = y - oy[i], dn = dx * gx + dy * gy, tx = dx - dn * gx, ty = dy - dn * gy;
+            const k = tx * tx + ty * ty < 0.25 ? 1 : 0.6 * CFG.sandFriction + 0.2;   // static, then kinetic friction
+            x -= tx * k; y -= ty * k;
+          }
+        } else if (d < 0) {                  // on a wall's centre line (no gradient): step back to last free spot
+          if (sdf[(oy[i] | 0) * MW + (ox[i] | 0)] > 0) { x = ox[i]; y = oy[i]; vx[i] *= 0.5; vy[i] *= 0.5; }
+          else if (d < -4) kill[nk++] = i;   // truly buried in a thick wall
+        }
       }
       px[i] = x; py[i] = y;
     }
@@ -1123,15 +1232,16 @@ class World {
       cellEntries[--cellStart[yi * pNX + xi]] = i;
     }
     if ((this.stepCount & 31) === 0) {     // reorder in memory by cell for cache locality
-      const { tpx, tpy, tvx, tvy, tpt, tpl, vx, vy, pt, pl } = this;
+      const { tpx, tpy, tvx, tvy, tpt, tpl, tox, toy, vx, vy, pt, pl, ox, oy } = this;
       for (let k = 0; k < N; k++) {
         const j = cellEntries[k];
-        tpx[k] = px[j]; tpy[k] = py[j]; tvx[k] = vx[j]; tvy[k] = vy[j]; tpt[k] = pt[j]; tpl[k] = pl[j];
+        tpx[k] = px[j]; tpy[k] = py[j]; tvx[k] = vx[j]; tvy[k] = vy[j]; tpt[k] = pt[j]; tpl[k] = pl[j]; tox[k] = ox[j]; toy[k] = oy[j];
         cellEntries[k] = k;
       }
-      this.tpx = px; this.tpy = py; this.tvx = vx; this.tvy = vy; this.tpt = pt; this.tpl = pl;
-      this.px = px = tpx; this.py = py = tpy; this.vx = tvx; this.vy = tvy; this.pt = tpt; this.pl = tpl;
+      this.tpx = px; this.tpy = py; this.tvx = vx; this.tvy = vy; this.tpt = pt; this.tpl = pl; this.tox = ox; this.toy = oy;
+      this.px = px = tpx; this.py = py = tpy; this.vx = tvx; this.vy = tvy; this.pt = tpt; this.pl = tpl; this.ox = tox; this.oy = toy;
     }
+    const { pt, ox, oy } = this, hasSand = this.sandN > 0, fr = CFG.sandFriction * 0.5;
     const minDist = 2 * this.r, minDist2 = minDist * minDist;
     for (let it = 0; it < CFG.separateIters; it++) {
       for (let cy = 0; cy < pNY; cy++) {
@@ -1142,6 +1252,7 @@ class World {
           for (let k = cs; k < ce; k++) {
             const i = cellEntries[k];
             let xi = px[i], yi = py[i];
+            const si = hasSand && pt[i] === 3;
             for (let nb = 0; nb < 5; nb++) {
               let a, e;
               if (nb === 0) { a = k + 1; e = ce; }
@@ -1158,6 +1269,13 @@ class World {
                 const d2 = dx * dx + dy * dy;
                 if (d2 > minDist2 || d2 === 0) continue;
                 const d = Math.sqrt(d2), s = 0.5 * (minDist - d) / d;
+                if (si && pt[j] === 3) {     // grain-grain static friction: cancel relative sliding
+                  const nx = dx / d, ny = dy / d;
+                  const rdx = (px[j] - ox[j]) - (xi - ox[i]), rdy = (py[j] - oy[j]) - (yi - oy[i]);
+                  const tn = rdx * nx + rdy * ny, sx = rdx - tn * nx, sy = rdy - tn * ny;
+                  const kf = sx * sx + sy * sy < 0.09 ? 0.5 : fr, tx = sx * kf, ty = sy * kf;
+                  xi += tx; yi += ty; px[j] -= tx; py[j] -= ty;
+                }
                 dx *= s; dy *= s;
                 xi -= dx; yi -= dy; px[j] += dx; py[j] += dy;
               }
@@ -1247,17 +1365,19 @@ class World {
 
   /* ---- particles -> grid ---- */
   p2g() {
-    const { NX, NY, h, inv, u, v, du, dv, type, solid, fixU, fixV, validU, validV, px, py, vx, vy } = this;
+    const { NX, NY, h, inv, u, v, du, dv, type, solid, fixU, fixV, validU, validV, px, py, vx, vy, pt } = this;
     const N = this.N, n = NX * NY, h2 = h * 0.5;
     u.fill(0); v.fill(0); du.fill(0); dv.fill(0);
     for (let c = 0; c < n; c++) type[c] = solid[c] ? SOLID : AIR;
     for (let i = 0; i < N; i++) {
+      if (pt[i] === 3) continue;
       const xi = clamp((px[i] * inv) | 0, 0, NX - 1), yi = clamp((py[i] * inv) | 0, 0, NY - 1);
       const c = yi * NX + xi;
       if (type[c] === AIR) type[c] = FLUID;
     }
     const lo = h, hx = (NX - 1) * h, hy = (NY - 1) * h;
     for (let i = 0; i < N; i++) {
+      if (pt[i] === 3) continue;
       const x = clamp(px[i], lo, hx), y = clamp(py[i], lo, hy);
       let fx = x * inv, fy = (y - h2) * inv;
       let x0 = Math.min(fx | 0, NX - 2), y0 = Math.min(fy | 0, NY - 2);
@@ -1288,8 +1408,9 @@ class World {
   }
 
   computeDensity() {
-    const { NX, h, inv, density, denW, denO, denF, px, py, pt } = this, N = this.N, h2 = h * 0.5;
-    let oil = 0;
+    const { NX, h, inv, density, denW, denO, denF, denS, px, py, pt } = this, N = this.N, h2 = h * 0.5;
+    let oil = 0, sand = 0;
+    denS.fill(0);
     density.fill(0); denW.fill(0); denO.fill(0); denF.fill(0);
     const lo = h, hx = (NX - 1) * h, hy = (this.NY - 1) * h;
     for (let i = 0; i < N; i++) {
@@ -1298,13 +1419,14 @@ class World {
       const x0 = fx | 0, y0 = fy | 0, tx = fx - x0, ty = fy - y0, sx = 1 - tx, sy = 1 - ty;
       const c = y0 * NX + x0;
       const w0 = sx * sy, w1 = tx * sy, w2 = sx * ty, w3 = tx * ty;
+      if (pt[i] === 3) { denS[c] += w0; denS[c + 1] += w1; denS[c + NX] += w2; denS[c + NX + 1] += w3; sand++; continue; }
       density[c] += w0; density[c + 1] += w1; density[c + NX] += w2; density[c + NX + 1] += w3;
       const t = pt[i];
       const d = t === 0 ? denW : (t === 1 ? denO : denF);
       { d[c] += w0; d[c + 1] += w1; d[c + NX] += w2; d[c + NX + 1] += w3; }
       if (t === 1) oil++;
     }
-    this.oilCount = oil;
+    this.oilCount = oil; this.sandN = sand;
   }
 
   /* ---- pressure projection (Gauss-Seidel + SOR, drift compensation) ---- */
@@ -1339,10 +1461,11 @@ class World {
   g2p() {
     const { NX, NY, h, inv, u, v, prevU, prevV, validU, validV, px, py, vx, vy, pt } = this;
     const N = this.N, h2 = h * 0.5;
-    const FL = [CFG.flipRatio, CFG.oilFlip, 0.4];
+    const FL = [CFG.flipRatio, CFG.oilFlip, 0.4, -1];
     const lo = h, hx = (NX - 1) * h, hy = (NY - 1) * h;
     for (let i = 0; i < N; i++) {
       const flip = FL[pt[i]], pic = 1 - flip;
+      if (flip < 0) continue;              // sand is not part of the fluid
       const x = clamp(px[i], lo, hx), y = clamp(py[i], lo, hy);
       let fx = x * inv, fy = (y - h2) * inv;
       let x0 = Math.min(fx | 0, NX - 2), y0 = Math.min(fy | 0, NY - 2);
@@ -1470,6 +1593,10 @@ class World {
         const hx = Math.cos(c.heading), hy = Math.sin(c.heading), hn = hx * nx + hy * ny;
         if (hn < 0) c.heading = Math.atan2(hy - 2 * hn * ny, hx - 2 * hn * nx);
       }
+      for (const b of this.bodies) {
+        const db = sampleBody(b, c.x, c.y);
+        if (db < rad) { c.x += SB_NX * (rad - db); c.y += SB_NY * (rad - db); const vn = c.vx * SB_NX + c.vy * SB_NY; if (vn < 0) { c.vx -= vn * SB_NX; c.vy -= vn * SB_NY; } }
+      }
       c.x = clamp(c.x, f + 1, MW - f - 1); c.y = clamp(c.y, f + 1, MH - f - 1);
       c.phase += dt * (c.wet > 0.5 || T.duck ? 5 + sp / (25 * U) : 18);
       const along = c.vx * rx + c.vy * ry;
@@ -1537,7 +1664,8 @@ class World {
       for (let c = 0; c < n; c++) if (flashSrc[c] > 0) { flashSrc[c] *= k; if (flashSrc[c] < 0.02) flashSrc[c] = 0; else any = true; }
       this.flashOn = any;
     }
-    const active = this.torches.length > 0 || this.globs.length > 0 || this.burning > 0 || this.oilBurning > 0 || this.hot;
+    const active = this.torches.length > 0 || this.globs.length > 0 || this.burning > 0 || this.oilBurning > 0 || this.hot
+                || this.bodyBurning > 0 || this.ropeBurning > 0;
     if (!active) {
       if (this.srcDirty) { fireSrc.fill(0); smokeSrc.fill(0); steamSrc.fill(0); this.srcDirty = false; }
       if (this.flashOn) this.fxLinger = 3; else if (this.fxLinger > 0) this.fxLinger -= dt;
@@ -1554,11 +1682,13 @@ class World {
     const smother = this.smother, fl = rest * 0.1;
     for (let c = 0; c < n; c++) {
       const a = c + upOff, b = c + 2 * upOff, d = c + 3 * upOff;
-      smother[c] = (denF[c] > fl || (a >= 0 && a < n && denF[a] > fl) || (b >= 0 && b < n && denF[b] > fl) || (d >= 0 && d < n && denF[d] > fl)) ? 1 : 0;
+      smother[c] = (denF[c] > fl || this.denS[c] > rest * 0.5 || (a >= 0 && a < n && denF[a] > fl) || (b >= 0 && b < n && denF[b] > fl) || (d >= 0 && d < n && denF[d] > fl)) ? 1 : 0;
     }
     const sp = CFG.fireSpread;
     const D = Math.min(0.24, 4 * sp * dt), R = Math.min(0.6, 9 * sp * dt), cool = Math.exp(-1.4 * dt);
-    const ign = Math.min(1, 5 * sp * dt), burnRate = dt / CFG.woodBurnTime;
+    const ign = Math.min(1, 1.5 * sp * dt), spreadP = Math.min(1, 3 * sp * dt), burnRate = dt / CFG.woodBurnTime;
+    const plastCnt = this.plastCnt;
+    this.stepRopes(dt);
     let nBurn = 0, hot = false;
     for (let cy = 1; cy < NY - 1; cy++) for (let cx = 1; cx < NX - 1; cx++) {
       const c = cy * NX + cx, f = fuel[c];
@@ -1567,7 +1697,8 @@ class World {
       let nt = t + D * (heatTmp[c - 1] + heatTmp[c + 1] + heatTmp[c - NX] + heatTmp[c + NX] - 4 * t) + R * (heatTmp[c - upOff] - t);
       nt *= cool;
       const oh = oilHeat[c];
-      if (oh > 0) { if (nt < 1.2) nt = Math.min(1.2, 0.55 + oh); fireSrc[c] = Math.min(0.85, oh * 1.4); smokeSrc[c] = 0.45; }
+      if (oh > 0) { if (nt < 1.2) nt = Math.min(1.2, 0.55 + oh); fireSrc[c] = Math.min(1, 0.35 + oh * 1.5); smokeSrc[c] = 0.45; }
+      if (plastCnt[c] > 0 && nt > 0.5) this.triggerPlast(c);
       const wet = denW[c] > rest * 0.3, foamy = smother[c] === 1;
       if (wet || foamy) {
         if ((burn[c] || nt > 0.35) && !oh) { steamSrc[c] = 1; if (wet && burn[c] && evap[c] < 3) { evap[c]++; this.evapAny = true; } }
@@ -1577,13 +1708,17 @@ class World {
       if (burn[c]) {
         nBurn++;
         if (nt < 1.15) nt = 1.15;
-        fireSrc[c] = 0.9; if (smokeSrc[c] < 0.35) smokeSrc[c] = 0.35;
+        fireSrc[c] = 1; if (smokeSrc[c] < 0.35) smokeSrc[c] = 0.35;
         fuel[c] = f - burnRate;
         if (this.char[c] > 0.15) { this.char[c] -= burnRate * 0.9; if ((this.stepCount + c) % 12 === 0) this.charList.push(c); }
         if (fuel[c] <= 0) { fuel[c] = 0; burn[c] = 0; this.burnQueue.push(c); }
         if (Math.random() < 2.5 * dt) this.spawnEmber((cx + Math.random()) * h, (cy + Math.random()) * h,
           (Math.random() - 0.5) * 60 * U, (Math.random() - 0.5) * 60 * U, 0.6 + Math.random() * 0.9, 0);
-      } else if (f > 0.005 && nt > 0.45 && !wet && !foamy && Math.random() < ign) burn[c] = 1;
+      } else if (f > 0.005 && !wet && !foamy) {
+        // fire creeps along wood cell by cell; hot air above can also light it
+        const nbB = burn[c - 1] | burn[c + 1] | burn[c - NX] | burn[c + NX] | burn[c - NX - 1] | burn[c - NX + 1] | burn[c + NX - 1] | burn[c + NX + 1];
+        if ((nbB && Math.random() < spreadP) || (nt > 0.55 && Math.random() < ign)) burn[c] = 1;
+      }
       if (oh > 0 && Math.random() < 1.5 * dt) this.spawnEmber((cx + Math.random()) * h, (cy + Math.random()) * h, 0, 0, 0.5 + Math.random() * 0.7, 0);
       if (nt > 0.75 && fireSrc[c] < 0.6) fireSrc[c] = Math.max(fireSrc[c], Math.min(0.6, (nt - 0.75) * 1.4));   // hot air glows as flame tongues
       if (nt < 0.004) nt = 0; else hot = true;
@@ -1591,10 +1726,11 @@ class World {
     }
     oilHeat.fill(0);
     this.burning = nBurn; this.hot = hot;
+    this.burnBodies(dt);
     let k = 0;
     while (this.burnQueue.length && k++ < 10) {
       const c = this.burnQueue.shift();
-      this.burnAt(((c % NX) + 0.5) * h, (((c / NX) | 0) + 0.5) * h, h * 1.3);
+      this.burnAt(((c % NX) + 0.5) * h, (((c / NX) | 0) + 0.5) * h, h * 1.5);
     }
   }
   updateGlobs(dt) {
@@ -1633,9 +1769,17 @@ class World {
     const rest = this.restDensity, U = this.U, rb = this.bombR(), MW = this.MW, MH = this.MH, f = this.frame;
     for (const b of this.bombs) {
       if (b.dead) continue;
-      // physics: heavy ball - falls, sinks through liquids (with drag), rolls on walls
-      if (b.held) { b.vx = 0; b.vy = 0; }
-      else {
+      b.w = 0; b.invI = 0; b.invM = 1 / (9.4 * rb * rb);
+      if (b.held) { b.vx = 0; b.vy = 0; b.stuck = false; b.attach = null; }
+      else if (b.stuck) {
+        b.vx = 0; b.vy = 0;
+        const at = b.attach;
+        if (at) {
+          if (!this.bodies.includes(at.b)) { b.stuck = false; b.attach = null; }
+          else { const B = at.b; b.x = B.x + at.lx * B.c - at.ly * B.s; b.y = B.y + at.lx * B.s + at.ly * B.c; b.vx = B.vx; b.vy = B.vy; }
+        }
+      } else {
+        // heavy ball: falls, sinks through liquids (with drag), rolls on walls
         b.vx = b.vx || 0; b.vy = b.vy || 0;
         const sub = Math.min(1, this.density[this.cellOf(b.x, b.y)] / rest);
         b.vx += this.gx * (1 - 0.3 * sub) * dt; b.vy += this.gy * (1 - 0.3 * sub) * dt;
@@ -1650,15 +1794,34 @@ class World {
           b.x = nx; b.y = ny;
         }
         const d = this.sdfAt(b.x, b.y);
-        if (d < rb) {
+        if (d < rb + 0.3) {
           const [nx, ny] = this.sdfGrad(b.x, b.y);
-          b.x += nx * (rb - d); b.y += ny * (rb - d);
+          if (d < rb) { b.x += nx * (rb - d); b.y += ny * (rb - d); }
           const vn = b.vx * nx + b.vy * ny;
           if (vn < 0) { b.vx -= 1.25 * vn * nx; b.vy -= 1.25 * vn * ny; }
-          b.vx *= 1 - 2 * dt; b.vy *= 1 - 2 * dt;     // rolling friction
+          b.vx *= 1 - 2 * dt; b.vy *= 1 - 2 * dt;
+          if (b.kind === 2) { b.stuck = true; b.vx = 0; b.vy = 0; }      // sticky bomb glues itself on
         }
-        b.x = clamp(b.x, f + rb, MW - f - rb); b.y = clamp(b.y, f + rb, MH - f - rb);
       }
+      b.x = clamp(b.x, f + rb, MW - f - rb); b.y = clamp(b.y, f + rb, MH - f - rb);
+    }
+    // bomb vs bomb
+    const L = this.bombs;
+    for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
+      const A = L[i], B = L[j]; if (A.dead || B.dead) continue;
+      let dx = B.x - A.x, dy = B.y - A.y; const d = Math.hypot(dx, dy);
+      if (d >= 2 * rb || d < 1e-4) continue;
+      dx /= d; dy /= d;
+      const ma = (A.held || A.stuck) ? 0 : 1, mb = (B.held || B.stuck) ? 0 : 1;
+      if (ma + mb === 0) continue;
+      const pen = 2 * rb - d;
+      A.x -= dx * pen * ma / (ma + mb); A.y -= dy * pen * ma / (ma + mb);
+      B.x += dx * pen * mb / (ma + mb); B.y += dy * pen * mb / (ma + mb);
+      const vn = (B.vx - A.vx) * dx + (B.vy - A.vy) * dy;
+      if (vn < 0) { const jj = -1.3 * vn / (ma + mb); A.vx -= dx * jj * ma; A.vy -= dy * jj * ma; B.vx += dx * jj * mb; B.vy += dy * jj * mb; }
+    }
+    for (const b of this.bombs) {
+      if (b.dead) continue;
       const [tx, ty] = this.bombTip(b), c = this.cellOf(tx, ty);
       if (!b.lit) { if (this.heat[c] > 0.4) { b.lit = true; } continue; }
       if (!b.chain && (this.denW[c] > rest * 0.35 || this.denF[c] > rest * 0.1)) {   // fuse doused
@@ -1689,6 +1852,8 @@ class World {
       c.vx += dx * f; c.vy += dy * f; c.scared = 3; c.heading = Math.atan2(dy, dx);
     }
     if (!fire) this.burnAt(b.x, b.y, R * 0.85);          // smash wooden walls
+    this.blastBodies(b.x, b.y, R, (fire ? 450 : 1000) * U, !fire);
+    this.plastInRadius(b.x, b.y, R);
     // visuals: flash, smoke, sparks, shock ring
     const { NX, NY, h, flashSrc } = this;
     const cx0 = clamp(((b.x - R) / h) | 0, 0, NX - 1), cx1 = clamp(((b.x + R) / h) | 0, 0, NX - 1);
@@ -1721,6 +1886,399 @@ class World {
     }
   }
 
+
+  /* ---- rigid bodies ---- */
+  createBody(x0, y0, W, H, m, texFn) {
+    if (this.bodies.length >= 40) return null;
+    const b = { W, H, m, th: 0, c: 1, s: 0, vx: 0, vy: 0, w: 0, x: 0, y: 0,
+      blockBurn: new Float32Array(Math.ceil(W / 2) * Math.ceil(H / 2)), texDirty: true, propsDirty: false, grab: false };
+    if (!buildBodyProps(b)) return null;
+    b.x = x0 + b.cx; b.y = y0 + b.cy;
+    const kx = BG.kx, ky = BG.ky, TW = Math.max(1, Math.round(W * kx)), TH = Math.max(1, Math.round(H * ky));
+    const tex = new Uint8ClampedArray(TW * TH * 4), out = [0, 0, 0];
+    for (let ty = 0; ty < TH; ty++) for (let tx = 0; tx < TW; tx++) {
+      const i = Math.min(W - 1, (tx * W / TW) | 0), j = Math.min(H - 1, (ty * H / TH) | 0), t = m[j * W + i];
+      if (!t) continue;
+      texFn(x0 * kx + tx, y0 * ky + ty, t, i, j, out);
+      const k = (ty * TW + tx) * 4;
+      tex[k] = out[0]; tex[k + 1] = out[1]; tex[k + 2] = out[2]; tex[k + 3] = 255;
+    }
+    Object.assign(b, { TW, TH, tex });
+    this.bodies.push(b);
+    return b;
+  }
+  texBlock(b, i0, j0, i1, j1, fn) {
+    const tx0 = Math.floor(i0 * b.TW / b.W), tx1 = Math.floor(i1 * b.TW / b.W), ty0 = Math.floor(j0 * b.TH / b.H), ty1 = Math.floor(j1 * b.TH / b.H);
+    for (let ty = ty0; ty < Math.min(b.TH, ty1); ty++) for (let tx = tx0; tx < Math.min(b.TW, tx1); tx++) fn((ty * b.TW + tx) * 4);
+    b.texDirty = true;
+  }
+  removeBodyPixel(b, i, j) {
+    b.m[j * b.W + i] = 0;
+    const t = b.tex;
+    this.texBlock(b, i, j, i + 1, j + 1, k => { t[k] = t[k + 1] = t[k + 2] = t[k + 3] = 0; });
+    b.propsDirty = true;
+  }
+  fixBodies() {
+    for (let i = this.bodies.length - 1; i >= 0; i--) {
+      const b = this.bodies[i];
+      if (!b.propsDirty) continue;
+      b.propsDirty = false;
+      if (!buildBodyProps(b)) { this.poof(b.x, b.y, 10 * this.U); this.bodies.splice(i, 1); }
+    }
+  }
+  bodyAt(x, y) {
+    for (let i = this.bodies.length - 1; i >= 0; i--) if (sampleBody(this.bodies[i], x, y) < 1) return this.bodies[i];
+    return null;
+  }
+  bodyWallContacts(b) {
+    const bnd = b.bnd, c = b.c, s = b.s;
+    let mp = 0, cx = 0, cy = 0;
+    for (let k = 0; k < bnd.length; k += 2) {
+      const lx = bnd[k], ly = bnd[k + 1];
+      const wx = b.x + lx * c - ly * s, wy = b.y + lx * s + ly * c;
+      const d = this.sdfAt(wx, wy);
+      if (d >= 0.6) continue;
+      const [nx, ny] = this.sdfGrad(wx, wy);
+      bodyImpulse(b, null, wx, wy, nx, ny, 0.12, 0.6);
+      const pen = 0.6 - d; if (pen > mp) { mp = pen; cx = nx; cy = ny; }
+    }
+    if (mp > 0 && !b.grab) { b.x += cx * mp * 0.7; b.y += cy * mp * 0.7; }
+  }
+  bodyPair(A, B) {
+    const bnd = A.bnd, c = A.c, s = A.s;
+    let mp = 0, cx = 0, cy = 0;
+    for (let k = 0; k < bnd.length; k += 2) {
+      const lx = bnd[k], ly = bnd[k + 1];
+      const wx = A.x + lx * c - ly * s, wy = A.y + lx * s + ly * c;
+      const d = sampleBody(B, wx, wy);
+      if (d >= 0.4) continue;
+      const nx = SB_NX, ny = SB_NY;
+      bodyImpulse(A, B, wx, wy, nx, ny, 0.1, 0.5);
+      const pen = 0.4 - d; if (pen > mp) { mp = pen; cx = nx; cy = ny; }
+    }
+    if (mp > 0) {
+      const ia = A.grab ? 0 : A.invM, ib = B.grab ? 0 : B.invM, tot = ia + ib || 1;
+      A.x += cx * mp * 0.6 * ia / tot; A.y += cy * mp * 0.6 * ia / tot;
+      B.x -= cx * mp * 0.6 * ib / tot; B.y -= cy * mp * 0.6 * ib / tot;
+    }
+  }
+  bombBody(bb, b) {
+    if (bb.stuck && bb.attach && bb.attach.b === b) return;
+    const rb = this.bombR(), d = sampleBody(b, bb.x, bb.y);
+    if (d >= rb) return;
+    const nx = SB_NX, ny = SB_NY;
+    bb.w = 0; bb.invI = 0; bb.invM = 1 / (9.4 * rb * rb);
+    if (bb.stuck) { bodyImpulse(b, null, bb.x - nx * rb, bb.y - ny * rb, -nx, -ny, 0.1, 0.5); return; }
+    bb.x += nx * (rb - d); bb.y += ny * (rb - d);
+    bodyImpulse(bb, b, bb.x - nx * rb, bb.y - ny * rb, nx, ny, 0.2, 0.5);
+    if (bb.kind === 2) {
+      const dx = bb.x - b.x, dy = bb.y - b.y;
+      bb.stuck = true; bb.attach = { b, lx: dx * b.c + dy * b.s, ly: -dx * b.s + dy * b.c };
+    }
+  }
+  stepBodies(dt) {
+    const B = this.bodies;
+    if (!B.length) return;
+    const gx = this.gx, gy = this.gy, ux = this.upX, uy = this.upY, rest = this.restDensity, h = this.h, dens = this.density;
+    for (const b of B) { b.c = Math.cos(b.th); b.s = Math.sin(b.th); }
+    for (const b of B) {
+      if (b.grab) continue;
+      let fx = gx * b.mass, fy = gy * b.mass, tq = 0;
+      const bnd = b.bnd, c = b.c, s = b.s;
+      // find the waterline by probing just outside the outline
+      let tot = 0, wet = 0, vwx = 0, vwy = 0; const hs = [];
+      for (let k = 0; k < bnd.length; k += 2) {
+        const lx = bnd[k], ly = bnd[k + 1], rl = Math.hypot(lx, ly) || 1;
+        const rx = lx * c - ly * s, ry = lx * s + ly * c;
+        const qx = b.x + rx + rx / rl * h * 1.2, qy = b.y + ry + ry / rl * h * 1.2, cell = this.cellOf(qx, qy);
+        tot++;
+        if (dens[cell] > rest * 0.4) {
+          wet++; hs.push((b.x + rx) * ux + (b.y + ry) * uy);
+          const gv = this.gridVel(qx, qy); if (gv) { vwx += gv[0]; vwy += gv[1]; }
+        }
+      }
+      if (wet > 0) {
+        let wl = Infinity;
+        if (wet < tot * 0.85) { hs.sort((p, q) => p - q); wl = hs[Math.min(hs.length - 1, Math.floor(hs.length * 0.92))]; }
+        const smp = b.smp;
+        let subA = 0;
+        for (let k = 0; k < smp.length; k += 5) {
+          const lx = smp[k], ly = smp[k + 1], a = smp[k + 2];
+          const rx = lx * c - ly * s, ry = lx * s + ly * c;
+          if ((b.x + rx) * ux + (b.y + ry) * uy > wl) continue;
+          const Fx = -gx * a, Fy = -gy * a;          // weight of displaced water pushes up
+          fx += Fx; fy += Fy; tq += rx * Fy - ry * Fx; subA += a;
+        }
+        const fsub = subA / b.n, k1 = Math.min(1, 5 * dt * fsub);
+        b.vx += (vwx / wet - b.vx) * k1 * 0.6; b.vy += (vwy / wet - b.vy) * k1 * 0.6;
+        b.w *= 1 - Math.min(1, 4 * dt * fsub);
+      }
+      b.vx += fx * b.invM * dt; b.vy += fy * b.invM * dt; b.w += tq * b.invI * dt;
+      b.w *= 0.998;
+    }
+    for (const g of this.grabs) {
+      const b = g.b; if (!B.includes(b)) continue;
+      const wx = b.x + g.lx * b.c - g.ly * b.s, wy = b.y + g.lx * b.s + g.ly * b.c;
+      b.vx = clamp((g.tx - wx) * 12, -2500, 2500); b.vy = clamp((g.ty - wy) * 12, -2500, 2500); b.w *= 0.8;
+    }
+    const vmax = CFG.vmax * this.U;
+    for (const b of B) {
+      const sp = Math.hypot(b.vx, b.vy); if (sp > vmax) { b.vx *= vmax / sp; b.vy *= vmax / sp; }
+      b.w = clamp(b.w, -20, 20);
+      b.x += b.vx * dt; b.y += b.vy * dt; b.th += b.w * dt;
+      b.c = Math.cos(b.th); b.s = Math.sin(b.th);
+    }
+    for (let it = 0; it < 3; it++) {
+      for (const b of B) this.bodyWallContacts(b);
+      for (let i = 0; i < B.length; i++) for (let j = i + 1; j < B.length; j++) {
+        const A = B[i], C = B[j];
+        if (Math.hypot(A.x - C.x, A.y - C.y) > A.R + C.R) continue;
+        this.bodyPair(A, C); this.bodyPair(C, A);
+      }
+      for (const bb of this.bombs) if (!bb.dead && !bb.held) for (const b of B) this.bombBody(bb, b);
+    }
+    this.pushFromBodies();
+  }
+  pushFromBodies() {
+    const { px, py, vx, vy, pt } = this, N = this.N, r = this.r, pa = 2 * Math.sqrt(3) * r * r, MPT = [1, 0.8, 0.1, 2];
+    for (const b of this.bodies) {
+      const R = b.R + r;
+      let jx = 0, jy = 0, jt = 0, cx = 0, cy = 0;
+      for (let i = 0; i < N; i++) {
+        const dx = px[i] - b.x; if (dx > R || dx < -R) continue;
+        const dy = py[i] - b.y; if (dy > R || dy < -R || dx * dx + dy * dy > R * R) continue;
+        const d = sampleBody(b, px[i], py[i]);
+        if (d >= r) continue;
+        const nx = SB_NX, ny = SB_NY, pen = r - d;
+        const qx = px[i] + nx * pen, qy = py[i] + ny * pen;
+        if (this.sdfAt(qx, qy) < r * 0.6) {        // drop trapped against a wall: never push it through - push the body instead
+          if (!b.grab) { cx -= nx * pen * 0.25; cy -= ny * pen * 0.25; }
+          const vn = (b.vx - b.w * (py[i] - b.y)) * nx + (b.vy + b.w * (px[i] - b.x)) * ny;
+          if (vn < 0) { jx -= vn * nx * b.mass * 0.02; jy -= vn * ny * b.mass * 0.02; }
+          continue;
+        }
+        px[i] = qx; py[i] = qy;
+        const rx = px[i] - b.x, ry = py[i] - b.y, bvx = b.vx - b.w * ry, bvy = b.vy + b.w * rx;
+        const vn = (vx[i] - bvx) * nx + (vy[i] - bvy) * ny;
+        if (vn < 0) {
+          const dvx = -vn * nx, dvy = -vn * ny; vx[i] += dvx; vy[i] += dvy;
+          const m = MPT[pt[i]] * pa * 0.3;
+          jx -= dvx * m; jy -= dvy * m; jt -= (rx * dvy - ry * dvx) * m;
+        }
+      }
+      if (!b.grab) {
+        b.vx += jx * b.invM; b.vy += jy * b.invM; b.w += jt * b.invI;
+        const cl = Math.hypot(cx, cy), lim = 1.5;
+        if (cl > lim) { cx *= lim / cl; cy *= lim / cl; }
+        b.x += cx; b.y += cy;
+      }
+    }
+  }
+  charBlock(b, blk) {
+    const BW = Math.ceil(b.W / 2), bi = (blk % BW) * 2, bj = ((blk / BW) | 0) * 2, t = b.tex;
+    this.texBlock(b, bi, bj, Math.min(b.W, bi + 2), Math.min(b.H, bj + 2), k => { t[k] *= 0.5; t[k + 1] *= 0.42; t[k + 2] *= 0.38; });
+  }
+  burnBodies(dt) {
+    let nb = 0;
+    const rest = this.restDensity, heat = this.heat, fireSrc = this.fireSrc, smokeSrc = this.smokeSrc, denW = this.denW, smother = this.smother, U = this.U;
+    for (const b of this.bodies) {
+      if (!b.hasWood) continue;
+      const smp = b.smp, c = b.c, s = b.s, BW = Math.ceil(b.W / 2);
+      for (let k = 0; k < smp.length; k += 5) {
+        if (!smp[k + 4]) continue;
+        const lx = smp[k], ly = smp[k + 1], blk = smp[k + 3];
+        const wx = b.x + lx * c - ly * s, wy = b.y + lx * s + ly * c, cell = this.cellOf(wx, wy);
+        let st = b.blockBurn[blk];
+        const wet = denW[cell] > rest * 0.3 || smother[cell];
+        if (st > 0) {
+          if (wet) { b.blockBurn[blk] = -0.5; this.steamSrc[cell] = 1; continue; }
+          nb++; st -= dt;
+          if (heat[cell] < 1.15) heat[cell] = 1.15;
+          if (fireSrc[cell] < 1) fireSrc[cell] = 1;
+          if (smokeSrc[cell] < 0.35) smokeSrc[cell] = 0.35;
+          if (st <= 0) {
+            st = -1;
+            const bi = (blk % BW) * 2, bj = ((blk / BW) | 0) * 2;
+            for (let j = bj; j < Math.min(b.H, bj + 2); j++) for (let i = bi; i < Math.min(b.W, bi + 2); i++) if (b.m[j * b.W + i] === 2) this.removeBodyPixel(b, i, j);
+          }
+          b.blockBurn[blk] = st;
+          if (Math.random() < 1.5 * dt) this.spawnEmber(wx, wy, 0, 0, 0.5 + Math.random() * 0.7, 0);
+        } else if (st > -0.9 && heat[cell] > 0.5 && !wet && Math.random() < 3 * dt * CFG.fireSpread) {
+          b.blockBurn[blk] = CFG.woodBurnTime * (0.8 + 0.4 * Math.random());
+          this.charBlock(b, blk);
+        }
+      }
+    }
+    this.bodyBurning = nb;
+    this.fixBodies();
+  }
+  blastBodies(x, y, R, P, destroyWood) {
+    for (const b of this.bodies) {
+      const dx = b.x - x, dy = b.y - y, d = Math.hypot(dx, dy) + 0.01;
+      if (d > 2 * R + b.R) continue;
+      const f = clamp(1 - (d - b.R * 0.5) / (2 * R), 0, 1), k = P * f * clamp(800 / b.mass, 0.1, 2.5);
+      b.vx += dx / d * k; b.vy += dy / d * k; b.w += (Math.random() - 0.5) * 10 * f;
+      if (destroyWood && b.hasWood) {
+        for (let j = 0; j < b.H; j++) for (let i = 0; i < b.W; i++) {
+          if (b.m[j * b.W + i] !== 2) continue;
+          const lx = i + 0.5 - b.cx, ly = j + 0.5 - b.cy;
+          const wx = b.x + lx * b.c - ly * b.s, wy = b.y + lx * b.s + ly * b.c;
+          const rr = R * (0.75 + 0.5 * vnoise(i * 0.3, j * 0.3));
+          if ((wx - x) * (wx - x) + (wy - y) * (wy - y) < rr * rr) this.removeBodyPixel(b, i, j);
+        }
+      }
+    }
+    this.fixBodies();
+  }
+  sandVel(dt) {
+    if (!this.sandN) return;
+    const { px, py, vx, vy, pt, ox, oy } = this, N = this.N, inv = 1 / dt;
+    for (let i = 0; i < N; i++) if (pt[i] === 3) { vx[i] = (px[i] - ox[i]) * inv * 0.995; vy[i] = (py[i] - oy[i]) * inv * 0.995; }
+  }
+
+  /* ---- plasteline: paintable explosive that cannot pass through walls ---- */
+  freeAt(x, y) { const xi = x | 0, yi = y | 0; return xi > 0 && yi > 0 && xi < this.MW - 1 && yi < this.MH - 1 && !this.wall[yi * this.MW + xi]; }
+  moveCursor(cur, tx, ty) {
+    const dx = tx - cur.x, dy = ty - cur.y, n = Math.ceil(Math.hypot(dx, dy));
+    let x = cur.x, y = cur.y;
+    for (let k = 1; k <= n; k++) {
+      const nx = cur.x + dx * k / n, ny = cur.y + dy * k / n;
+      if (!this.freeAt(nx, ny)) break;
+      x = nx; y = ny;
+    }
+    return { x, y };
+  }
+  stampPlast(cx, cy, rad) {
+    const { MW, MH, wall, plast, plastCnt, NX, inv } = this;
+    const x0 = Math.max(1, Math.floor(cx - rad)), x1 = Math.min(MW - 2, Math.ceil(cx + rad));
+    const y0 = Math.max(1, Math.floor(cy - rad)), y1 = Math.min(MH - 2, Math.ceil(cy + rad));
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
+      if (dx * dx + dy * dy > rad * rad) continue;
+      const i = y * MW + x;
+      if (wall[i] || plast[i]) continue;
+      const n = Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)));
+      let ok = true;
+      for (let k = 1; k < n; k++) { const qx = (cx + dx * k / n) | 0, qy = (cy + dy * k / n) | 0; if (wall[qy * MW + qx]) { ok = false; break; } }
+      if (!ok) continue;
+      plast[i] = 1; plastCnt[((y * inv) | 0) * NX + ((x * inv) | 0)]++;
+    }
+    return [x0, y0, x1 + 1, y1 + 1];
+  }
+  paintPlast(ax, ay, bx, by, rad) {
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / (rad * 0.5)));
+    let box = null;
+    for (let k = 0; k <= n; k++) {
+      const b = this.stampPlast(ax + (bx - ax) * k / n, ay + (by - ay) * k / n, rad);
+      box = box ? [Math.min(box[0], b[0]), Math.min(box[1], b[1]), Math.max(box[2], b[2]), Math.max(box[3], b[3])] : b;
+    }
+    return box;
+  }
+  erasePlast(cx, cy, R) {
+    const { MW, MH, plast, plastCnt, NX, inv } = this;
+    const x0 = Math.max(0, Math.floor(cx - R)), x1 = Math.min(MW - 1, Math.ceil(cx + R));
+    const y0 = Math.max(0, Math.floor(cy - R)), y1 = Math.min(MH - 1, Math.ceil(cy + R));
+    let any = false;
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const i = y * MW + x;
+      if (!plast[i] || (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 > R * R) continue;
+      plast[i] = 0; plastCnt[((y * inv) | 0) * NX + ((x * inv) | 0)]--; any = true;
+    }
+    return any ? [x0, y0, x1 + 1, y1 + 1] : null;
+  }
+  plastAt(x, y) { const xi = x | 0, yi = y | 0; return xi >= 0 && yi >= 0 && xi < this.MW && yi < this.MH && this.plast[yi * this.MW + xi] === 1; }
+  nearPlast(x, y, R) {
+    for (let yy = Math.max(0, (y - R) | 0); yy <= Math.min(this.MH - 1, (y + R) | 0); yy++)
+      for (let xx = Math.max(0, (x - R) | 0); xx <= Math.min(this.MW - 1, (x + R) | 0); xx++)
+        if (this.plast[yy * this.MW + xx]) return this.cellOf(xx, yy);
+    return -1;
+  }
+  triggerPlast(c) {
+    if (this.plastCnt[c] > 0 && !this.detMark[c]) { this.detMark[c] = 1; this.detQ.push({ c, t: 0 }); }
+  }
+  plastInRadius(x, y, R) {
+    const { NX, NY, h } = this;
+    for (let cy = clamp(((y - R) / h) | 0, 0, NY - 1); cy <= clamp(((y + R) / h) | 0, 0, NY - 1); cy++)
+      for (let cx = clamp(((x - R) / h) | 0, 0, NX - 1); cx <= clamp(((x + R) / h) | 0, 0, NX - 1); cx++)
+        if (Math.hypot((cx + 0.5) * h - x, (cy + 0.5) * h - y) < R) this.triggerPlast(cy * NX + cx);
+  }
+  stepPlast(dt) {
+    if (!this.detQ.length) return;
+    const q = this.detQ; this.detQ = [];
+    for (const it of q) { it.t -= dt; if (it.t <= 0) this.detonateCell(it.c); else this.detQ.push(it); }
+    this.fixBodies();
+  }
+  detonateCell(c) {
+    const { h, NX, NY, MW, MH, plast, plastCnt, flashSrc } = this, U = this.U;
+    const cx = c % NX, cy = (c / NX) | 0, x = (cx + 0.5) * h, y = (cy + 0.5) * h;
+    for (let yy = cy * h; yy < Math.min(MH, (cy + 1) * h); yy++) for (let xx = cx * h; xx < Math.min(MW, (cx + 1) * h); xx++) plast[yy * MW + xx] = 0;
+    plastCnt[c] = 0; this.detMark[c] = 0;
+    const R = 2.6 * h, P = 800 * U, R2 = 4 * R * R, { px, py, vx, vy } = this;
+    for (let i = 0; i < this.N; i++) {
+      const dx = px[i] - x, dy = py[i] - y, d2 = dx * dx + dy * dy;
+      if (d2 > R2) continue;
+      const d = Math.sqrt(d2) + 0.5, f = P * (1 - d / (2 * R)) / d; vx[i] += dx * f; vy[i] += dy * f;
+    }
+    for (const cr of this.creatures) {
+      const dx = cr.x - x, dy = cr.y - y, d = Math.hypot(dx, dy) + 0.5;
+      if (d < 2 * R) { const f = P * 0.4 * (1 - d / (2 * R)) / d; cr.vx += dx * f; cr.vy += dy * f; cr.scared = 3; }
+    }
+    this.burnAt(x, y, R);
+    this.blastBodies(x, y, R, 350 * U, true);
+    for (let yy = Math.max(0, cy - 2); yy <= Math.min(NY - 1, cy + 2); yy++) for (let xx = Math.max(0, cx - 2); xx <= Math.min(NX - 1, cx + 2); xx++) {
+      const q = 1 - Math.hypot(xx - cx, yy - cy) / 3; if (q > 0) flashSrc[yy * NX + xx] = Math.max(flashSrc[yy * NX + xx], q);
+    }
+    this.flashOn = true; this.fxLinger = 3;
+    for (let k = 0; k < 5; k++) { const a = Math.random() * 6.283, sp = (200 + Math.random() * 500) * U; this.spawnEmber(x, y, Math.cos(a) * sp, Math.sin(a) * sp, 0.2 + Math.random() * 0.4, 2); }
+    if ((this.detCount++ & 3) === 0) this.rings.push({ x, y, R: R * 1.6, t0: performance.now(), fire: false });
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const nx = cx + dx, ny = cy + dy; if (nx < 0 || ny < 0 || nx >= NX || ny >= NY) continue;
+      const nc = ny * NX + nx;
+      if (plastCnt[nc] > 0 && !this.detMark[nc]) { this.detMark[nc] = 1; this.detQ.push({ c: nc, t: h / (CFG.plastSpeed * U) }); }
+    }
+    for (const bb of this.bombs) if (!bb.dead && Math.hypot(bb.x - x, bb.y - y) < R * 1.6) { bb.lit = true; bb.chain = true; bb.left = Math.min(bb.left, 0.08); }
+    if (this.onBg) this.onBg([cx * h - 1, cy * h - 1, (cx + 1) * h + 1, (cy + 1) * h + 1]);
+  }
+
+  /* ---- rope fuses: burn along their length, light what is at the end ---- */
+  addRope(pts) {
+    const sp = 4 * this.U, out = [pts[0], pts[1]];
+    for (let i = 2; i < pts.length; i += 2) {
+      let lx = out[out.length - 2], ly = out[out.length - 1];
+      const tx = pts[i], ty = pts[i + 1];
+      let d = Math.hypot(tx - lx, ty - ly);
+      while (d >= sp) { lx += (tx - lx) * sp / d; ly += (ty - ly) * sp / d; out.push(lx, ly); d = Math.hypot(tx - lx, ty - ly); }
+    }
+    if (out.length < 6) return false;
+    this.ropes.push({ pts: new Float32Array(out), st: new Float32Array(out.length / 2) });
+    return true;
+  }
+  stepRopes(dt) {
+    let nb = 0;
+    const rest = this.restDensity, U = this.U, stepT = (4 * U) / (CFG.ropeSpeed * U), h = this.h;
+    for (let r = this.ropes.length - 1; r >= 0; r--) {
+      const rp = this.ropes[r], p = rp.pts, st = rp.st, n = st.length;
+      let alive = false;
+      for (let k = 0; k < n; k++) {
+        const s = st[k];
+        if (s < 0) continue;
+        alive = true;
+        const x = p[2 * k], y = p[2 * k + 1], cell = this.cellOf(x, y);
+        const wet = this.denW[cell] > rest * 0.3;
+        if (s === 0) { if (!wet && this.heat[cell] > 0.45) st[k] = 1e-6; continue; }
+        if (wet) { st[k] = 0; continue; }
+        nb++;
+        const a = s + dt; st[k] = a;
+        this.stampHeat(x, y, h * 1.3, 1.0, 0.85);
+        if (a > stepT) { if (k > 0 && st[k - 1] === 0) st[k - 1] = 1e-6; if (k < n - 1 && st[k + 1] === 0) st[k + 1] = 1e-6; }
+        if (a > stepT * 3) st[k] = -1;
+        if (Math.random() < 6 * dt) this.spawnEmber(x, y, (Math.random() - 0.5) * 80 * U, (Math.random() - 0.5) * 80 * U, 0.2 + Math.random() * 0.3, 2);
+      }
+      if (!alive) this.ropes.splice(r, 1);
+    }
+    this.ropeBurning = nb;
+  }
+
   step(dt, gx, gy) {
     this.gx = gx; this.gy = gy;
     this.emit(dt);
@@ -1728,7 +2286,10 @@ class World {
     this.separate();
     this.collide();
     this.stepMills(dt);
+    this.stepBodies(dt);
+    this.sandVel(dt);
     this.stepFire(dt);
+    this.stepPlast(dt);
     this.updateBombs(dt);
     this.drain(dt);
     this.p2g();
@@ -1760,9 +2321,27 @@ uniform float uSize;
 out vec2 vST;
 void main(){
   vec2 c = aP.xy * uInvDomain;
+  gl_Position = aP.w > 2.5 ? vec4(2.0, 2.0, 2.0, 1.0) : vec4(c.x * 2.0 - 1.0, 1.0 - c.y * 2.0, 0.0, 1.0);
+  gl_PointSize = aP.w > 2.5 ? 1.0 : uSize;
+  vST = aP.zw;
+}`;
+const VS_SAND = `#version 300 es
+in vec4 aP; uniform vec2 uInvDomain; uniform float uSize; out float vH;
+void main(){
+  if (aP.w < 2.5) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 1.0; vH = 0.0; return; }
+  vec2 c = aP.xy * uInvDomain;
   gl_Position = vec4(c.x * 2.0 - 1.0, 1.0 - c.y * 2.0, 0.0, 1.0);
   gl_PointSize = uSize;
-  vST = aP.zw;
+  vH = fract(sin(dot(floor(aP.xy * 0.5), vec2(12.9898, 78.233))) * 43758.5453);
+}`;
+const FS_SAND = `#version 300 es
+precision mediump float; in float vH; out vec4 o;
+void main(){
+  vec2 q = gl_PointCoord * 2.0 - 1.0; float r2 = dot(q, q);
+  if (r2 > 1.0) discard;
+  vec3 c = mix(vec3(0.96, 0.83, 0.5), vec3(0.78, 0.6, 0.3), vH);
+  c *= 0.88 + 0.12 * (-q.x - q.y) * 0.7;
+  o = vec4(c, 1.0);
 }`;
 const FS_POINTS = `#version 300 es
 precision mediump float;
@@ -1786,8 +2365,8 @@ void main(){
 }`;
 const FS_BLIT = `#version 300 es
 precision mediump float;
-in vec2 vUv; uniform sampler2D uTex; out vec4 o;
-void main(){ o = vec4(texture(uTex, vec2(vUv.x, 1.0 - vUv.y)).rgb, 1.0); }`;
+in vec2 vUv; uniform sampler2D uTex; uniform float uBgB; out vec4 o;
+void main(){ o = vec4(texture(uTex, vec2(vUv.x, 1.0 - vUv.y)).rgb * uBgB, 1.0); }`;
 const VS_SPRITE = `#version 300 es
 in vec4 aV; out vec2 vT;
 void main(){ gl_Position = vec4(aV.xy, 0.0, 1.0); vT = aV.zw; }`;
@@ -1925,14 +2504,14 @@ void main(){
 }`;
 const FS_F_SCAL = `#version 300 es
 precision highp float; in vec2 vUv;
-uniform sampler2D uVel, uScal, uSrc, uSolid; uniform vec2 uInvDomain; uniform float uDt, uTime;
+uniform sampler2D uVel, uScal, uSrc, uSolid; uniform vec2 uInvDomain; uniform float uDt, uTime, uSize;
 out vec4 o;
 void main(){
   vec2 v = texture(uVel, vUv).xy;
   vec4 s = texture(uScal, vUv - v * uDt * uInvDomain);
   vec4 src = texture(uSrc, vUv);
   float n = fract(sin(dot(floor(vUv * vec2(211.0, 157.0)) + floor(uTime * 24.0), vec2(12.9898, 78.233))) * 43758.5453);
-  s.r = s.r * exp(-4.2 * uDt) + src.r * (0.4 + 1.2 * n) * uDt * 6.5;
+  s.r = s.r * exp(-4.2 / uSize * uDt) + src.r * (0.4 + 1.2 * n) * uDt * 6.5 * (0.6 + 0.4 * uSize);
   s.a = s.a * exp(-3.5 * uDt) + src.a * uDt * 14.0;
   s.g = s.g * exp(-0.9 * uDt) + max(src.g, src.a * 0.6) * uDt * 1.1;
   s.b = s.b * exp(-1.2 * uDt) + src.b * uDt * 5.0;
@@ -2078,7 +2657,7 @@ class FireFX {
     this.run(this.pCurl, this.curl, { uVel: this.vel[0][0] }, texel);
     this.run(this.pVel, this.vel[1], { uVel: this.vel[0][0], uScal: this.scal[0][0], uCurl: this.curl[0], uSolid: this.solidTex }, L => {
       texel(L); gl.uniform2f(L('uInvDomain'), 1 / world.MW, 1 / world.MH); gl.uniform2f(L('uUp'), world.upX, world.upY);
-      gl.uniform1f(L('uDt'), dt); gl.uniform1f(L('uBuoy'), 650 * U); gl.uniform1f(L('uVort'), 5.0); gl.uniform1f(L('uVmax'), 900 * U);
+      gl.uniform1f(L('uDt'), dt); gl.uniform1f(L('uBuoy'), 650 * U * Math.sqrt(CFG.fireSize)); gl.uniform1f(L('uVort'), 5.0); gl.uniform1f(L('uVmax'), 900 * U);
     });
     swap('vel');
     this.run(this.pDiv, this.div, { uVel: this.vel[0][0] }, texel);
@@ -2087,6 +2666,7 @@ class FireFX {
     swap('vel');
     this.run(this.pScal, this.scal[1], { uVel: this.vel[0][0], uScal: this.scal[0][0], uSrc: this.srcTex, uSolid: this.solidTex }, L => {
       gl.uniform2f(L('uInvDomain'), 1 / world.MW, 1 / world.MH); gl.uniform1f(L('uDt'), dt); gl.uniform1f(L('uTime'), time);
+      gl.uniform1f(L('uSize'), CFG.fireSize);
     });
     swap('scal');
   }
@@ -2139,9 +2719,11 @@ class Renderer {
     this.pWater = this.program(VS_FULL, FS_WATER);
     this.pBlit = this.program(VS_FULL, FS_BLIT);
     this.pSprite = this.program(VS_SPRITE, FS_SPRITE);
+    this.pSand = this.program(VS_SAND, FS_SAND);
+    this.uSd = this.uniforms(this.pSand, ['uInvDomain', 'uSize']);
     this.uP = this.uniforms(this.pPoints, ['uInvDomain', 'uSize', 'uW']);
     this.uW = this.uniforms(this.pWater, ['uBg', 'uDen', 'uTexel', 'uTime', 'uAspect', 'uShallow', 'uDeep', 'uFlipBg', 'uBgB']);
-    this.uB = this.uniforms(this.pBlit, ['uTex']);
+    this.uB = this.uniforms(this.pBlit, ['uTex', 'uBgB']);
     this.uS = this.uniforms(this.pSprite, ['uTex', 'uAlpha']);
     this.allocParticles(CFG.maxParticles);
     // sprites
@@ -2162,6 +2744,7 @@ class Renderer {
     this.sceneTex = null; this.sceneFbo = null; this.sw = 0; this.sh = 0;
     this.palette = 0;
     this.fire = new FireFX(this);
+    this.bodyTex = new Map();
   }
   allocParticles(P) {
     const gl = this.gl;
@@ -2173,6 +2756,12 @@ class Renderer {
     gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 16, 0);
     gl.bindVertexArray(null);
     this.buf = new Float32Array(P * 4); this.capP = P;
+    if (this.sandVao) { gl.deleteVertexArray(this.sandVao); }
+    this.sandVao = gl.createVertexArray(); gl.bindVertexArray(this.sandVao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+    const sl = gl.getAttribLocation(this.pSand, 'aP');
+    gl.enableVertexAttribArray(sl); gl.vertexAttribPointer(sl, 4, gl.FLOAT, false, 16, 0);
+    gl.bindVertexArray(null);
   }
   tex() {
     const gl = this.gl, t = gl.createTexture();
@@ -2286,6 +2875,35 @@ class Renderer {
     gl.drawArrays(gl.TRIANGLES, 0, n);
     gl.disable(gl.BLEND);
   }
+  drawBodies(world) {
+    const gl = this.gl, MW = world.MW, MH = world.MH, out = this.sBuf;
+    for (const [b, t] of this.bodyTex) if (!world.bodies.includes(b)) { gl.deleteTexture(t); this.bodyTex.delete(b); }
+    if (!world.bodies.length) return;
+    gl.useProgram(this.pSprite);
+    gl.bindVertexArray(this.sVao); gl.bindBuffer(gl.ARRAY_BUFFER, this.sVbo);
+    gl.uniform1i(this.uS.uTex, 0); gl.uniform1f(this.uS.uAlpha, 1);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.activeTexture(gl.TEXTURE0);
+    for (const b of world.bodies) {
+      let t = this.bodyTex.get(b);
+      if (!t) { t = this.tex(); this.bodyTex.set(b, t); b.texDirty = true; }
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      if (b.texDirty) {
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, b.TW, b.TH, 0, gl.RGBA, gl.UNSIGNED_BYTE, b.tex);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+        b.texDirty = false;
+      }
+      const c = Math.cos(b.th), s = Math.sin(b.th), x0 = -b.cx, y0 = -b.cy, x1 = b.W - b.cx, y1 = b.H - b.cy;
+      let k = 0;
+      const put = (lx, ly, u, v) => { const wx = b.x + lx * c - ly * s, wy = b.y + lx * s + ly * c;
+        out[k++] = wx / MW * 2 - 1; out[k++] = 1 - wy / MH * 2; out[k++] = u; out[k++] = v; };
+      put(x0, y0, 0, 0); put(x1, y0, 1, 0); put(x1, y1, 1, 1); put(x0, y0, 0, 0); put(x1, y1, 1, 1); put(x0, y1, 0, 1);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, out, 0, 24);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+    gl.disable(gl.BLEND);
+  }
   render(world, time, dt) {
     const gl = this.gl, cw = this.canvas.width, ch = this.canvas.height;
     this.uploadBgDirty();
@@ -2294,13 +2912,23 @@ class Renderer {
     // 0) creatures under the surface -> scene = background + sprites
     let bgTex = this.bgTex, flip = 1;
     const nUnder = this.buildSprites(world, false);
-    if (nUnder > 0 && this.sceneFbo) {
+    if (N > 0) { gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo); gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.buf, 0, N * 4); }
+    if ((nUnder > 0 || world.bodies.length || world.sandN > 0) && this.sceneFbo) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.sceneFbo);
       gl.viewport(0, 0, cw, ch);
       gl.useProgram(this.pBlit); gl.bindVertexArray(this.emptyVao);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.bgTex); gl.uniform1i(this.uB.uTex, 0);
+      gl.uniform1f(this.uB.uBgB, CFG.bgBright);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-      this.drawSprites(nUnder, 1);
+      this.drawBodies(world);
+      if (world.sandN > 0) {
+        gl.useProgram(this.pSand);
+        gl.uniform2f(this.uSd.uInvDomain, 1 / world.MW, 1 / world.MH);
+        gl.uniform1f(this.uSd.uSize, 2.7 * world.r * cw / world.MW);
+        gl.bindVertexArray(this.sandVao);
+        gl.drawArrays(gl.POINTS, 0, N);
+      }
+      if (nUnder > 0) { this.buildSprites(world, false); this.drawSprites(nUnder, 1); }
       bgTex = this.sceneTex; flip = 0;
     }
     // 1) liquid density splats
@@ -2314,8 +2942,6 @@ class Renderer {
       gl.uniform1f(this.uP.uSize, 2 * CFG.blobSize * world.r * this.dw / world.MW);
       gl.uniform1f(this.uP.uW, 0.28 * (3.9 / CFG.blobSize) * (3.9 / CFG.blobSize));
       gl.bindVertexArray(this.vao);
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.buf, 0, N * 4);
       gl.drawArrays(gl.POINTS, 0, N);
       gl.disable(gl.BLEND);
     }
@@ -2331,12 +2957,12 @@ class Renderer {
     gl.uniform1f(this.uW.uTime, time);
     gl.uniform1f(this.uW.uAspect, world.MW / world.MH);
     gl.uniform1f(this.uW.uFlipBg, flip);
-    gl.uniform1f(this.uW.uBgB, CFG.bgBright);
+    gl.uniform1f(this.uW.uBgB, flip ? CFG.bgBright : 1);
     const pal = PALETTES[this.palette];
     gl.uniform3fv(this.uW.uShallow, pal.shallow); gl.uniform3fv(this.uW.uDeep, pal.deep);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     // 3) submerged creatures again at partial strength (keeps colors vivid under tint), floaters on top
-    if (nUnder > 0) this.drawSprites(nUnder, 0.55);
+    if (nUnder > 0) { this.buildSprites(world, false); this.drawSprites(nUnder, 0.55); }
     const nOver = this.buildSprites(world, true);
     if (nOver > 0) this.drawSprites(nOver, 1);
     // 4) fire & smoke, embers
@@ -2353,7 +2979,7 @@ let photo = null;          // { src, rot, angle, crop{x,y,w,h}, sx, sy, sens, th
 let curCap = null, curMask = null;
 let userStrokes = [];      // { mode: stone|wood|erase|toWood|toStone|burn, rN, pts:[nx,ny,...] } normalized
 let mode = 'pour', liquid = 0;
-const tool = { pour: 1, wall: 1, wallMode: 'stone', wind: 1, mill: 1, fish: -1, fire: 1, bomb: 0 };
+const tool = { pour: 1, wall: 1, wallMode: 'stone', wind: 1, mill: 1, fish: -1, fire: 1, bomb: 0, plast: 1, obj: 0, objSize: 1 };
 let tiltOn = false;
 const grav = { x: 0, y: CFG.gravity }, gravTarget = { x: 0, y: 1 };
 const stage = $('stage'), glc = $('gl'), ov = $('ov'), octx = ov.getContext('2d');
@@ -2394,6 +3020,7 @@ function rebuildWorld(cap, mask, keep) {   // keep: 'all' | 'creatures' | null
   for (const s of userStrokes) applyStrokeAll(A, MW, MH, s, 0);
   const nw = new World(MW, MH, A);
   nw.onBurn = onWorldBurn;
+  nw.onBg = box => renderBG(box[0], box[1], box[2], box[3]);
   if (old) { nw.upAng = old.upAng; nw.upX = old.upX; nw.upY = old.upY; }
   if (old && keep) {
     const sx = nw.MW / old.MW, sy = nw.MH / old.MH;
@@ -2406,6 +3033,12 @@ function rebuildWorld(cap, mask, keep) {   // keep: 'all' | 'creatures' | null
       nw.bombs = old.bombs.filter(b => !b.dead).map(sc);
       nw.winds = old.winds.map(w => ({ ...w, pts: w.pts.map((v, i) => v * (i & 1 ? sy : sx)) }));
       nw.rebuildWind();
+      nw.ropes = old.ropes.map(r => ({ pts: r.pts.map((v, i) => v * (i & 1 ? sy : sx)), st: r.st.slice() }));
+      for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+        const o = Math.min(old.MH - 1, (y / sy) | 0) * old.MW + Math.min(old.MW - 1, (x / sx) | 0), i = y * MW + x;
+        if (old.plast[o] && !nw.wall[i]) { nw.plast[i] = 1; nw.plastCnt[nw.cellOf(x, y)]++; }
+      }
+      if (old.MW === nw.MW && old.MH === nw.MH) nw.bodies = old.bodies;
     }
     for (const c of old.creatures) {
       const n = { ...c, x: c.x * sx, y: c.y * sy, vx: 0, vy: 0 };
@@ -2440,6 +3073,16 @@ function drawOverlay(time) {
   for (const s of world.sewers) drawSewer(s);
   for (const m of world.mills) drawMill(m);
   for (const p of world.pipes) drawPipe(p);
+  for (const r of world.ropes) drawRope(r.pts, r.st, time);
+  for (const r of drawingRopes) drawRope(r, null, time);
+  for (const o of drawingObjs) {
+    octx.save(); octx.lineCap = 'round'; octx.lineJoin = 'round'; octx.lineWidth = o.rad * 2;
+    octx.strokeStyle = o.kind === 2 ? 'rgba(170,105,45,.75)' : (o.kind === 3 ? 'rgba(125,128,140,.75)' : 'rgba(255,210,63,.55)');
+    octx.beginPath(); octx.moveTo(o.pts[0], o.pts[1]);
+    for (let k = 2; k < o.pts.length; k += 2) octx.lineTo(o.pts[k], o.pts[k + 1]);
+    if (o.pts.length === 2) octx.lineTo(o.pts[0] + 0.1, o.pts[1]);
+    octx.stroke(); octx.restore();
+  }
   for (const b of world.bombs) drawBomb(b, time);
   const now = performance.now();
   world.rings = world.rings.filter(r => now - r.t0 < 400);
@@ -2509,8 +3152,29 @@ function drawMill(m) {
   c.beginPath(); c.arc(0, 0, hub * 0.35, 0, 7); c.fillStyle = '#666'; c.fill();
   c.restore();
 }
+function drawRope(p, st, time) {
+  const c = octx, U = world.U, n = p.length / 2;
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  const path = (w, col, dash) => {
+    c.beginPath(); let open = false;
+    for (let k = 0; k < n; k++) {
+      const ok = !st || st[k] >= 0;
+      if (ok && open) c.lineTo(p[2 * k], p[2 * k + 1]); else if (ok) { c.moveTo(p[2 * k], p[2 * k + 1]); open = true; } else open = false;
+    }
+    c.setLineDash(dash); c.lineWidth = w; c.strokeStyle = col; c.stroke();
+  };
+  path(3.4 * U, '#7a5a2e', []); path(1.8 * U, '#d8b878', [2.2 * U, 2.2 * U]);
+  c.setLineDash([]);
+  if (st) for (let k = 0; k < n; k++) if (st[k] > 0) {
+    const f = 0.7 + 0.3 * Math.sin(time * 37 + k), R = 4 * U * f;
+    const g = c.createRadialGradient(p[2 * k], p[2 * k + 1], 0, p[2 * k], p[2 * k + 1], R);
+    g.addColorStop(0, '#fff'); g.addColorStop(0.35, '#ffd04a'); g.addColorStop(1, 'rgba(255,110,0,0)');
+    c.fillStyle = g; c.beginPath(); c.arc(p[2 * k], p[2 * k + 1], R, 0, 7); c.fill();
+  }
+  c.restore();
+}
 function drawBomb(b, time) {
-  const c = octx, rb = world.bombR(), fire = b.kind === 1;
+  const c = octx, rb = world.bombR(), fire = b.kind === 1, sticky = b.kind === 2;
   c.save(); c.translate(b.x, b.y); c.rotate(world.upAng);
   c.beginPath(); c.ellipse(rb * 0.15, rb * 0.95, rb * 0.9, rb * 0.25, 0, 0, 7); c.fillStyle = 'rgba(0,0,0,.2)'; c.fill();
   // fuse rope (shortens while burning) with a knot at the end
@@ -2532,8 +3196,16 @@ function drawBomb(b, time) {
   // cap + body
   c.fillStyle = '#6d7480'; c.fillRect(-rb * 0.38, -rb * 1.2, rb * 0.76, rb * 0.35);
   const g = c.createRadialGradient(-rb * 0.35, -rb * 0.35, rb * 0.1, 0, 0, rb);
-  if (fire) { g.addColorStop(0, '#ff9a6a'); g.addColorStop(1, '#9e1a0c'); } else { g.addColorStop(0, '#6a6f7a'); g.addColorStop(1, '#14161c'); }
+  if (fire) { g.addColorStop(0, '#ff9a6a'); g.addColorStop(1, '#9e1a0c'); }
+  else if (sticky) { g.addColorStop(0, '#b8f07a'); g.addColorStop(1, '#2e7a18'); }
+  else { g.addColorStop(0, '#6a6f7a'); g.addColorStop(1, '#14161c'); }
   c.fillStyle = g; c.beginPath(); c.arc(0, 0, rb, 0, 7); c.fill();
+  if (sticky) {          // goo drips
+    c.fillStyle = '#7ad23a';
+    for (const [dx, l] of [[-0.5, 0.55], [0.1, 0.8], [0.55, 0.45]]) {
+      c.beginPath(); c.ellipse(rb * dx, rb * (0.75 + l * 0.4), rb * 0.16, rb * l * 0.45, 0, 0, 7); c.fill();
+    }
+  }
   c.fillStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.ellipse(-rb * 0.38, -rb * 0.4, rb * 0.22, rb * 0.13, -0.6, 0, 7); c.fill();
   if (fire) {   // little flame mark
     c.fillStyle = '#ffd23f'; c.beginPath(); c.moveTo(0, -rb * 0.45);
@@ -2558,6 +3230,7 @@ const HINTS = {
   wind: 'Draw a line – water gets blown along it',
   fish: 'Tap to add an animal!',
   fire: 'Touch to light a fire 🔥 – wood and oil burn',
+  object: 'Drop boxes or draw things that fall – wood floats, stone sinks. Drag them around!',
   bomb: 'Tap to place a bomb · tap a bomb to explode it',
   erase: 'Rub to remove liquid · tap things to remove them',
 };
@@ -2582,6 +3255,20 @@ function liquidChips() {
 }
 const WALL_MODES = [['stone', '🪨', 'Stone'], ['wood', '🪵', 'Wood'], ['erase', '🩹', 'Erase'],
                     ['toWood', '🖌️', '→Wood'], ['toStone', '🖌️', '→Stone']];
+const BOMB_CHIPS = [
+  ['💣', 'Bomb', 0, 'Tap to place a bomb · tap a bomb to explode it'],
+  ['🔥', 'Fire', 1, 'Fire bomb – sprays burning blobs'],
+  ['🟢', 'Sticky', 2, 'Sticky bomb – falls and sticks where it lands'],
+  ['🟣', 'Paint', 3, 'Paint plasteline 🟣 (not through walls) · tap it to blow it up'],
+  ['🪢', 'Rope', 4, 'Draw a rope fuse – fire runs along it'],
+];
+const OBJ_CHIPS = [
+  ['📦', 'Crate', 0, 'Tap to drop a wooden crate – it floats'],
+  ['🧱', 'Block', 1, 'Tap to drop a stone block – it sinks'],
+  ['🪵', 'Wood', 2, 'Draw a wooden thing – a boat floats!'],
+  ['🪨', 'Stone', 3, 'Draw a stone thing – it falls and sinks'],
+  ['✂️', '→Object', 4, 'Paint over walls to cut them loose as objects'],
+];
 function buildFlyout() {
   flyout.innerHTML = '';
   if (mode === 'pour') { flyout.appendChild(liquidChips()); flyout.appendChild(sizeChips('pour')); }
@@ -2593,8 +3280,14 @@ function buildFlyout() {
   else if (mode === 'wind') flyout.appendChild(sizeChips('wind'));
   else if (mode === 'mill') flyout.appendChild(sizeChips('mill'));
   else if (mode === 'fire') flyout.appendChild(sizeChips('fire'));
-  else if (mode === 'bomb') flyout.appendChild(group([chip('💣<small>Bomb</small>', tool.bomb === 0, () => tool.bomb = 0),
-                                                      chip('🔥<small>Fire</small>', tool.bomb === 1, () => tool.bomb = 1)]));
+  else if (mode === 'bomb') {
+    flyout.appendChild(group(BOMB_CHIPS.map(([ic, l, k, hn]) => chip(`${ic}<small>${l}</small>`, tool.bomb === k, () => { tool.bomb = k; hint(hn); }))));
+    flyout.appendChild(sizeChips('plast'));
+  }
+  else if (mode === 'object') {
+    flyout.appendChild(group(OBJ_CHIPS.map(([ic, l, k, hn]) => chip(`${ic}<small>${l}</small>`, tool.obj === k, () => { tool.obj = k; hint(hn); }))));
+    flyout.appendChild(sizeChips('objSize'));
+  }
   else if (mode === 'fish') flyout.appendChild(group(CREATURE_CHIPS.map(cc => chip(`${cc.icon}<small>${cc.label}</small>`, tool.fish === cc.kind, () => tool.fish = cc.kind))));
 }
 
@@ -2628,6 +3321,8 @@ function eraseThingAt(p) {
   i = world.mills.findIndex(m => Math.hypot(m.x - p.x, m.y - p.y) < CFG.millSize * U * m.mul); if (i >= 0) { world.mills.splice(i, 1); return true; }
   i = world.creatures.findIndex(c => Math.hypot(c.x - p.x, c.y - p.y) < world.creatureSize(c) * 0.6); if (i >= 0) { world.creatures.splice(i, 1); return true; }
   i = world.winds.findIndex(w => distToPath(w.pts, p) < 14 * U); if (i >= 0) { world.winds.splice(i, 1); world.rebuildWind(); return true; }
+  const bb = world.bodyAt(p.x, p.y); if (bb) { world.bodies.splice(world.bodies.indexOf(bb), 1); return true; }
+  i = world.ropes.findIndex(r => distToPath(r.pts, p) < 10 * U); if (i >= 0) { world.ropes.splice(i, 1); return true; }
   return false;
 }
 function wallSegment(st, a, b) {
@@ -2636,6 +3331,78 @@ function wallSegment(st, a, b) {
   world.refreshWalls(box);
   renderBG(box[0] - 1, box[1] - 1, box[2] + 1, box[3] + 1);
 }
+
+/* ---- objects (rigid bodies) ---- */
+function texFromBG(X, Y, t, i, j, out) {
+  const x = clamp(X | 0, 0, BG.W - 1), y = clamp(Y | 0, 0, BG.H - 1), k = (y * BG.W + x) * 4;
+  out[0] = BG.img[k]; out[1] = BG.img[k + 1]; out[2] = BG.img[k + 2];
+}
+function texMaterial(X, Y, t, i, j, out) { (t === 2 ? woodRGB : stoneRGB)(X / BG.kx, Y / BG.ky, out); }
+function texBox(W, H) {
+  return (X, Y, t, i, j, out) => {
+    texMaterial(X, Y, t, i, j, out);
+    const e = Math.max(1, Math.round(W * 0.12)), edge = i < e || j < e || i >= W - e || j >= H - e;
+    let k = 1;
+    if (t === 2) { if (edge || Math.abs(i - j * W / H) < e * 0.7) k = 0.62; }
+    else { if (edge) k = 0.68; else if (i < e * 2 || j < e * 2) k = 1.12; }
+    out[0] *= k; out[1] *= k; out[2] *= k;
+  };
+}
+function dropBox(p, stone) {
+  const S = Math.round([12, 18, 26][tool.objSize] * world.U), x0 = Math.round(p.x - S / 2), y0 = Math.round(p.y - S / 2);
+  const m = new Uint8Array(S * S).fill(stone ? 1 : 2);
+  if (!world.createBody(x0, y0, S, S, m, texBox(S, S))) hint('Too many objects!');
+}
+function forCapsules(pts, rad, fn) {
+  const MW = world.MW, MH = world.MH, n = pts.length;
+  for (let k = 0; k < Math.max(2, n - 2); k += 2) {
+    const ax = pts[k], ay = pts[k + 1], bx = n > k + 2 ? pts[k + 2] : ax, by = n > k + 2 ? pts[k + 3] : ay;
+    const x0 = Math.max(0, Math.floor(Math.min(ax, bx) - rad)), x1 = Math.min(MW - 1, Math.ceil(Math.max(ax, bx) + rad));
+    const y0 = Math.max(0, Math.floor(Math.min(ay, by) - rad)), y1 = Math.min(MH - 1, Math.ceil(Math.max(ay, by) + rad));
+    const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const px = x + 0.5, py = y + 0.5;
+      const t = L2 > 0 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0;
+      const qx = ax + dx * t - px, qy = ay + dy * t - py;
+      if (qx * qx + qy * qy <= rad * rad) fn(y * MW + x, x, y);
+    }
+  }
+}
+function finishObject(o) {
+  const MW = world.MW, MH = world.MH, fr = world.frame, sel = new Uint8Array(MW * MH);
+  let x0 = MW, y0 = MH, x1 = -1, y1 = -1, n = 0;
+  forCapsules(o.pts, o.rad, (i, x, y) => {
+    if (sel[i] || x < fr || y < fr || x >= MW - fr || y >= MH - fr) return;
+    let t = 0;
+    if (o.kind === 4) { if (world.wall[i]) t = world.mat[i] === 2 ? 2 : 1; }
+    else if (!world.wall[i]) t = o.kind === 2 ? 2 : 1;
+    if (!t) return;
+    sel[i] = t; n++;
+    if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y;
+  });
+  if (n < 12) { hint(o.kind === 4 ? 'Paint over a wall to cut it out' : 'Draw a bigger shape'); return; }
+  const W = x1 - x0 + 1, H = y1 - y0 + 1, m = new Uint8Array(W * H);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) m[(y - y0) * W + x - x0] = sel[y * MW + x];
+  const b = world.createBody(x0, y0, W, H, m, o.kind === 4 ? texFromBG : texMaterial);
+  if (!b) { hint('Too many objects!'); return; }
+  if (o.kind === 4) {        // cut the painted wall pixels out of the drawing
+    const stroke = { mode: 'erase', rN: o.rad / MW, pts: [] };
+    for (let k = 0; k < o.pts.length; k += 2) stroke.pts.push(o.pts[k] / MW, o.pts[k + 1] / MH);
+    userStrokes.push(stroke);
+    const box = [x0 - 1, y0 - 1, x1 + 2, y1 + 2];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (sel[y * MW + x]) world.wall[y * MW + x] = 0;
+    world.refreshWalls(box);
+    renderBG(box[0], box[1], box[2], box[3]);
+  }
+}
+function paintPlastTo(st, p) {
+  if (!st.cursor) return;
+  const nc = world.moveCursor(st.cursor, p.x, p.y), rad = [2.5, 4, 7][tool.plast] * world.U;
+  const box = world.paintPlast(st.cursor.x, st.cursor.y, nc.x, nc.y, rad);
+  st.cursor = nc;
+  if (box) renderBG(box[0], box[1], box[2], box[3]);
+}
+const drawingObjs = new Set(), drawingRopes = new Set();
 
 glc.addEventListener('pointerdown', e => {
   if (!world) return;
@@ -2647,10 +3414,26 @@ glc.addEventListener('pointerdown', e => {
     case 'pour':
       st.brush = { x: p.x, y: p.y, vx: 0, vy: 0, erase: false, R: CFG.brushRadius * U * SIZE_MUL[tool.pour], type: liquid };
       world.brushes.push(st.brush); break;
-    case 'erase':
+    case 'erase': {
       eraseThingAt(p);
       st.brush = { x: p.x, y: p.y, vx: 0, vy: 0, erase: true, R: CFG.brushRadius * U };
-      world.brushes.push(st.brush); break;
+      world.brushes.push(st.brush);
+      const eb = world.erasePlast(p.x, p.y, st.brush.R); if (eb) renderBG(eb[0], eb[1], eb[2], eb[3]);
+      break;
+    }
+    case 'object': {
+      const b = world.bodyAt(p.x, p.y);
+      if (b) {
+        const dx = p.x - b.x, dy = p.y - b.y;
+        st.grab = { b, lx: dx * b.c + dy * b.s, ly: -dx * b.s + dy * b.c, tx: p.x, ty: p.y };
+        b.grab = true; world.grabs.push(st.grab);
+      } else if (tool.obj <= 1) dropBox(p, tool.obj === 1);
+      else {
+        st.obj = { kind: tool.obj, rad: [CFG.wallS, CFG.wallM, CFG.wallL][tool.objSize] * U * (tool.obj === 4 ? 1.6 : 1.4), pts: [p.x, p.y] };
+        drawingObjs.add(st.obj);
+      }
+      break;
+    }
     case 'pipe': {
       const i = findNear(world.pipes, p, 22 * U);
       if (i >= 0) st.target = world.pipes[i];
@@ -2673,6 +3456,13 @@ glc.addEventListener('pointerdown', e => {
       break;
     }
     case 'bomb': {
+      if (tool.bomb === 3) {                    // plasteline paint
+        st.plastTap = world.plastAt(p.x, p.y) || world.nearPlast(p.x, p.y, 2) >= 0;
+        if (world.freeAt(p.x, p.y)) { st.cursor = { x: p.x, y: p.y }; if (!st.plastTap) paintPlastTo(st, p); }
+        else if (!st.plastTap) hint('Start painting on empty paper 🟣');
+        break;
+      }
+      if (tool.bomb === 4) { st.rope = [p.x, p.y]; drawingRopes.add(st.rope); break; }
       const i = findNear(world.bombs, p, world.bombR() * 2);
       if (i >= 0) { st.target = world.bombs[i]; st.bombTap = true; st.target.held = true; }
       else if (world.bombs.length < 30) { st.target = { x: p.x, y: p.y, vx: 0, vy: 0, kind: tool.bomb, lit: false, left: CFG.fuseTime, held: true }; world.bombs.push(st.target); }
@@ -2710,7 +3500,19 @@ glc.addEventListener('pointermove', e => {
   if (st.brush) {
     st.brush.x = p.x; st.brush.y = p.y;
     st.brush.vx = clamp(st.vx * 0.6, -lim, lim); st.brush.vy = clamp(st.vy * 0.6, -lim, lim);
+    if (st.brush.erase) { const eb = world.erasePlast(p.x, p.y, st.brush.R); if (eb) renderBG(eb[0], eb[1], eb[2], eb[3]); }
   } else if (st.torch) { st.torch.x = p.x; st.torch.y = p.y; }
+  else if (st.grab) { st.grab.tx = p.x; st.grab.ty = p.y; }
+  else if (st.obj) {
+    const o = st.obj.pts, n = o.length;
+    if (Math.hypot(p.x - o[n - 2], p.y - o[n - 1]) > 2) o.push(p.x, p.y);
+  } else if (st.cursor !== undefined || st.plastTap) {
+    if (Math.hypot(p.x - st.start.x, p.y - st.start.y) > 8) { st.moved = true; st.plastTap = false; }
+    if (!st.plastTap) paintPlastTo(st, p);
+  } else if (st.rope) {
+    const r = st.rope, n = r.length;
+    if (Math.hypot(p.x - r[n - 2], p.y - r[n - 1]) > 3) r.push(p.x, p.y);
+  }
   else if (st.target) {
     const dx = p.x - st.start.x, dy = p.y - st.start.y;
     if (dx * dx + dy * dy > 64) st.moved = true;
@@ -2733,6 +3535,10 @@ function endPointer(e) {
     if (st.brush) { const i = world.brushes.indexOf(st.brush); if (i >= 0) world.brushes.splice(i, 1); }
     if (st.torch) { const i = world.torches.indexOf(st.torch); if (i >= 0) world.torches.splice(i, 1); }
     if (st.target && st.target.held) st.target.held = false;
+    if (st.grab) { st.grab.b.grab = false; const i = world.grabs.indexOf(st.grab); if (i >= 0) world.grabs.splice(i, 1); }
+    if (st.obj) { drawingObjs.delete(st.obj); finishObject(st.obj); }
+    if (st.plastTap && !st.moved) { const c = world.nearPlast(st.start.x, st.start.y, 3); if (c >= 0) world.triggerPlast(c); }
+    if (st.rope) { drawingRopes.delete(st.rope); if (!world.addRope(st.rope)) hint('Draw a longer rope 🪢'); }
     if (st.bombTap && !st.moved) world.explode(st.target);
     if (st.wind) {
       drawingWinds.delete(st.wind);
@@ -2760,10 +3566,7 @@ document.querySelectorAll('.tb.mode').forEach(b => b.addEventListener('click', (
   hint(HINTS[mode]);
 }));
 $('bClear').addEventListener('click', () => { if (world) { world.clearLiquids(); hint('All clean! 🧹', 1400); } });
-$('bColor').addEventListener('click', () => {
-  renderer.palette = (renderer.palette + 1) % PALETTES.length;
-  hint(PALETTES[renderer.palette].name + ' water', 1200);
-});
+
 
 /* ---- motion: tilt gravity + physical orientation for icons & animals ---- */
 let motionOn = false, motionAsked = false;
@@ -3116,7 +3919,10 @@ function buildSettings() {
     setPending = 2; buildSettings(); hint('Press Done, then pour lots of water 💧', 2500);
   });
   mk('🧽 Undo drawn walls & burns', () => { userStrokes = []; rebuildWorld(curCap, curMask, 'all'); hint('Walls restored', 1400); });
-  mk('🗑️ Remove pipes, mills, bombs, wind', () => { world.pipes = []; world.sewers = []; world.mills = []; world.bombs = []; world.winds = []; world.rebuildWind(); hint('All tools removed', 1400); });
+  mk('🗑️ Remove pipes, mills, bombs, wind, objects', () => {
+    world.pipes = []; world.sewers = []; world.mills = []; world.bombs = []; world.winds = []; world.bodies = []; world.ropes = [];
+    world.plast.fill(0); world.plastCnt.fill(0); world.rebuildWind(); renderBG(0, 0, world.MW, world.MH); hint('All tools removed', 1400);
+  });
   mk('🐟 Remove animals', () => { world.creatures = []; });
   box.appendChild(btns);
 }
@@ -3192,6 +3998,7 @@ function demoScene() {
     for (let x = W * 0.07 + (row & 1 ? r : 0); x < W * 0.37; x += sp) world.add(x, y, 0, 0, 0);
   world.bombs.push({ x: W * 0.65, y: H * 0.19, kind: 0, lit: false, left: CFG.fuseTime });
   world.bombs.push({ x: W * 0.865, y: H * 0.255, kind: 1, lit: false, left: CFG.fuseTime });
+  tool.objSize = 2; dropBox({ x: W * 0.24, y: H * 0.70 }, false); tool.objSize = 1;
   for (let i = 0; i < 20; i++) world.step(1 / 60, 0, CFG.gravity * world.U);
 }
 
