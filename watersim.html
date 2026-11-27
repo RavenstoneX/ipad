@@ -47,7 +47,7 @@
   body.land #flyout { flex-direction: column; min-height: calc(5 * (var(--b) + var(--g)) + 22px); width: calc(2 * var(--b) + var(--g)); }
   #ver { position: absolute; right: calc(env(safe-area-inset-right) + 8px); bottom: calc(env(safe-area-inset-bottom) + 3px);
          font: 600 9px ui-monospace, Menlo, monospace; color: rgba(255,255,255,.35); pointer-events: none; }
-  .tb .ic { width: 28px; height: 28px; display: block; }
+  .tb .ic { width: calc(var(--b) * 0.7); height: calc(var(--b) * 0.7); display: block; }
   .tb.on .ic, .tb.live .ic { filter: drop-shadow(0 1px 0 rgba(255,255,255,.6)); }
   .tb {
     width: var(--b); height: var(--b); border-radius: 13px; border: none; padding: 0;
@@ -68,7 +68,7 @@
     background: rgba(255,255,255,.88); color: #223; font-size: 21px; line-height: 1;
     box-shadow: 0 3px 0 rgba(0,0,0,.3);
   }
-  .chip .ic { width: 26px; height: 26px; display: block; }
+  .chip .ic { width: calc(var(--b) * 0.64); height: calc(var(--b) * 0.64); display: block; }
   .chip small { font-size: 7px; font-weight: 800; text-transform: uppercase; color: #556; margin-top: 2px; white-space: nowrap; }
   .chip.on { background: #7fd3ff; box-shadow: 0 2px 0 #3a8fbd, 0 0 0 2.5px #fff; }
   .dot { border-radius: 50%; background: #334; display: inline-block; }
@@ -125,13 +125,19 @@
   #edPreview { width: 120px; height: 80px; border-radius: 6px; background: #000; }
 
   /* ---------- settings ---------- */
-  #settings { background: rgba(10,14,24,.82); display: flex; align-items: center; justify-content: center; }
+  #settings { background: rgba(10,14,24,.33); display: flex; align-items: center; justify-content: center; }
   #setBox {
-    width: min(680px, 94vw); max-height: 88vh; display: flex; flex-direction: column;
+    width: min(680px, 94vw); max-height: 88vh; height: min(640px, 88vh); display: flex; flex-direction: column;
     background: #252b3d; border-radius: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.5); overflow: hidden;
   }
   #setHead, .setHead { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #2e3550; }
   #setHead h2, .setHead h2 { margin: 0; font-size: 20px; }
+  #setBox.two { width: min(900px, 96vw); }
+  #setList.split { display: flex; padding: 0; overflow: hidden; flex: 1; min-height: 0; }
+  #setNav { width: 190px; flex: none; overflow-y: auto; background: #20263a; padding: 10px 8px; }
+  #setNav button { display: block; width: 100%; text-align: left; margin: 0 0 6px; padding: 11px 12px; border: none; border-radius: 12px; background: transparent; color: #cfd6ea; font: 700 15px system-ui, sans-serif; }
+  #setNav button.on { background: #ffd23f; color: #1f2430; }
+  #setPane { flex: 1; overflow-y: auto; padding: 6px 20px 20px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
   #setList { overflow-y: auto; padding: 6px 20px 20px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
   #setList h3 { margin: 18px 0 6px; font-size: 13px; letter-spacing: .6px; text-transform: uppercase; color: #ffd23f; }
   .srow { display: grid; grid-template-columns: 1fr 64px 38px; align-items: center; gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
@@ -173,6 +179,13 @@
   .nseg button.on { background: #7fd3ff; color: #12324a; }
   .ncheck { display: flex; align-items: center; gap: 10px; font-size: 15px; color: #dfe5f5; }
   .ncheck input { width: 24px; height: 24px; accent-color: #5be37d; }
+  #setList.ro input, #setList.ro button, #setList.ro .nseg { pointer-events: none; opacity: .55; }
+  #setList.ro #setNav button { pointer-events: auto; opacity: 1; }
+  .roNote { background: #3a4466; border-radius: 12px; padding: 10px 14px; margin: 4px 0 10px; font-weight: 700; line-height: 1.35; }
+  #askScr { z-index: 40; background: rgba(10,14,24,.7); display: flex; align-items: center; justify-content: center; }
+  #askScr.hidden { display: none !important; }
+  #askBox { width: min(440px, 90vw); background: #252b3d; border-radius: 20px; padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  #askText { font-size: 18px; font-weight: 700; line-height: 1.4; }
   #nogl { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px; font-size: 20px; }
 </style>
 </head>
@@ -202,6 +215,7 @@
     <button class="tb mode" data-mode="wind"><div class="in"><span>🌬️</span><small>Wind</small></div></button>
     <button class="tb mode" data-mode="fire"><div class="in"><span>🔥</span><small>Fire</small></div></button>
     <button class="tb mode" data-mode="erase"><div class="in"><span>🧽</span><small>Erase</small></div></button>
+    <button class="tb mode" data-mode="hand"><div class="in"><span>✋</span><small>Hand</small></div></button>
   </div>
   <div class="grp" id="grpThings">
     <button class="tb mode" data-mode="fish"><div class="in"><span>🐠</span><small>Animal</small></div></button>
@@ -211,9 +225,11 @@
       <circle r="2.6" fill="#fff" stroke="#333"/></svg><small>Mill</small></div></button>
     <button class="tb mode" data-mode="bomb"><div class="in"><span>💣</span><small>Bomb</small></div></button>
     <button class="tb mode" data-mode="object"><div class="in"><span>📦</span><small>Object</small></div></button>
+    <button class="tb mode" data-mode="chain"><div class="in"><span>⛓️</span><small>Chain</small></div></button>
+    <button class="tb mode" data-mode="cannon"><div class="in"><span>💥</span><small>Cannon</small></div></button>
   </div>
   <div id="flyout"></div>
-  <div id="ver">v7.9</div>
+  <div id="ver">v10.4</div>
 </div>
 <div id="hint"></div>
 <div id="stats"></div>
@@ -245,6 +261,8 @@
           <div class="nseg" id="netMax"></div>
           <label class="ncheck"><input type="checkbox" id="netAllowClear"> Friends can use 🧹 Clear</label>
           <label class="ncheck"><input type="checkbox" id="netPause"> Pause friends (they can only watch)</label>
+          <label class="ncheck"><input type="checkbox" id="netSplit"> ✂️ Split screen – everybody plays in their own part</label>
+          <label class="ncheck"><input type="checkbox" id="netHostAll"> 👑 Split screen: I (host) can play everywhere, friends share the parts</label>
         </div>
         <button class="pill" id="netLeave" style="margin-top:8px">Stop</button>
       </div>
@@ -306,6 +324,8 @@
   </div>
 </div>
 
+<div id="askScr" class="screen hidden"><div id="askBox"><div id="askText"></div>
+  <div class="nrow" style="justify-content:flex-end;margin-top:16px"><button class="pill" id="askNo">Cancel</button><button class="pill go" id="askYes" style="background:#ff6b5a;color:#fff">OK</button></div></div></div>
 <input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden">
 
 <script>
@@ -332,13 +352,13 @@ const DEFAULTS = {
   brushRadius: 24, pipeSpeed: 280, pipeWidth: 10.5, sewerRadius: 9, sewerPull: 2200,
   wallS: 2, wallM: 4, wallL: 8,
   windSpeed: 420, windAccel: 3000, windWidth: 14, windOnAnimals: 0.5,
-  millSize: 34, millFriction: 0.6, millMass: 2500,
+  millSize: 34, millFriction: 0.25, millMass: 800,
   maxCreatures: 40, creatureSize: 28, creatureSwim: 60, dryTime: 10,
-  fireSpread: 1, woodBurnTime: 3, oilBurnTime: 4, fireBrush: 16, fireSize: 1.4,
-  ropeSpeed: 30, plastSpeed: 300, sandFriction: 0.8,
-  fuseTime: 5, bombRadius: 42, fireBombGlobs: 26,
+  fireSpread: 1, woodBurnTime: 9, oilBurnTime: 4, fireBrush: 16, fireSize: 1.4,
+  ropeSpeed: 14, plastSpeed: 300, sandFriction: 0.8,
+  fuseTime: 5, bombRadius: 42, fireBombGlobs: 26, cannonSpread: 4, cannonLife: 100, cannonSpeed: 650, cannonMax: 3,
   fireFx: 1, fireRes: 3, bgBright: 0.5, sandWeight: 2, objScale: 50,
-  dprCap: 2, denScale: 1, blobSize: 3.9, showStats: 1, millCollide: 1,
+  dprCap: 2, denScale: 1, blobSize: 3.9, showStats: 1, millCollide: 1, look3d: 1,
 };
 const CFG_KEY = 'paperSplash.cfg6';
 const CFG = Object.assign({}, DEFAULTS);
@@ -347,8 +367,15 @@ try {
   for (const k in saved) if (k in DEFAULTS && typeof saved[k] === 'number') CFG[k] = saved[k];
   if (saved.sewerRadius === 12 && !saved.v72) CFG.sewerRadius = DEFAULTS.sewerRadius;   // old defaults -> new ones
   if (!saved.v73) { if (saved.bgBright === 0.64) CFG.bgBright = DEFAULTS.bgBright; if (saved.ropeSpeed === 49) CFG.ropeSpeed = DEFAULTS.ropeSpeed; }
+  if (!saved.v81 && saved.woodBurnTime === 3) CFG.woodBurnTime = DEFAULTS.woodBurnTime;
+  if (!saved.v104 && saved.ropeSpeed === 11) CFG.ropeSpeed = DEFAULTS.ropeSpeed;
+  if (!saved.v96 && saved.cannonSpread === 6) CFG.cannonSpread = DEFAULTS.cannonSpread;
+  if (!saved.v92 && saved.ropeSpeed === 9) CFG.ropeSpeed = DEFAULTS.ropeSpeed;
+  if (!saved.v91) { if (saved.ropeSpeed === 3) CFG.ropeSpeed = DEFAULTS.ropeSpeed; if (saved.woodBurnTime === 12) CFG.woodBurnTime = DEFAULTS.woodBurnTime; }
+  if (!saved.v89) { if (saved.ropeSpeed === 5 || saved.ropeSpeed === 30) CFG.ropeSpeed = DEFAULTS.ropeSpeed; if (saved.woodBurnTime === 7) CFG.woodBurnTime = DEFAULTS.woodBurnTime; }
+  if (!saved.v88) { if (saved.ropeSpeed === 30) CFG.ropeSpeed = DEFAULTS.ropeSpeed; if (saved.millFriction === 0.6) CFG.millFriction = DEFAULTS.millFriction; if (saved.millMass === 2500) CFG.millMass = DEFAULTS.millMass; }
 } catch (e) {}
-function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify({ ...CFG, v72: 1, v73: 1 })); } catch (e) {} }
+function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify({ ...CFG, v72: 1, v73: 1, v81: 1, v88: 1, v89: 1, v91: 1, v92: 1, v96: 1, v104: 1 })); } catch (e) {} }
 
 const SETTINGS = [
   { g: 'Water simulation' },
@@ -376,12 +403,17 @@ const SETTINGS = [
   { k: 'oilBurnTime', l: 'Oil burn time (s)', min: 1, max: 20, step: 0.5 },
   { k: 'fireBrush', l: 'Fire finger size', min: 5, max: 50, step: 1 },
   { k: 'fuseTime', l: 'Bomb fuse time (s)', min: 0.5, max: 15, step: 0.5 },
-  { k: 'ropeSpeed', l: 'Rope burning speed', min: 10, max: 400, step: 5 },
+  { k: 'ropeSpeed', l: 'Rope burning speed', min: 1, max: 400, step: 1 },
   { k: 'plastSpeed', l: 'Plasteline blast speed', min: 40, max: 1500, step: 10 },
   { k: 'bombRadius', l: 'Bomb blast size', min: 15, max: 110, step: 1 },
   { k: 'fireBombGlobs', l: 'Fire bomb flames', min: 4, max: 80, step: 1 },
+  { g: 'Tank' },
+  { k: 'cannonSpread', l: 'Cannon inaccuracy (° – 0 hits exactly where you aim)', min: 0, max: 25, step: 1 },
+  { k: 'cannonLife', l: 'Cannon life (how much damage it takes)', min: 20, max: 500, step: 10 },
+  { k: 'cannonSpeed', l: 'Bullet speed (how far it shoots)', min: 250, max: 1300, step: 10 },
+  { k: 'cannonMax', l: 'Cannons per player', min: 1, max: 8, step: 1 },
   { g: 'Tools' },
-  { k: 'objScale', l: 'Objects scale – crates, blocks & drawn things (%)', min: 20, max: 150, step: 5 },
+  { k: 'objScale', l: 'Objects scale – crates, mills, cannons, bombs, pipes… (%)', min: 20, max: 150, step: 5 },
   { k: 'brushRadius', l: 'Pour / erase brush size', min: 8, max: 60, step: 1 },
   { k: 'pipeSpeed', l: 'Pipe flow speed', min: 40, max: 900, step: 10 },
   { k: 'pipeWidth', l: 'Pipe width', min: 4, max: 40, step: 0.5 },
@@ -405,6 +437,7 @@ const SETTINGS = [
   { k: 'windOnAnimals', l: 'How much wind moves animals', min: 0, max: 1, step: 0.05 },
   { g: 'Display' },
   { k: 'bgBright', l: 'Picture brightness', min: 0.3, max: 1.2, step: 0.02 },
+  { k: 'look3d', l: '3D look – raised walls & objects with shadows', toggle: 1 },
   { k: 'fireFx', l: 'Flame & smoke effects', toggle: 1 },
   { k: 'fireRes', l: 'Flame detail (px per cell, smaller = finer)', min: 2, max: 8, step: 1 },
   { k: 'dprCap', l: 'Screen sharpness (pixel ratio)', min: 1, max: 3, step: 0.5, layout: 1 },
@@ -421,6 +454,7 @@ const LIQUIDS = [
   { name: 'Oil',   icon: '🛢️', color: '#7a4a10' },
   { name: 'Foam',  icon: '🫧', color: '#ffffff' },
   { name: 'Sand',  icon: '🏖️', color: '#e6c35a' },
+  { name: 'Lava',  icon: '🌋', color: '#ff5a1a' },
 ];
 const SDF_CLAMP = 12;
 const MAX_EMBERS = 1500;
@@ -518,7 +552,7 @@ function vnoise(x, y) {
   return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
 }
 function applyStroke(A, MW, MH, ax, ay, bx, by, rad, mode, frame) {
-  const R = mode === 'burn' ? rad * 1.3 : rad;
+  const R = mode === 'burn' || mode === 'blast' ? rad * 1.3 : rad;
   const x0 = Math.max(0, Math.floor(Math.min(ax, bx) - R - 1)), x1 = Math.min(MW - 1, Math.ceil(Math.max(ax, bx) + R + 1));
   const y0 = Math.max(0, Math.floor(Math.min(ay, by) - R - 1)), y1 = Math.min(MH - 1, Math.ceil(Math.max(ay, by) + R + 1));
   const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, r2 = rad * rad;
@@ -527,8 +561,8 @@ function applyStroke(A, MW, MH, ax, ay, bx, by, rad, mode, frame) {
     for (let x = x0; x <= x1; x++) {
       if (frame && (x < frame || y < frame || x >= MW - frame || y >= MH - frame)) continue;
       const px = x + 0.5, py = y + 0.5, i = y * MW + x;
-      if (mode === 'burn') {
-        if (!wall[i] || mat[i] !== 2) continue;
+      if (mode === 'burn' || mode === 'blast') {
+        if (!wall[i] || (mode === 'burn' && mat[i] !== 2)) continue;
         const rr = rad * (0.85 + 0.4 * vnoise(x * 0.35, y * 0.35));
         if ((px - ax) * (px - ax) + (py - ay) * (py - ay) > rr * rr) continue;
         wall[i] = 0; burnt[i] = 1; continue;
@@ -566,7 +600,44 @@ function polyFill(pts, MW, MH, fn) {      // scanline fill of a closed polygon [
     }
   }
 }
+function blastOval(A, MW, MH, x, y, a, b, nx, ny, frame, onPix) {   // oval crater: long along the wall, shallow into it
+  const { wall, burnt, mat } = A, R = Math.max(a, b) * 1.2;
+  const x0 = Math.max(0, Math.floor(x - R)), x1 = Math.min(MW - 1, Math.ceil(x + R));
+  const y0 = Math.max(0, Math.floor(y - R)), y1 = Math.min(MH - 1, Math.ceil(y + R));
+  for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) {
+    if (frame && (xx < frame || yy < frame || xx >= MW - frame || yy >= MH - frame)) continue;
+    const i = yy * MW + xx; if (!wall[i]) continue;
+    const dx = xx + 0.5 - x, dy = yy + 0.5 - y, along = dx * -ny + dy * nx, into = dx * nx + dy * ny;
+    const q = (along / a) ** 2 + (into / b) ** 2, rr = 0.8 + 0.35 * vnoise(xx * 0.3, yy * 0.3);
+    if (q < rr * rr) { if (onPix) onPix(xx + 0.5, yy + 0.5, mat[i]); wall[i] = 0; burnt[i] = 1; }
+  }
+  return [x0, y0, x1 + 1, y1 + 1];
+}
 function applyStrokeAll(A, MW, MH, s, frame) {
+  if (s.mode === 'dots') {                      // many little stone dots (cooled lava, baked sand)
+    const rad = s.rN * MW, p = s.pts; let b = null;
+    for (let k = 0; k + 1 < p.length; k += 2) {
+      const q = applyStroke(A, MW, MH, p[k] * MW, p[k + 1] * MH, p[k] * MW, p[k + 1] * MH, rad, 'stone', frame);
+      b = b ? [Math.min(b[0], q[0]), Math.min(b[1], q[1]), Math.max(b[2], q[2]), Math.max(b[3], q[3])] : q;
+    }
+    return b || [0, 0, 1, 1];
+  }
+  if (s.mode === 'fillPoly') {
+    const pts = s.pts.map((v, i) => v * (i & 1 ? MH : MW));
+    let x0 = MW, y0 = MH, x1 = 0, y1 = 0;
+    for (let k = 0; k < pts.length; k += 2) { x0 = Math.min(x0, pts[k]); x1 = Math.max(x1, pts[k]); y0 = Math.min(y0, pts[k + 1]); y1 = Math.max(y1, pts[k + 1]); }
+    const fm = s.fm || (s.m === 2 ? 'wood' : 'stone');
+    polyFill(pts, MW, MH, (i, x, y) => {
+      if (frame && (x < frame || y < frame || x >= MW - frame || y >= MH - frame)) return;
+      if (fm === 'stone') { A.wall[i] = 1; A.mat[i] = 1; A.burnt[i] = 0; }
+      else if (fm === 'wood') { A.wall[i] = 1; A.mat[i] = 2; A.burnt[i] = 0; }
+      else if (fm === 'erase') A.wall[i] = 0;
+      else if (fm === 'toWood') { if (A.wall[i]) A.mat[i] = 2; }
+      else if (fm === 'toStone') { if (A.wall[i]) A.mat[i] = A.photoWall && A.photoWall[i] ? 0 : 1; }
+    });
+    return [Math.max(0, Math.floor(x0) - 2), Math.max(0, Math.floor(y0) - 2), Math.min(MW, Math.ceil(x1) + 3), Math.min(MH, Math.ceil(y1) + 3)];
+  }
+  if (s.mode === 'oval') { const p = s.pts; blastOval(A, MW, MH, p[0] * MW, p[1] * MH, s.a * MW, s.b * MW, s.n[0], s.n[1], frame); return; }
   if (s.mode === 'cutPoly') {
     const pts = s.pts.map((v, i) => v * (i & 1 ? MH : MW));
     polyFill(pts, MW, MH, (i, x, y) => { if (!frame || !(x < frame || y < frame || x >= MW - frame || y >= MH - frame)) A.wall[i] = 0; });
@@ -629,8 +700,17 @@ function stoneRGB(mx, my, out) {
   const v = 98 + 74 * nn - (hash2(mx | 0, my | 0) > 0.93 ? 26 : 0);
   out[0] = v; out[1] = v + 3; out[2] = v + 9;
 }
-function renderBG(x0, y0, x1, y1) {      // box in mask px
+const LIGHT_X = -0.7071, LIGHT_Y = -0.7071;     // light from the top-left (screen space)
+function renderBG(x0, y0, x1, y1, sameShape) {      // box in mask px
+  if (CFG.look3d && !sameShape) { x0 -= 3; y0 -= 3; x1 += 3; y1 += 3; }   // room for bevels & shadows of changed walls
   const { W, H, MW, MH, kx, ky, img, photo, paper } = BG, w = world;
+  const look = !!CFG.look3d, S = w.sdf, BEV = 2.2, SHX = 1.8;
+  const sd = (fx, fy) => {                 // bilinear signed distance (mask px, pixel centres)
+    if (fx < 0) fx = 0; else if (fx > MW - 1.001) fx = MW - 1.001;
+    if (fy < 0) fy = 0; else if (fy > MH - 1.001) fy = MH - 1.001;
+    const ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy, o = iy * MW + ix;
+    return (S[o] * (1 - tx) + S[o + 1] * tx) * (1 - ty) + (S[o + MW] * (1 - tx) + S[o + MW + 1] * tx) * ty;
+  };
   const wall = w.wall, mat = w.mat, burnt = w.burnt, pw = w.photoWall, fr = w.frame;
   const bx0 = clamp(Math.floor(x0 * kx) - 2, 0, W), bx1 = clamp(Math.ceil(x1 * kx) + 2, 0, W);
   const by0 = clamp(Math.floor(y0 * ky) - 2, 0, H), by1 = clamp(Math.ceil(y1 * ky) + 2, 0, H);
@@ -646,7 +726,16 @@ function renderBG(x0, y0, x1, y1) {      // box in mask px
       if (burnt[n] || (pw[n] && !wall[n])) { const q = n * 3; gr = paper[q]; gg = paper[q + 1]; gb = paper[q + 2]; }
       if (w.plast[n]) { const nn = vnoise(bx * 0.25, by * 0.25); gr = 140 + 34 * nn; gg = 64 + 22 * nn; gb = 200 + 30 * nn; }
       const cov = (wv(ix, iy) * (1 - tx) + wv(ix + 1, iy) * tx) * (1 - ty) + (wv(ix, iy + 1) * (1 - tx) + wv(ix + 1, iy + 1) * tx) * ty;
-      if (cov <= 0.001) { img[j] = gr; img[j + 1] = gg; img[j + 2] = gb; img[j + 3] = 255; continue; }
+      if (cov <= 0.001) {
+        if (look) {                        // soft drop shadow of raised walls (cast to the bottom-right)
+          const sxp = fx - SHX, syp = fy - SHX;
+          if (sxp > fr && syp > fr) {
+            const ds = sd(sxp, syp);
+            if (ds < 0.9) { const sh = 1 - Math.min(1, (0.9 - ds) / 1.8) * 0.3; gr *= sh; gg *= sh; gb *= sh; }
+          }
+        }
+        img[j] = gr; img[j + 1] = gg; img[j + 2] = gb; img[j + 3] = 255; continue;
+      }
       let wr, wg, wb;
       const m = mat[n], mx = (bx + 0.5) / kx;
       if (m === 2) {          // wood: grain along x, darker rings; blackens while burning
@@ -656,6 +745,15 @@ function renderBG(x0, y0, x1, y1) {      // box in mask px
       } else if (m === 1) {   // stone: speckled grey
         stoneRGB(mx, my, COL); wr = COL[0]; wg = COL[1]; wb = COL[2];
       } else { wr = r * r / 255; wg = g * g / 255; wb = b * b / 255; }   // pencil: deepen its own colour
+      if (look) {                          // bevelled edge: lit on the top-left, darker on the bottom-right
+        const d = sd(fx, fy), edge = d > 0 ? 1 : Math.max(0, 1 + d / BEV);
+        if (edge > 0) {
+          const gx = sd(fx + 0.7, fy) - sd(fx - 0.7, fy), gy = sd(fx, fy + 0.7) - sd(fx, fy - 0.7);
+          const gl = Math.hypot(gx, gy) || 1, lit = (gx * LIGHT_X + gy * LIGHT_Y) / gl;
+          const f = 1 + 0.55 * lit * edge + 0.06;
+          wr = Math.min(255, wr * f + (lit > 0 ? 26 * lit * edge : 0)); wg = Math.min(255, wg * f + (lit > 0 ? 26 * lit * edge : 0)); wb = Math.min(255, wb * f + (lit > 0 ? 26 * lit * edge : 0));
+        }
+      }
       const ic = 1 - cov;
       img[j] = gr * ic + wr * cov; img[j + 1] = gg * ic + wg * cov; img[j + 2] = gb * ic + wb * cov; img[j + 3] = 255;
     }
@@ -933,13 +1031,19 @@ function makeAtlas() {
    --------------------------------------------------------------------- */
 const FLUID = 0, AIR = 1, SOLID = 2;
 // bomb fuse: quadratic curve in bomb-local coords (up = -y); t = 1 full length
+function nearOwn(st, k) {                     // a burning spot on the same rope nearby: its heat must not skip ahead
+  for (let j = Math.max(0, k - 10), e = Math.min(st.length - 1, k + 10); j <= e; j++) if (st[j] > 0) return true;
+  return false;
+}
 function fusePoint(rb, t) {
-  const p0x = 0, p0y = -rb * 1.05, cx = rb * 0.15, cy = -rb * 2.1, p2x = rb * 0.9, p2y = -rb * 2.35, u = 1 - t;
+  const p0x = rb * 0.78, p0y = -rb * 0.78, cx = rb * 1.75, cy = -rb * 1.95, p2x = rb * 2.55, p2y = -rb * 2.1, u = 1 - t;   // top-right diagonal
   return [u * u * p0x + 2 * u * t * cx + t * t * p2x, u * u * p0y + 2 * u * t * cy + t * t * p2y];
 }
 
 /* ---- rigid body helpers ---- */
-const MAT_DENS = [0, 2.4, 0.55];          // per body pixel: 1 stone (sinks), 2 wood (floats)
+const CANNON_R = 12, SHOT_G = 0.5;
+const OBJK = () => CFG.objScale / 50;           // 'Objects scale' setting: mills, cannons, bombs, pipes, sewers, crates
+const MAT_DENS = [0, 2.4, 0.38];          // per body pixel: 1 stone (sinks), 2 wood (floats high: ~40% under water)
 let SB_NX = 0, SB_NY = 0;
 function sampleBody(b, wx, wy) {           // signed distance to body b at a world point; normal -> SB_NX/NY
   const dx = wx - b.x, dy = wy - b.y, c = b.c, s = b.s;
@@ -1031,7 +1135,7 @@ class World {
     this.u = F(); this.v = F(); this.du = F(); this.dv = F(); this.prevU = F(); this.prevV = F();
     this.s = F(); this.density = F(); this.denW = F(); this.denO = F();
     this.windX = F(); this.windY = F();
-    this.denF = F(); this.denS = F(); this.heat = F(); this.heatTmp = F(); this.fuel = F();
+    this.denF = F(); this.denS = F(); this.denL = F(); this.lavaN = 0; this.heat = F(); this.heatTmp = F(); this.fuel = F();
     this.fireSrc = F(); this.smokeSrc = F(); this.steamSrc = F(); this.flashSrc = F(); this.oilHeat = F();
     this.burn = new Uint8Array(n); this.evap = new Uint8Array(n); this.smother = new Uint8Array(n); this.woodN = new Int32Array(n);
     this.char = new Float32Array(n).fill(1); this.charList = [];
@@ -1061,6 +1165,7 @@ class World {
     this.brushes = [];
     this.stepCount = 0; this.oilCount = 0;
     this.bombs = []; this.globs = []; this.torches = []; this.rings = []; this.burnQueue = [];
+    this.booms = []; this.cannons = []; this.shots = []; this.mush = []; this.sandQueue = []; this.chains = [];
     this.emb = new Float32Array(MAX_EMBERS * 7); this.nEmb = 0;
     this.burning = 0; this.oilBurning = 0; this.hot = false; this.flashOn = false; this.evapAny = false;
     this.fxLinger = 0; this.srcDirty = false; this.wallsVersion = 0;
@@ -1152,7 +1257,7 @@ class World {
     this.px[i] = this.px[l]; this.py[i] = this.py[l]; this.vx[i] = this.vx[l]; this.vy[i] = this.vy[l];
     this.pt[i] = this.pt[l]; this.pl[i] = this.pl[l]; this.ox[i] = this.ox[l]; this.oy[i] = this.oy[l];
   }
-  clearLiquids() { this.N = 0; this.density.fill(0); this.denW.fill(0); this.denO.fill(0); this.denF.fill(0); this.denS.fill(0); }
+  clearLiquids() { this.N = 0; this.lavaN = 0; this.denL.fill(0); this.density.fill(0); this.denW.fill(0); this.denO.fill(0); this.denF.fill(0); this.denS.fill(0); }
 
   /* ---- wind field (velocity targets on the grid) ---- */
   rebuildWind() {
@@ -1189,7 +1294,7 @@ class World {
       while (p.acc >= 1 && guard++ < 8) {
         p.acc -= 1; p.row ^= 1;
         const off = p.acc * rowH - speed * dt * 0.8 + 0.5;     // back-dated: after this step's move the drops sit at the mouth
-        const half = CFG.pipeWidth * U / 2 - r;
+        const half = CFG.pipeWidth * U * OBJK() / 2 - r;
         for (let t = -half + (p.row ? r : 0); t <= half; t += sp) {
           const j = (Math.random() - 0.5) * 0.2;
           this.add(p.x + dx * off + nx * (t + j), p.y + dy * off + ny * (t + j), dx * speed, dy * speed, p.type);
@@ -1230,22 +1335,25 @@ class World {
     const vmax = CFG.vmax * this.U, vmax2 = vmax * vmax, thr = this.r * 0.5;
     const irest = 1 / this.restDensity, oilLift = CFG.oilLift, foamLift = CFG.foamLift;
     const wSpeed = CFG.windSpeed * this.U, wAcc = CFG.windAccel * this.U * dt;
-    const hasWind = this.winds.length > 0, hasOil = this.oilCount > 0, fdamp = Math.max(0, 1 - 1.5 * dt);
+    const ldamp = Math.exp(-7 * dt), denL = this.denL, hasWind = this.winds.length > 0, hasOil = this.oilCount > 0, fdamp = Math.max(0, 1 - 1.5 * dt), hasSand = this.sandN > 0, denS = this.denS;
     // slip (drift-flux) velocity: lighter liquids move up relative to the mixture
     const gl = Math.sqrt(gx * gx + gy * gy), ux0 = gl > 1 ? -gx / gl : 0, uy0 = gl > 1 ? -gy / gl : 0;
     const oilSlip = CFG.oilLift * 60 * this.U * dt * (gl / (CFG.gravity * this.U) || 0);
     const foamSlip = CFG.foamLift * 45 * this.U * dt * (gl / (CFG.gravity * this.U) || 0);
+    const sandSlip = 110 * this.U * dt * (gl / (CFG.gravity * this.U) || 0);
+    const lavaSlip = 320 * this.U * dt * (gl / (CFG.gravity * this.U) || 0), hasLava = this.lavaN > 0;
     for (let i = 0; i < N; i++) {
       let x = px[i], y = py[i], ux = vx[i], uy = vy[i];
       ox[i] = x; oy[i] = y;
       const t = pt[i];
       let ax = gx, ay = gy;
-      if (t !== 0 || hasWind || hasOil) {
+      if (t !== 0 || hasWind || hasOil || hasSand || hasLava) {
         let cx = (x * inv) | 0, cy = (y * inv) | 0;
         if (cx < 0) cx = 0; else if (cx >= NX) cx = NX - 1;
         if (cy < 0) cy = 0; else if (cy >= NY) cy = NY - 1;
         const c = cy * NX + cx;
         if (t === 0) {                       // water sinks where oil is mixed in (counter-flow)
+          if (hasLava) { let f = denL[c] * irest; if (f > 1) f = 1; x += ux0 * lavaSlip * f; y += uy0 * lavaSlip * f; }   // and rises above lava
           if (hasOil) { let f = denO[c] * irest; if (f > 1) f = 1; x -= ux0 * oilSlip * f; y -= uy0 * oilSlip * f; }
         } else if (t === 1) {                // oil rises through water
           let f = denW[c] * irest; if (f > 1) f = 1;
@@ -1256,19 +1364,30 @@ class World {
           if (lf > 0) {
             if (smother[c]) pl[i] = 0;                  // foam blanket smothers the flame
             else { nb++; oilHeat[c] += 0.25; const r = lf - dt; pl[i] = r > 0 ? r : -1; }   // burns until used up
-          } else if (lf === 0 && air && heat[c] > 0.45 && !smother[c]) pl[i] = oilBurn * (0.6 + 0.8 * Math.random());
+          } else if (lf === 0 && ((air && heat[c] > 0.45) || denL[c] > 0.1 * this.restDensity) && !smother[c]) pl[i] = oilBurn * (0.6 + 0.8 * Math.random());
         } else if (t === 3) {                // sand: heavy grains, sink in water and get dragged by it
+          if (pl[i] <= -1) { ux *= 0.15; uy *= 0.15; }
           let f = denW[c] * irest; if (f > 1) f = 1;
           const sw = CFG.sandWeight, k = 1 - 0.4 * f / sw; ax = gx * k; ay = gy * k;
-          if (f > 0.1) {
-            const a = Math.min(1, 3 * dt) * f / sw;
-            ux += ((u[c] + u[c + 1]) * 0.5 - ux) * a; uy += ((v[c] + v[c + NX]) * 0.5 - uy) * a;
+          if (f > 0.1 && this.type[c] !== SOLID) {   // flowing water carries grains along (gently: the grid near the sand bed is noisy)
+            const a = Math.min(1, 1.5 * dt) * f / sw, lim = 120 * this.U;
+            const wu = clamp((u[c] + u[c + 1]) * 0.5, -lim, lim), wv = clamp((v[c] + v[c + NX]) * 0.5, -lim, lim);
+            ux += (wu - ux) * a; uy += (wv - uy) * a;
           }
+        } else if (t === 4) {                // lava: thick and slow, heavier than water (sinks under it), lighter than sand
+          ux *= ldamp; uy *= ldamp;
+          if (pl[i] <= -1) { ux *= 0.15; uy *= 0.15; }   // hardening: barely moves
+          let f = denW[c] * irest; if (f > 1) f = 1;
+          x -= ux0 * lavaSlip * f; y -= uy0 * lavaSlip * f;
         } else if (t === 2) {                // foam rises through any liquid, dies over time
           let f = (denW[c] + denO[c]) * irest; if (f > 1) f = 1;
           const k = f < 0.15 ? 0.45 : 1 - f * foamLift; ax = gx * k; ay = gy * k;
           ux *= fdamp; uy *= fdamp; pl[i] -= dt;
           x += ux0 * foamSlip * f; y += uy0 * foamSlip * f;
+        }
+        if (hasSand && t !== 3) {           // liquids don't soak into sand: they get squeezed up and out, on top of it
+          let fs = denS[c] * irest;
+          if (fs > 0.15) { if (fs > 1) fs = 1; x += ux0 * sandSlip * fs; y += uy0 * sandSlip * fs; }
         }
         if (hasWind) {
           const wx = windX[c], wy = windY[c];
@@ -1407,7 +1526,7 @@ class World {
                 }
                 dx *= s; dy *= s;
                 if (hasSand && (pt[i] === 3) !== (pt[j] === 3)) {   // heavy grains push water aside more than water pushes them
-                  const fi = pt[i] === 3 ? 2 / (1 + sw) : 2 * sw / (1 + sw);
+                  const fi = pt[i] === 3 ? 1 / (1 + 2 * sw) : 2 - 1 / (1 + 2 * sw);
                   xi -= dx * fi; yi -= dy * fi; px[j] += dx * (2 - fi); py[j] += dy * (2 - fi);
                 } else { xi -= dx; yi -= dy; px[j] += dx; py[j] += dy; }
               }
@@ -1424,7 +1543,7 @@ class World {
     if (!this.mills.length) return;
     const { px, py, vx, vy } = this, N = this.N, r = this.r, U = this.U;
     for (const m of this.mills) {
-      const R = CFG.millSize * U * m.mul, hub = R * 0.18;
+      const R = CFG.millSize * U * m.mul * OBJK(), hub = R * 0.18;
       const bt0 = Math.max(1.4, 1.2 * U), bt1 = R * 0.16;
       const reach = R + bt1 + r, reach2 = reach * reach, hubR2 = (hub + r) * (hub + r);
       const cs = [], sn = [];
@@ -1525,7 +1644,7 @@ class World {
   drain(dt) {
     const { px, py, vx, vy, pt, pl } = this;
     if (this.sewers.length) {
-      const U = this.U, R = CFG.sewerRadius * U, R2 = R * R, P2 = 9 * R2, pull = CFG.sewerPull * U * dt;
+      const U = this.U, R = CFG.sewerRadius * U * OBJK(), R2 = R * R, P2 = 9 * R2, pull = CFG.sewerPull * U * dt;
       for (const s of this.sewers) {
         for (let i = this.N - 1; i >= 0; i--) {
           const dx = s.x - px[i], dy = s.y - py[i], d2 = dx * dx + dy * dy;
@@ -1553,12 +1672,12 @@ class World {
   p2g() {
     const { NX, NY, h, inv, u, v, du, dv, type, solid, fixU, fixV, validU, validV, px, py, vx, vy, pt } = this;
     const N = this.N, n = NX * NY, h2 = h * 0.5;
-    const { density, denW, denO, denF, denS } = this;
+    const { density, denW, denO, denF, denS, denL } = this;
     u.fill(0); v.fill(0); du.fill(0); dv.fill(0);
-    density.fill(0); denW.fill(0); denO.fill(0); denF.fill(0); denS.fill(0);
+    density.fill(0); denW.fill(0); denO.fill(0); denF.fill(0); denS.fill(0); denL.fill(0);
     for (let c = 0; c < n; c++) type[c] = solid[c] ? SOLID : AIR;
     const lo = h, hx = (NX - 1) * h, hy = (NY - 1) * h;
-    let oil = 0, sand = 0;
+    let oil = 0, sand = 0, lava = 0;
     for (let i = 0; i < N; i++) {           // one pass: cell types, liquid densities (cell centres) and u / v splats
       const x = clamp(px[i], lo, hx), y = clamp(py[i], lo, hy), t = pt[i];
       {
@@ -1567,9 +1686,9 @@ class World {
         const w0 = sx * sy, w1 = tx * sy, w2 = sx * ty, w3 = tx * ty;
         if (t === 3) { denS[c] += w0; denS[c + 1] += w1; denS[c + NX] += w2; denS[c + NX + 1] += w3; sand++; continue; }
         density[c] += w0; density[c + 1] += w1; density[c + NX] += w2; density[c + NX + 1] += w3;
-        const d = t === 0 ? denW : (t === 1 ? denO : denF);
+        const d = t === 0 ? denW : (t === 1 ? denO : (t === 4 ? denL : denF));
         d[c] += w0; d[c + 1] += w1; d[c + NX] += w2; d[c + NX + 1] += w3;
-        if (t === 1) oil++;
+        if (t === 1) oil++; else if (t === 4) lava++;
       }
       { const c = ((y * inv) | 0) * NX + ((x * inv) | 0); if (type[c] === AIR) type[c] = FLUID; }
       let fx = x * inv, fy = (y - h2) * inv;
@@ -1591,10 +1710,20 @@ class World {
       w = sx * ty; v[c + NX] += pv * w; dv[c + NX] += w;
       w = tx * ty; v[c + NX + 1] += pv * w; dv[c + NX + 1] += w;
     }
-    this.oilCount = oil; this.sandN = sand;
+    this.oilCount = oil; this.sandN = sand; this.lavaN = lava;
+    // packed sand behaves like ground for the liquids: those cells are solid for this step (water lies on top)
+    if (!this.sDyn || this.sDyn.length !== n) this.sDyn = new Float32Array(n);
+    this.sandSolid = false;
+    if (sand) {
+      const sS = this.sDyn, thr = this.restDensity * 0.6; sS.set(this.s);
+      for (let c = 0; c < n; c++) if (!solid[c] && denS[c] > thr && density[c] < denS[c]) { type[c] = SOLID; sS[c] = 0; this.sandSolid = true; }
+    }
+    const dyn = this.sandSolid;
     for (let c = 0; c < n; c++) {
-      u[c] = (fixU[c] || du[c] === 0) ? 0 : u[c] / du[c];
-      v[c] = (fixV[c] || dv[c] === 0) ? 0 : v[c] / dv[c];
+      const bu = fixU[c] || (dyn && (type[c] === SOLID || (c % NX > 0 && type[c - 1] === SOLID)));
+      const bv = fixV[c] || (dyn && (type[c] === SOLID || (c >= NX && type[c - NX] === SOLID)));
+      u[c] = (bu || du[c] === 0) ? 0 : u[c] / du[c];
+      v[c] = (bv || dv[c] === 0) ? 0 : v[c] / dv[c];
       const x = c % NX;
       validU[c] = (type[c] === FLUID || (x > 0 && type[c - 1] === FLUID)) ? 1 : 0;
       validV[c] = (type[c] === FLUID || (c >= NX && type[c - NX] === FLUID)) ? 1 : 0;
@@ -1603,8 +1732,8 @@ class World {
 
   computeDensity() {
     const { NX, h, inv, density, denW, denO, denF, denS, px, py, pt } = this, N = this.N, h2 = h * 0.5;
-    let oil = 0, sand = 0;
-    denS.fill(0);
+    let oil = 0, sand = 0, lava = 0;
+    const denL = this.denL; denS.fill(0); denL.fill(0);
     density.fill(0); denW.fill(0); denO.fill(0); denF.fill(0);
     const lo = h, hx = (NX - 1) * h, hy = (this.NY - 1) * h;
     for (let i = 0; i < N; i++) {
@@ -1616,16 +1745,16 @@ class World {
       if (pt[i] === 3) { denS[c] += w0; denS[c + 1] += w1; denS[c + NX] += w2; denS[c + NX + 1] += w3; sand++; continue; }
       density[c] += w0; density[c + 1] += w1; density[c + NX] += w2; density[c + NX + 1] += w3;
       const t = pt[i];
-      const d = t === 0 ? denW : (t === 1 ? denO : denF);
+      const d = t === 0 ? denW : (t === 1 ? denO : (t === 4 ? denL : denF));
       { d[c] += w0; d[c + 1] += w1; d[c + NX] += w2; d[c + NX + 1] += w3; }
-      if (t === 1) oil++;
+      if (t === 1) oil++; else if (t === 4) lava++;
     }
-    this.oilCount = oil; this.sandN = sand;
+    this.oilCount = oil; this.sandN = sand; this.lavaN = lava;
   }
 
   /* ---- pressure projection (Gauss-Seidel + SOR, drift compensation) ---- */
   project(dt) {
-    const { NX, type, s, u, v, density, fluidList } = this, n = NX * this.NY;
+    const { NX, type, u, v, density, fluidList } = this, n = NX * this.NY, s = this.sandSolid ? this.sDyn : this.s;
     if (!this.pK || this.pK.length !== n) { this.pK = new Float32Array(n); this.pB = new Float32Array(n); this.pM = new Uint8Array(n); this.pAcc = new Float32Array(n); this.pPrev = new Float32Array(n); }
     const pK = this.pK, pB = this.pB, pM = this.pM, pAcc = this.pAcc, pPrev = this.pPrev;
     const rest = this.restDensity, kd = CFG.driftK * this.h / dt, omega = 1.9;
@@ -1666,7 +1795,7 @@ class World {
   g2p() {
     const { NX, NY, h, inv, u, v, prevU, prevV, validU, validV, px, py, vx, vy, pt } = this;
     const N = this.N, h2 = h * 0.5;
-    const FL = [CFG.flipRatio, CFG.oilFlip, 0.4, -1];
+    const FL = [CFG.flipRatio, CFG.oilFlip, 0.4, -1, 0.25];
     const lo = h, hx = (NX - 1) * h, hy = (NY - 1) * h;
     for (let i = 0; i < N; i++) {
       const flip = FL[pt[i]], pic = 1 - flip;
@@ -1698,7 +1827,7 @@ class World {
   }
 
   /* ---- creatures ---- */
-  creatureSize(c) { return CFG.creatureSize * this.U * CREATURES[c.kind].scale * c.mul * (1 + 0.6 * (c.puff || 0)); }
+  creatureSize(c) { return CFG.creatureSize * this.U * OBJK() * CREATURES[c.kind].scale * c.mul * (1 + 0.6 * (c.puff || 0)); }
   spawnCreature(x, y, kind) {
     if (this.creatures.length >= CFG.maxCreatures) return false;
     if (kind === -1) kind = ANIMAL_KINDS[(Math.random() * ANIMAL_KINDS.length) | 0];
@@ -1709,6 +1838,13 @@ class World {
     c.angle = c.heading;
     this.creatures.push(c);
     return true;
+  }
+  crumbleFx(x, y, size) {                      // the same little fire sparks as a burning object
+    const U = this.U;
+    for (let k = 0; k < 22; k++) {
+      const a = Math.random() * 6.283, sp = (20 + Math.random() * 60) * U, ox = Math.cos(a) * size * 0.4, oy = Math.sin(a) * size * 0.4;
+      this.spawnEmber(x + ox, y + oy, Math.cos(a) * sp, Math.sin(a) * sp, 0.4 + Math.random() * 0.6, k % 3 ? 2 : 0);
+    }
   }
   poof(x, y, size) {
     for (let k = 0; k < 26; k++) {
@@ -1886,7 +2022,7 @@ class World {
         } else { e[j] = nx; e[j + 1] = ny; }
         continue;
       }
-      const lift = kind === 0 ? 110 * U : (kind === 1 || kind === 6 ? 30 * U : (kind === 5 ? 0 : -500 * U));
+      const lift = kind < 0.5 ? 110 * U : (kind === 1 || kind === 6 ? 30 * U : (kind === 5 ? 0 : -500 * U));
       let wx = 0, wy = 0;
       if (kind !== 2) {                    // smooth swirl from a noise field: drifts, never jitters
         const a = vnoise(e[j] * iU, e[j + 1] * iU - tt) * 12.566, f = kind === 5 ? 25 * U : 160 * U;
@@ -1913,6 +2049,12 @@ class World {
       if (smokeSrc[c] < 0.2) smokeSrc[c] = 0.2;
     }
   }
+  wetAround(c) {                         // how many of the 8 neighbouring cells hold water (or sand: it buries the fire)
+    const d = this.denW, ds = this.denS, t = this.restDensity * 0.3, NX = this.NX, n = d.length;
+    let k = 0;
+    for (const o of [-1, 1, -NX, NX, -NX - 1, -NX + 1, NX - 1, NX + 1]) { const q = c + o; if (q >= 0 && q < n && (d[q] > t || ds[q] > t)) k++; }
+    return k;
+  }
   stepFire(dt) {
     this.updateEmbers(dt);
     const { NX, NY, h, heat, heatTmp, burn, fuel, fireSrc, smokeSrc, steamSrc, flashSrc, oilHeat, denW, denF, solid, evap, woodN } = this;
@@ -1922,7 +2064,7 @@ class World {
       for (let c = 0; c < n; c++) if (flashSrc[c] > 0) { flashSrc[c] *= k; if (flashSrc[c] < 0.02) flashSrc[c] = 0; else any = true; }
       this.flashOn = any;
     }
-    const active = this.torches.length > 0 || this.globs.length > 0 || this.burning > 0 || this.oilBurning > 0 || this.hot
+    const active = this.lavaN > 0 || this.torches.length > 0 || this.globs.length > 0 || this.shots.length > 0 || this.mush.length > 0 || this.burning > 0 || this.oilBurning > 0 || this.hot
                 || this.bodyBurning > 0 || this.ropeBurning > 0;
     if (!active) {
       if (this.srcDirty) { fireSrc.fill(0); smokeSrc.fill(0); steamSrc.fill(0); this.srcDirty = false; }
@@ -1940,27 +2082,31 @@ class World {
     const smother = this.smother, fl = rest * 0.1;
     for (let c = 0; c < n; c++) {
       const a = c + upOff, b = c + 2 * upOff, d = c + 3 * upOff;
-      smother[c] = (denF[c] > fl || this.denS[c] > rest * 0.5 || (a >= 0 && a < n && denF[a] > fl) || (b >= 0 && b < n && denF[b] > fl) || (d >= 0 && d < n && denF[d] > fl)) ? 1 : 0;
+      smother[c] = (denF[c] > fl || this.denS[c] > rest * 0.3 || (a >= 0 && a < n && denF[a] > fl) || (b >= 0 && b < n && denF[b] > fl) || (d >= 0 && d < n && denF[d] > fl)) ? 1 : 0;
     }
     const sp = CFG.fireSpread;
     const D = Math.min(0.24, 4 * sp * dt), R = Math.min(0.6, 9 * sp * dt), cool = Math.exp(-1.4 * dt);
-    const ign = Math.min(1, 1.5 * sp * dt), spreadP = Math.min(1, 3 * sp * dt), burnRate = dt / CFG.woodBurnTime;
+    const ign = Math.min(1, 0.35 * sp * dt), spreadP = Math.min(1, 0.3 * sp * dt), burnRate = dt / CFG.woodBurnTime;
     const plastCnt = this.plastCnt;
     this.stepRopes(dt);
     let nBurn = 0, hot = false;
     for (let cy = 1; cy < NY - 1; cy++) for (let cx = 1; cx < NX - 1; cx++) {
       const c = cy * NX + cx, f = fuel[c];
       if (solid[c] && woodN[c] === 0) { heat[c] = 0; burn[c] = 0; continue; }   // stone blocks heat
+      if (cy <= 2 || cx <= 2 || cx >= NX - 3) { heat[c] = 0; burn[c] = 0; fireSrc[c] = 0; continue; }   // the picture's edges never burn
       const t = heatTmp[c];
       let nt = t + D * (heatTmp[c - 1] + heatTmp[c + 1] + heatTmp[c - NX] + heatTmp[c + NX] - 4 * t) + R * (heatTmp[c - upOff] - t);
       nt *= cool;
       const oh = oilHeat[c];
       if (oh > 0) { if (nt < 1.2) nt = Math.min(1.2, 0.55 + oh); fireSrc[c] = Math.min(1, 0.35 + oh * 1.5); smokeSrc[c] = 0.45; }
       if (plastCnt[c] > 0 && nt > 0.5) this.triggerPlast(c);
-      const wet = denW[c] > rest * 0.3, foamy = smother[c] === 1;
+      const foamy = smother[c] === 1;
+      let wet = denW[c] > rest * 0.3;
+      if (!wet && nt > 0.3 && this.wetAround(c) >= 6) wet = true;              // a hot spot surrounded by water goes out
+      if (!wet && woodN[c] > 0 && (burn[c] || nt > 0.4)) wet = this.wetAround(c) >= 4;   // wood surrounded by water can't burn
       if (wet || foamy) {
         if ((burn[c] || nt > 0.35) && !oh) { steamSrc[c] = 1; if (wet && burn[c] && evap[c] < 3) { evap[c]++; this.evapAny = true; } }
-        if (!oh || foamy) nt *= foamy ? 0.15 : 0.55;
+        if (!oh || foamy) { nt *= foamy ? 0.15 : 0.55; fireSrc[c] = 0; if (nt > 0.3) steamSrc[c] = 1; }   // no flames in water: it hisses
         burn[c] = 0;
       }
       if (burn[c]) {
@@ -1970,15 +2116,16 @@ class World {
         fuel[c] = f - burnRate;
         if (this.char[c] > 0.15) { this.char[c] -= burnRate * 0.9; if ((this.stepCount + c) % 12 === 0) this.charList.push(c); }
         if (fuel[c] <= 0) { fuel[c] = 0; burn[c] = 0; this.burnQueue.push(c); }
-        if (Math.random() < 2.5 * dt) this.spawnEmber((cx + Math.random()) * h, (cy + Math.random()) * h,
-          (Math.random() - 0.5) * 60 * U, (Math.random() - 0.5) * 60 * U, 0.6 + Math.random() * 0.9, 0);
+        if (Math.random() < 1.6 * dt) { const up = (2.5 + Math.random() * 3) * h;   // sparks leave from the flame tips
+          this.spawnEmber((cx + Math.random()) * h + this.upX * up, (cy + Math.random()) * h + this.upY * up,
+          (Math.random() - 0.5) * 40 * U + this.upX * 30 * U, (Math.random() - 0.5) * 40 * U + this.upY * 30 * U, 0.6 + Math.random() * 0.8, 0); }
       } else if (woodN[c] > 0 && !wet && !foamy) {
         // fire creeps along wood cell by cell; hot air above can also light it
         const nbB = burn[c - 1] | burn[c + 1] | burn[c - NX] | burn[c + NX] | burn[c - NX - 1] | burn[c - NX + 1] | burn[c + NX - 1] | burn[c + NX + 1];
         if ((nbB && Math.random() < spreadP) || (nt > 0.55 && Math.random() < ign)) burn[c] = 1;
       }
       if (oh > 0 && Math.random() < 1.5 * dt) this.spawnEmber((cx + Math.random()) * h, (cy + Math.random()) * h, 0, 0, 0.5 + Math.random() * 0.7, 0);
-      if (nt > 0.75 && fireSrc[c] < 0.6) fireSrc[c] = Math.max(fireSrc[c], Math.min(0.6, (nt - 0.75) * 1.4));   // hot air glows as flame tongues
+      if (nt > 0.75 && fireSrc[c] < 0.6 && !wet) fireSrc[c] = Math.max(fireSrc[c], Math.min(0.6, (nt - 0.75) * 1.4));   // hot air glows as flame tongues
       if (nt < 0.004) nt = 0; else hot = true;
       heat[c] = nt;
     }
@@ -2011,6 +2158,7 @@ class World {
       o.life -= dt;
       const c = this.cellOf(o.x, o.y);
       if (this.denW[c] > rest * 0.3 || this.denF[c] > rest * 0.1) { this.steamSrc[c] = 1; o.life = 0; }
+      else if (this.denS[c] > rest * 0.3) { this.smokeSrc[c] = 0.5; o.life = 0; }   // buried in sand: goes out
       else {
         this.stampHeat(o.x, o.y, this.h * 1.6, 1.3, 1);
         if (Math.random() < 4 * dt) this.spawnEmber(o.x, o.y, (Math.random() - 0.5) * 50 * U, (Math.random() - 0.5) * 50 * U, 0.4 + Math.random() * 0.6, 0);
@@ -2020,7 +2168,7 @@ class World {
   }
 
   /* ---- bombs ---- */
-  bombR() { return CFG.bombRadius * this.U * 0.22; }
+  bombR() { return CFG.bombRadius * this.U * 0.22 * OBJK(); }
   bombTip(b) {
     const rb = this.bombR(), t = b.lit ? clamp(b.left / CFG.fuseTime, 0, 1) : 1;
     const [lx, ly] = fusePoint(rb, t), a = this.upAng, ca = Math.cos(a), sa = Math.sin(a);
@@ -2046,6 +2194,7 @@ class World {
         const sub = Math.min(1, this.density[this.cellOf(b.x, b.y)] / rest);
         const bk = b.kind === 1 ? 1 - 2 * sub : 1 - 0.3 * sub;          // fire bomb is light: it floats, half under the surface
         b.vx += this.gx * bk * dt; b.vy += this.gy * bk * dt;
+        { const ad = Math.exp(-0.7 * dt); b.vx *= ad; b.vy *= ad; }   // air slows a thrown bomb down gradually
         if (sub > 0.05) {
           const wv = this.gridVel(b.x, b.y), k = Math.min(1, 4 * dt * sub);
           b.vx += ((wv ? wv[0] : 0) - b.vx) * k; b.vy += ((wv ? wv[1] : 0) - b.vy) * k;
@@ -2053,10 +2202,10 @@ class World {
         const dx = b.vx * dt, dy = b.vy * dt, steps = Math.max(1, Math.ceil(Math.abs(dx) + Math.abs(dy)));
         for (let k = 0; k < steps; k++) {
           const nx = b.x + dx / steps, ny = b.y + dy / steps;
-          if (this.sdf[(ny | 0) * MW + (nx | 0)] < 1) break;
+          if (ny > f + rb + 2 && this.sdf[(ny | 0) * MW + (nx | 0)] < 1) break;   // the top is open
           b.x = nx; b.y = ny;
         }
-        const d = this.sdfAt(b.x, b.y);
+        const d = b.y < f + rb + 2 ? 99 : this.sdfAt(b.x, b.y);
         if (d < rb + 0.3) {
           const [nx, ny] = this.sdfGrad(b.x, b.y);
           if (d < rb) { b.x += nx * (rb - d); b.y += ny * (rb - d); }
@@ -2066,7 +2215,7 @@ class World {
           if (b.kind === 2) { b.stuck = true; b.vx = 0; b.vy = 0; }      // sticky bomb glues itself on
         }
       }
-      b.x = clamp(b.x, f + rb, MW - f - rb); b.y = clamp(b.y, f + rb, MH - f - rb);
+      b.x = clamp(b.x, f + rb, MW - f - rb); b.y = clamp(b.y, -4 * MH, MH - f - rb);
     }
     // bomb vs bomb
     const L = this.bombs;
@@ -2088,17 +2237,19 @@ class World {
       const [tx, ty] = this.bombTip(b), c = this.cellOf(tx, ty);
       if (!b.lit) { if (this.heat[c] > 0.4) { b.lit = true; } continue; }
       b.left -= dt;                              // a lit fuse burns on, even under water
-      if (this.density[c] > rest * 0.35) { if (Math.random() < 8 * dt) this.spawnEmber(tx, ty, 0, 0, 0.3 + Math.random() * 0.3, 1); }
-      else if (Math.random() < 30 * dt) this.spawnEmber(tx, ty, (Math.random() - 0.5) * 160 * U, (Math.random() - 0.5) * 160 * U, 0.15 + Math.random() * 0.25, 2);
-      if (b.left <= 0) this.explode(b);
+      if (this.density[c] + this.denS[c] > rest * 0.35) { if (Math.random() < 8 * dt) this.spawnEmber(tx, ty, 0, 0, 0.3 + Math.random() * 0.3, 1); }
+      else { if (Math.random() < 30 * dt) this.spawnEmber(tx, ty, (Math.random() - 0.5) * 160 * U, (Math.random() - 0.5) * 160 * U, 0.15 + Math.random() * 0.25, 2);
+        if (Math.random() < 9 * dt) this.spawnEmber(tx, ty, (Math.random() - 0.5) * 70 * U, (Math.random() - 0.5) * 70 * U + this.upY * 30 * U, 0.25 + Math.random() * 0.3, 0); }
+      if (b.left <= 0 && !b.queued) { b.queued = true; this.booms.push(b); }   // blows up at the start of the next step
     }
     if (this.bombs.some(b => b.dead)) this.bombs = this.bombs.filter(b => !b.dead);
   }
   explode(b) {
     if (b.dead) return;
     b.dead = true;
-    const U = this.U, fire = b.kind === 1, R = CFG.bombRadius * U * (fire ? 0.7 : 1), R2 = 4 * R * R;
-    const P = (fire ? 700 : 1500) * U;
+    const U = this.U, fire = b.kind === 1, fat = b.kind === 5, boomC = b.kind === 6, small = b.kind === 7, hole = fat || boomC || small || b.kind === 0;
+    const R = CFG.bombRadius * U * (fire ? 0.7 : (fat ? 0.9 : (boomC ? 0.72 : (small ? 0.65 : 1)))), R2 = 4 * R * R;
+    const P = (fire ? 700 : (small ? 900 : 1500)) * U * (b.wMul || 1);
     const { px, py, vx, vy } = this;
     for (let i = 0; i < this.N; i++) {
       const dx = px[i] - b.x, dy = py[i] - b.y, d2 = dx * dx + dy * dy;
@@ -2106,14 +2257,41 @@ class World {
       const d = Math.sqrt(d2) + 0.5, f = P * (1 - d / (2 * R)) / d;
       vx[i] += dx * f; vy[i] += dy * f;
     }
+    for (const ch of this.chains) {            // chains get flung; wooden links close by break
+      for (let i = 0; i < ch.n; i++) {
+        if (!ch.alive[i]) continue;
+        const dx = ch.p[2 * i] - b.x, dy = ch.p[2 * i + 1] - b.y, d = Math.hypot(dx, dy) + 0.5;
+        if (d > 2 * R) continue;
+        if (ch.mat === 0 && d < R * 0.5 && !fire) { ch.alive[i] = 0; continue; }
+        const k = P * 0.012 * (1 - d / (2 * R)) / d; ch.q[2 * i] -= dx * k; ch.q[2 * i + 1] -= dy * k;
+      }
+    }
+    for (const c of this.cannons) {            // cannons get knocked and damaged
+      const dx = c.x - b.x, dy = c.y - b.y, d = Math.hypot(dx, dy) + 0.5;
+      const RR = small ? 3.2 * R : 2 * R;         // a fireball scorches cannons over a wider area
+      if (d > RR) continue;
+      const q = 1 - d / RR;
+      c.vx = (c.vx || 0) + dx / d * P * 0.22 * q; c.vy = (c.vy || 0) + dy / d * P * 0.22 * q;
+      this.damageCannon(c, (fat ? 55 : (fire ? 40 : (boomC ? 70 : (small ? 40 : 85)))) * (b.dmgMul || 1) * Math.min(1, q * 1.4));
+    }
     for (const c of this.creatures) {          // gentle: knocked around, scared
       const dx = c.x - b.x, dy = c.y - b.y, d = Math.hypot(dx, dy) + 0.5;
       if (d > 2.5 * R) continue;
       const f = P * 0.55 * (1 - d / (2.5 * R)) / d;
       c.vx += dx * f; c.vy += dy * f; c.scared = 3; c.heading = Math.atan2(dy, dx);
     }
-    if (!fire) this.burnAt(b.x, b.y, R * 0.85);          // smash wooden walls
-    this.blastBodies(b.x, b.y, R, (fire ? 450 : 1000) * U, !fire);
+    if (fat) this.blastHole(b.x, b.y, R * 0.7, R * 0.45, b.nx || -this.upX, b.ny || -this.upY);   // a shallow oval dent, even in stone
+    else if (boomC || small || b.kind === 0) this.blastHole(b.x, b.y, R * (small ? 0.42 : (b.shotBoom ? 0.6 : 0.45)), R * (small ? 0.42 : (b.shotBoom ? 0.6 : 0.45)), -this.upX, -this.upY);   // round hole, stone too
+    if (!fire && !small && !b.shotBoom) this.burnAt(b.x, b.y, R * 0.85);     // smash wooden walls (bullets: wood & stone break alike)
+    this.blastBodies(b.x, b.y, R, (fire ? 450 : (small ? 500 : 1000)) * U, !fire, hole, hole ? R * 0.5 : R);
+    if (false) for (let k = 0; k < 22; k++) {      // grenade / fat bomb: a cloud of smoke and dust, no fire
+      const a = Math.random() * 6.283, sp = (40 + Math.random() * 160) * U;
+      this.spawnEmber(b.x + Math.cos(a) * R * 0.3, b.y + Math.sin(a) * R * 0.3, Math.cos(a) * sp + this.upX * 40 * U, Math.sin(a) * sp + this.upY * 40 * U, 0.9 + Math.random() * 1.1, 1);
+    }
+    if (b.shrapnel) for (let k = 0; k < 7; k++) {        // grenade: hot splinters fly out
+      const a = k / 7 * 6.283 + Math.random() * 0.6, v = (190 + Math.random() * 130) * U;
+      this.shots.push({ x: b.x, y: b.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, kind: 3, t: 0 });
+    }
     this.plastInRadius(b.x, b.y, R);
     // visuals: flash, smoke, sparks, shock ring
     const { NX, NY, h, flashSrc } = this;
@@ -2124,12 +2302,12 @@ class World {
       if (q > 0) flashSrc[cy * NX + cx] = Math.max(flashSrc[cy * NX + cx], q * 1.2);
     }
     this.flashOn = true; this.fxLinger = 3;
-    for (let k = 0; k < 60; k++) {
-      const a = Math.random() * Math.PI * 2, s = (250 + Math.random() * 700) * U;
+    for (let k = 0; k < (small ? 20 : (boomC ? 25 : 60)); k++) {
+      const a = Math.random() * Math.PI * 2, s = (250 + Math.random() * 700) * U * (small ? 0.5 : (boomC ? 0.3 : 1));
       this.spawnEmber(b.x, b.y, Math.cos(a) * s, Math.sin(a) * s, 0.3 + Math.random() * 0.6, 2);
     }
-    for (let k = 0; k < 16; k++) {             // shell pieces of the bomb
-      const a = Math.random() * Math.PI * 2, s = (250 + Math.random() * 500) * U;
+    for (let k = 0; k < (small ? 4 : (boomC ? 8 : 16)); k++) {    // shell pieces of the bomb
+      const a = Math.random() * Math.PI * 2, s = (250 + Math.random() * 500) * U * (boomC ? 0.35 : 1);
       this.spawnEmber(b.x, b.y, Math.cos(a) * s, Math.sin(a) * s, 1.0 + Math.random() * 1.0, fire ? 4 : 3);
     }
     if (fire) {
@@ -2142,7 +2320,7 @@ class World {
     }
     for (const o of this.bombs) {
       if (o.dead || o === b) continue;
-      if (Math.hypot(o.x - b.x, o.y - b.y) < R * 1.7) { o.lit = true; o.chain = true; o.left = Math.min(o.left, 0.1 + Math.random() * 0.15); }
+      if (Math.hypot(o.x - b.x, o.y - b.y) < R * 1.7) { o.lit = true; o.chain = true; o.left = Math.min(o.left, 0.3 + Math.random() * 0.45); }
     }
   }
 
@@ -2153,6 +2331,7 @@ class World {
     const b = { W, H, m, th: 0, c: 1, s: 0, vx: 0, vy: 0, w: 0, x: 0, y: 0,
       blockBurn: new Float32Array(Math.ceil(W / 2) * Math.ceil(H / 2)), texDirty: true, propsDirty: false, grab: false };
     if (!buildBodyProps(b)) return null;
+    b.n0 = b.n;
     b.x = x0 + b.cx; b.y = y0 + b.cy;
     const kx = BG.kx, ky = BG.ky, TW = Math.max(1, Math.round(W * kx)), TH = Math.max(1, Math.round(H * ky));
     const tex = new Uint8ClampedArray(TW * TH * 4), out = [0, 0, 0];
@@ -2165,6 +2344,11 @@ class World {
     }
     Object.assign(b, { TW, TH, tex });
     this.bodies.push(b);
+    for (const ch of this.chains) for (let e = 0; e < 2; e++) {      // a free chain end inside the new object hooks onto it
+      const li = e ? ch.n - 1 : 0; if (ch.hook[e] || !ch.alive[li]) continue;
+      const hx = ch.p[2 * li], hy = ch.p[2 * li + 1];
+      if (sampleBody(b, hx, hy) < 3 * this.U) { const dx = hx - b.x, dy = hy - b.y; ch.hook[e] = { t: 'body', o: b, lx: dx * b.c + dy * b.s, ly: -dx * b.s + dy * b.c }; }
+    }
     return b;
   }
   texBlock(b, i0, j0, i1, j1, fn) {
@@ -2183,7 +2367,7 @@ class World {
       const b = this.bodies[i];
       if (!b.propsDirty) continue;
       b.propsDirty = false;
-      if (!buildBodyProps(b)) { this.poof(b.x, b.y, 10 * this.U); this.bodies.splice(i, 1); }
+      if (!buildBodyProps(b) || (b.n < 20 && (b.n0 || 0) > 20)) { this.crumbleFx(b.x, b.y, 10 * this.U); this.bodies.splice(i, 1); }   // crumbs vanish
     }
   }
   bodyAt(x, y) {
@@ -2314,7 +2498,7 @@ class World {
     this.pushFromBodies();
   }
   pushFromBodies() {
-    const { px, py, vx, vy, pt } = this, N = this.N, r = this.r, pa = 2 * Math.sqrt(3) * r * r, MPT = [1, 0.8, 0.1, 2 * CFG.sandWeight];
+    const { px, py, vx, vy, pt } = this, N = this.N, r = this.r, pa = 2 * Math.sqrt(3) * r * r, MPT = [1, 0.8, 0.1, 2 * CFG.sandWeight, 2.4];
     for (const b of this.bodies) {
       const R = b.R + r;
       let jx = 0, jy = 0, jt = 0, cx = 0, cy = 0;
@@ -2358,15 +2542,29 @@ class World {
     for (const b of this.bodies) {
       if (!b.hasWood) continue;
       const smp = b.smp, c = b.c, s = b.s, BW = Math.ceil(b.W / 2);
+      let burningHere = 0;
       for (let k = 0; k < smp.length; k += 5) {
         if (!smp[k + 4]) continue;
         const lx = smp[k], ly = smp[k + 1], blk = smp[k + 3];
         const wx = b.x + lx * c - ly * s, wy = b.y + lx * s + ly * c, cell = this.cellOf(wx, wy);
         let st = b.blockBurn[blk];
-        const wet = denW[cell] > rest * 0.3 || smother[cell];
+        const wet = denW[cell] > rest * 0.3 || smother[cell] || ((st > 0 || heat[cell] > 0.5) && this.wetAround(cell) >= 4);
+        if (st > 0 && b.crumbling) {
+          st -= dt; burningHere++; nb++;              // keeps the fire step running until the crumbs are gone
+          if (Math.random() < 7 * dt) this.spawnEmber(wx + (Math.random() - 0.5) * 3, wy + (Math.random() - 0.5) * 3,
+            (Math.random() - 0.5) * 30 * U, (Math.random() - 0.5) * 30 * U, 0.2 + Math.random() * 0.35, 2);
+          if (st <= 0) {
+            st = -1;
+            const bi = (blk % BW) * 2, bj = ((blk / BW) | 0) * 2;
+            for (let j = bj; j < Math.min(b.H, bj + 2); j++) for (let i = bi; i < Math.min(b.W, bi + 2); i++) if (b.m[j * b.W + i] === 2) this.removeBodyPixel(b, i, j);
+            for (let q = 0; q < 3; q++) this.spawnEmber(wx, wy, (Math.random() - 0.5) * 50 * U, (Math.random() - 0.5) * 50 * U, 0.25 + Math.random() * 0.35, 2);
+          }
+          b.blockBurn[blk] = st;
+          continue;
+        }
         if (st > 0) {
           if (wet) { b.blockBurn[blk] = -0.5; this.steamSrc[cell] = 1; continue; }
-          nb++; st -= dt;
+          nb++; burningHere++; b.wasBurning = true; st -= dt;
           if (heat[cell] < 1.15) heat[cell] = 1.15;
           if (fireSrc[cell] < 1) fireSrc[cell] = 1;
           if (smokeSrc[cell] < 0.35) smokeSrc[cell] = 0.35;
@@ -2377,10 +2575,29 @@ class World {
             for (let j = bj; j < Math.min(b.H, bj + 2); j++) for (let i = bi; i < Math.min(b.W, bi + 2); i++) if (b.m[j * b.W + i] === 2) this.removeBodyPixel(b, i, j);
           }
           b.blockBurn[blk] = st;
-          if (Math.random() < 1.5 * dt) this.spawnEmber(wx, wy, 0, 0, 0.5 + Math.random() * 0.7, 0);
+          if (Math.random() < 1 * dt) { const up = (2.5 + Math.random() * 3) * this.h; this.spawnEmber(wx + this.upX * up, wy + this.upY * up, this.upX * 30 * U, this.upY * 30 * U, 0.5 + Math.random() * 0.7, 0); }
         } else if (st > -0.9 && heat[cell] > 0.5 && !wet && Math.random() < 3 * dt * CFG.fireSpread) {
           b.blockBurn[blk] = CFG.woodBurnTime * (0.8 + 0.4 * Math.random());
           this.charBlock(b, blk);
+        }
+      }
+      // fire went out on a mostly burnt object: the last charred crumbs burn away too
+      if (b.crumbling && !burningHere) {      // crumbling finished: sweep up any last specks
+        let k = 0;
+        for (let j = 0; j < b.H; j++) for (let i = 0; i < b.W; i++) if (b.m[j * b.W + i] === 2) {
+          const lx = i + 0.5 - b.cx, ly = j + 0.5 - b.cy;
+          if ((k++ & 3) === 0) this.spawnEmber(b.x + lx * c - ly * s, b.y + lx * s + ly * c, (Math.random() - 0.5) * 40 * U, (Math.random() - 0.5) * 40 * U, 0.25 + Math.random() * 0.35, 2);
+          this.removeBodyPixel(b, i, j);
+        }
+      }
+      if (b.wasBurning && !b.crumbling && !burningHere && b.n <= Math.max(90, (b.n0 || b.n) * 0.35)) {
+        b.crumbling = true;                    // blacken what is left, then let it fall apart piece by piece over ~3 s
+        for (let k = 0; k < smp.length; k += 5) {
+          if (!smp[k + 4]) continue;
+          const blk = smp[k + 3];
+          if (b.blockBurn[blk] <= -0.9) continue;
+          this.charBlock(b, blk); this.charBlock(b, blk);
+          b.blockBurn[blk] = 0.4 + Math.random() * 2.6;
         }
       }
     }
@@ -2425,7 +2642,365 @@ class World {
     }
     this.igniteBombs(x, y, R);
   }
+  /* ---- cannons: aimed by the player, fired by a tap or by a burning rope ---- */
+  fireCannon(c) {
+    if (c.cool > 0 || c.dead || c.moving > 0) return false;      // no shooting while it rolls
+    const U = this.U, K = OBJK(), sp = CFG.cannonSpread * Math.PI / 180, a = c.a + (Math.random() - 0.5) * 2 * sp;
+    const v = CFG.cannonSpeed * U * c.pow * (c.kind === 2 ? 1.1 : 1) * (1 + (Math.random() - 0.5) * CFG.cannonSpread / 40), L = 21 * U * K;
+    const mx = c.x + Math.cos(c.a) * L, my = c.y + Math.sin(c.a) * L;
+    this.shots.push({ x: mx, y: my, vx: Math.cos(a) * v, vy: Math.sin(a) * v, kind: c.kind, t: 0, from: c });
+    c.cool = 0.7; c.recoil = 1;
+    for (let k = 0; k < 14; k++) {
+      const aa = c.a + (Math.random() - 0.5) * 0.8, ss = (100 + Math.random() * 300) * U;
+      this.spawnEmber(mx, my, Math.cos(aa) * ss, Math.sin(aa) * ss, 0.2 + Math.random() * 0.3, 2);
+    }
+    for (let k = 0; k < 7; k++) {
+      const aa = c.a + (Math.random() - 0.5) * 1.2, ss = (30 + Math.random() * 90) * U;
+      this.spawnEmber(mx, my, Math.cos(aa) * ss, Math.sin(aa) * ss, 0.7 + Math.random() * 0.6, 1);
+    }
+    const fc = this.cellOf(mx, my); this.flashSrc[fc] = Math.max(this.flashSrc[fc], 0.8); this.flashOn = true; this.fxLinger = 3;
+    return true;
+  }
+  damageCannon(c, dmg) {
+    if (c.dead || dmg <= 0) return;
+    c.hp = (c.hp ?? CFG.cannonLife) - dmg; c.hit = 0.35;
+    const U = this.U;
+    for (let k = 0; k < Math.min(10, dmg / 3); k++) { const a = Math.random() * 6.283, v = (60 + Math.random() * 160) * U; this.spawnEmber(c.x, c.y, Math.cos(a) * v, Math.sin(a) * v, 0.2 + Math.random() * 0.3, 2); }
+    if (c.hp > 0) return;
+    c.dead = true;                               // broken: it falls apart in a puff of smoke and sparks
+    this.booms.push({ x: c.x, y: c.y, kind: 6, dmgMul: 0.6, wMul: 0.7 });       // crater
+    this.mush.push({ x: c.x, y: c.y, t: 0, dur: 1.6, s: 0.92 * OBJK(), wb: 10, smoky: 1 });   // a big fire mushroom, wide base, smoke after
+    for (let k = 0; k < 80; k++) {                                              // lots of fire, spread out sideways from the base
+      const a = Math.random() * 6.283, v = (50 + Math.random() * 175) * U, side = (Math.random() - 0.5) * 2, tx = -this.upY, ty = this.upX;
+      this.spawnEmber(c.x + tx * side * 11 * U, c.y + ty * side * 14 * U, Math.cos(a) * v * 0.5 + tx * side * v + this.upX * 70 * U, Math.sin(a) * v * 0.5 + ty * side * v + this.upY * 70 * U, 0.6 + Math.random() * 1.0, k % 4 ? 0.3 : 2);
+    }
+    const fc = this.cellOf(c.x, c.y); this.flashSrc[fc] = Math.max(this.flashSrc[fc], 1); this.flashOn = true; this.fxLinger = 3;
+  }
+  cannonTouch(x, y, Rc, c) {                   // probes around the outline (works at any size); objects get pushed away
+    let gnx = 0, gny = 0, pen = 0, wsum = 0, body = null, bp = 0;
+    const gl = Math.hypot(this.gx, this.gy) || 1, dgx = this.gx / gl, dgy = this.gy / gl;
+    for (let k = 0; k < 20; k++) {
+      const a = k * 0.31416, cx = Math.cos(a), cy = Math.sin(a), qx = x + cx * Rc, qy = y + cy * Rc;
+      const d = this.sdfAt(qx, qy);
+      if (d < 0.8) { const g = this.sdfGrad(qx, qy), w = 0.8 - d; gnx += g[0] * w; gny += g[1] * w; wsum += w; if (w > pen) pen = w; }
+      const under = cx * dgx + cy * dgy > 0.35;   // probe on the bottom side
+      for (const b of this.bodies) {
+        if (Math.abs(b.x - qx) > b.R + 1 || Math.abs(b.y - qy) > b.R + 1) continue;
+        const db = sampleBody(b, qx, qy);
+        if (db >= 1) continue;
+        const w = 1 - db;
+        if (under || (c && b === c.onBody)) { gnx += SB_NX * w; gny += SB_NY * w; wsum += w; if (w > pen) pen = w; if (w > bp) { bp = w; body = b; } }
+        else if (c && !b.grab) {                  // the cannon is heavy: an object bumping into it is pushed away instead
+          b.x -= SB_NX * w * 0.6; b.y -= SB_NY * w * 0.6;
+          const vn = b.vx * -SB_NX + b.vy * -SB_NY; if (vn < 0) { b.vx += SB_NX * vn; b.vy += SB_NY * vn; }
+        }
+      }
+    }
+    if (wsum > 0) { const l = Math.hypot(gnx, gny) || 1; gnx /= l; gny /= l; }
+    return { gnx, gny, pen, body };
+  }
+  lavaFlames(dt) {                              // small flames dance on top of open lava
+    if (!this.lavaN) return;
+    const { NX, NY, h, denL, density, denS, denW, fireSrc, smokeSrc } = this, rest = this.restDensity, U = this.U;
+    const upOff = Math.abs(this.upX) > Math.abs(this.upY) ? (this.upX > 0 ? 1 : -1) : (this.upY > 0 ? NX : -NX), n = NX * NY;
+    for (let c = NX; c < n - NX; c++) {
+      if (denL[c] < rest * 0.3 || denW[c] > rest * 0.1) continue;
+      const a = c + upOff; if (a < 0 || a >= n || density[a] + denS[a] > rest * 0.2) continue;
+      const fl = 0.3 + 0.25 * Math.random();
+      if (fireSrc[a] < fl) fireSrc[a] = fl; if (smokeSrc[a] < 0.12) smokeSrc[a] = 0.12;
+      if (Math.random() < 0.5 * dt) this.spawnEmber(((a % NX) + Math.random()) * h, (((a / NX) | 0) + Math.random()) * h, (Math.random() - 0.5) * 30 * U + this.upX * 40 * U, this.upY * 40 * U, 0.4 + Math.random() * 0.5, 0);
+    }
+  }
+  stepLava(dt) {                                // hot: lights wood, oil, ropes; water & sand turn it / are turned into stone
+    if (!this.lavaN) return;
+    const { NX, denW, denS, denL, heat, pt, px, py, steamSrc, smokeSrc } = this, rest = this.restDensity, n = NX * this.NY, lt = rest * 0.15;
+    for (let c = 0; c < n; c++) if (denL[c] > lt && heat[c] < 0.7) heat[c] = 0.7;
+    const pts = [];
+    for (let i = this.N - 1; i >= 0; i--) {
+      const t = pt[i]; if (t !== 4 && t !== 3) continue;
+      const c = this.cellOf(px[i], py[i]);
+      const near = (D) => {                      // strongest neighbour within 2 cells: drops act on a wider area
+        let m = 0; const cy = (c / NX) | 0, cx = c - cy * NX;
+        for (let oy = -2; oy <= 2; oy++) { const yy = cy + oy; if (yy < 0 || yy >= this.NY) continue;
+          for (let ox = -2; ox <= 2; ox++) { const xx = cx + ox; if (xx < 0 || xx >= NX) continue; const v = D[yy * NX + xx]; if (v > m) m = v; } }
+        return m;
+      };
+      const pl = this.pl;
+      if (pl[i] <= -1) {                          // cooling / baking: fades to stone, then becomes part of the rock
+        pl[i] -= dt / 1.6;
+        if (t === 4 && Math.random() < 3 * dt) steamSrc[c] = Math.max(steamSrc[c], 0.6);
+        if (pl[i] <= -2) { pts.push(px[i] / this.MW, py[i] / this.MH); this.removeAt(i); }
+        continue;
+      }
+      if (t === 4 && ((near(denW) > rest * 0.2 && (pl[i] += dt) > 1.5 && Math.random() < 0.16 * dt) || (this.sdfAt(px[i], py[i]) < this.r * 2.2 && Math.abs(this.vx[i]) + Math.abs(this.vy[i]) < 15 * this.U && Math.random() < 0.3 * dt))) { pl[i] = -1; steamSrc[c] = 1; }
+      else if (t === 3 && near(denL) > rest * 0.2 && Math.random() < 0.7 * dt) { pl[i] = -1; smokeSrc[c] = 0.5; }
+    }
+    if (Math.random() < 6 * dt) {                 // a few sparks fly off the hot surface
+      for (let k = 0; k < 3; k++) { const i = (Math.random() * this.N) | 0; if (pt[i] === 4) this.spawnEmber(px[i], py[i], (Math.random() - 0.5) * 60 * this.U, this.upY * 80 * this.U, 0.3 + Math.random() * 0.4, 2); }
+    }
+    if (!pts.length) return;
+    this.hot = true;
+    const stroke = { mode: 'dots', m: 1, rN: this.r * 2.1 / this.MW, pts };
+    const box = applyStrokeAll(this, this.MW, this.MH, stroke, this.frame);
+    if (this.onDots) this.onDots(stroke);
+    this.refreshWalls(box); if (this.onBg) this.onBg(box);
+  }
+  stepCannons(dt) {
+    if (!this.cannons.length) return;
+    const U = this.U, K = OBJK(), rest = this.restDensity, Rc = CANNON_R * U * K, f = this.frame;
+    for (const c of this.cannons) {
+      if (c.dead) continue;
+      if (c.cool > 0) c.cool -= dt; if (c.rcool > 0) c.rcool -= dt; if (c.hit > 0) c.hit -= dt; if (c.moving > 0) c.moving -= dt;
+      c.recoil *= Math.exp(-6 * dt);
+      c.vx = c.vx || 0; c.vy = c.vy || 0; if (c.hp === undefined) c.hp = CFG.cannonLife;
+      const cell = this.cellOf(c.x, c.y);
+      {                                          // fire around it slowly burns the cannon away
+        let hm = 0; const cy = (cell / this.NX) | 0, cx = cell - cy * this.NX;
+        for (let oy = -2; oy <= 2; oy++) for (let ox = -2; ox <= 2; ox++) { const q = (cy + oy) * this.NX + cx + ox; if (q >= 0 && q < this.heat.length) hm = Math.max(hm, this.heat[q], this.burn[q] ? 1 : 0, this.fireSrc[q] * 1.5, this.oilHeat[q] > 0 ? 1 : 0); }
+        if (hm > 0.45 && this.denW[cell] < rest * 0.3) {
+          c.hp -= 7 * dt; c.hit = Math.max(c.hit || 0, 0.12);
+          if (Math.random() < 10 * dt) this.spawnEmber(c.x + (Math.random() - 0.5) * Rc, c.y + (Math.random() - 0.5) * Rc, 0, this.upY * 40 * U, 0.4 + Math.random() * 0.4, 0);
+          if (c.hp <= 0) { c.hp = 0.01; this.damageCannon(c, 1); }
+        }
+      }
+      if (c.dead) continue;
+      const sub = Math.min(1, (this.density[cell] + this.denS[cell]) / rest) * 0.5;   // heavy: sinks through liquids and sand
+      if (c.onBody && Math.hypot(c.vx, c.vy) > 60 * U) c.onBody = null;   // blown off by an explosion
+      if (c.onBody) {                            // riding an object: move with it (the barrel keeps its own aim)
+        const B = c.onBody;
+        if (!this.bodies.includes(B)) c.onBody = null;
+        else { c.x = B.x + c.blx * B.c - c.bly * B.s; c.y = B.y + c.blx * B.s + c.bly * B.c; c.gnx = c.bnx * B.c - c.bny * B.s; c.gny = c.bnx * B.s + c.bny * B.c; }
+      }
+      const parked = c.ground && this.gx * c.gnx + this.gy * c.gny < 0;   // standing on something: gravity can't make it slide
+      if (!parked) { c.vx += this.gx * (1 - 0.35 * sub) * dt; c.vy += this.gy * (1 - 0.35 * sub) * dt; }
+      if (sub > 0.05) { const d = Math.max(0, 1 - 4 * sub * dt); c.vx *= d; c.vy *= d; }
+      // driving: roll slowly along the floor towards the finger
+      const px0 = c.x, py0 = c.y, wasOn = c.onBody;
+      if (c.driveTo && c.ground) {
+        const tx = -c.gny, ty = c.gnx, along = (c.driveTo.x - c.x) * tx + (c.driveTo.y - c.y) * ty;
+        if (Math.abs(along) > 2 * U) {
+          const sp = Math.sign(along) * Math.min(55 * U * K, Math.abs(along) * 4) * dt;
+          c.x += tx * sp; c.y += ty * sp; c.wheel = (c.wheel || 0) + sp / (3 * U * K); c.moving = 0.35;
+        }
+      }
+      const dx = c.vx * dt, dy = c.vy * dt, n = Math.max(1, Math.ceil(Math.hypot(dx, dy)));
+      for (let k = 0; k < n; k++) {
+        const nx = c.x + dx / n, ny = c.y + dy / n;
+        if (this.cannonTouch(nx, ny, Rc, null).pen > 1.5) break;
+        c.x = nx; c.y = ny;
+      }
+      let T = this.cannonTouch(c.x, c.y, Rc, c);
+      if (wasOn && c.driveTo && T.body !== wasOn) { c.x = px0; c.y = py0; T = this.cannonTouch(c.x, c.y, Rc, c); }   // edge of an object: it won't drive off
+      let gnx = T.gnx, gny = T.gny, pen = T.pen;
+      const onB = T.body;
+      c.ground = false;
+      if (pen <= 0 && !(c.onBody && this.bodies.includes(c.onBody))) c.onBody = null;
+      if (pen <= 0 && c.onBody) { c.ground = true; c.vx = 0; c.vy = 0; }   // glued to its object
+      if (pen > 0) {
+        c.x += gnx * Math.max(0, pen - 0.5); c.y += gny * Math.max(0, pen - 0.5);
+        const vn = c.vx * gnx + c.vy * gny;
+        const gl = Math.hypot(this.gx, this.gy) || 1, floor = -(gnx * this.gx + gny * this.gy) / gl;   // 1 = flat floor, <0 = ceiling
+        if (floor > 0.2 && vn < 40 * U) {          // something under it: it sticks, no sliding
+          c.vx = 0; c.vy = 0; c.ground = true; c.gnx = gnx; c.gny = gny;
+          if (onB && c.onBody === onB) {}
+          else if (onB) { const dx = c.x - onB.x, dy = c.y - onB.y; c.onBody = onB; c.blx = dx * onB.c + dy * onB.s; c.bly = -dx * onB.s + dy * onB.c; c.bnx = gnx * onB.c + gny * onB.s; c.bny = -gnx * onB.s + gny * onB.c; }
+          else c.onBody = null;
+        }
+        else if (vn < 0) { c.vx -= vn * gnx; c.vy -= vn * gny; }     // steep wall / corner / ceiling: slips off
+      }
+      c.x = clamp(c.x, f + Rc, this.MW - f - Rc); c.y = clamp(c.y, f + Rc, this.MH - f - Rc);
+      {                                          // stuck & shaking (going back and forth without getting anywhere): it wears out
+        if (c.wx === undefined) { c.wx = c.x; c.wy = c.y; c.lx_ = c.x; c.ly_ = c.y; c.wP = 0; c.wT = 0; }
+        c.wP += Math.hypot(c.x - c.lx_, c.y - c.ly_); c.lx_ = c.x; c.ly_ = c.y; c.wT += dt;
+        if (c.wT >= 1) { c.jitter = !c.driveTo && c.wP > 25 * U * K && Math.hypot(c.x - c.wx, c.y - c.wy) < 0.35 * c.wP; c.wx = c.x; c.wy = c.y; c.wP = 0; c.wT = 0; }
+        if (c.jitter) { c.hp -= 6 * dt; c.hit = Math.max(c.hit || 0, 0.1); if (c.hp <= 0) { c.hp = 0.01; this.damageCannon(c, 1); } }
+      }
+      if (c.onBody && (c.x !== px0 || c.y !== py0) && c.driveTo) {   // drove along its object: remember the new spot on it
+        const B = c.onBody, dx = c.x - B.x, dy = c.y - B.y;
+        c.blx = dx * B.c + dy * B.s; c.bly = -dx * B.s + dy * B.c; c.bnx = c.gnx * B.c + c.gny * B.s; c.bny = -c.gnx * B.s + c.gny * B.c;
+      }
+      // the carriage leans with the ground under it (the barrel keeps its own aim)
+      const want = c.ground ? Math.atan2(c.gnx, -c.gny) : Math.atan2(this.gy, this.gx) - Math.PI / 2;
+      if (c.tilt === undefined) c.tilt = want;
+      c.tilt += Math.atan2(Math.sin(want - c.tilt), Math.cos(want - c.tilt)) * Math.min(1, 5 * dt);
+      // it sinks through water and sand: push the drops out of its way
+      const { px, py } = this, R = Rc * 0.95, R2 = R * R;
+      for (let i = 0; i < this.N; i++) {
+        const ex = px[i] - c.x; if (ex > R || ex < -R) continue;
+        const ey = py[i] - c.y; if (ey > R || ey < -R) continue;
+        const e2 = ex * ex + ey * ey; if (e2 >= R2 || e2 < 1e-6) continue;
+        const e = Math.sqrt(e2); px[i] = c.x + ex / e * R; py[i] = c.y + ey / e * R;
+      }
+    }
+    if (this.cannons.some(c => c.dead)) this.cannons = this.cannons.filter(c => !c.dead);
+  }
+  fireballBurst(x, y) {
+    const U = this.U;
+    this.stampHeat(x, y, this.h * 2.5, 1.3, 1);
+    for (let k = 0; k < 7; k++) {
+      const a = Math.random() * Math.PI * 2, sp = (60 + Math.random() * 180) * U;
+      this.globs.push({ x, y, vx: Math.cos(a) * sp + this.upX * 80 * U, vy: Math.sin(a) * sp + this.upY * 80 * U, life: 3 + Math.random() * 2.5, stuck: false });
+    }
+    for (let k = 0; k < 18; k++) { const a = Math.random() * 6.283, sp = (60 + Math.random() * 200) * U; this.spawnEmber(x, y, Math.cos(a) * sp, Math.sin(a) * sp, 0.4 + Math.random() * 0.6, 0); }
+  }
+  stepShots(dt) {
+    this.stepMush(dt);
+    const S = this.shots; if (!S.length) return;
+    const U = this.U, rest = this.restDensity, MW = this.MW, MH = this.MH, rb = this.bombR();
+    const { px, py, vx, vy } = this, pr = this.r;
+    for (let k = S.length - 1; k >= 0; k--) {
+      const s = S[k]; s.t += dt;
+      const r = (s.kind === 1 ? 6 : (s.kind === 2 ? 6 : (s.kind === 3 ? 3 : 4.5))) * U * OBJK(), Rc = CANNON_R * U * OBJK();
+      const cell = this.cellOf(s.x, s.y), sub = Math.min(1, this.density[cell] / rest);
+      if (s.kind === 0) {                       // fireball: dies in water, trails flames in the air
+        if (this.denW[cell] > rest * 0.4 || this.denF[cell] > rest * 0.2 || this.denS[cell] > rest * 0.4) {
+          this.steamSrc[cell] = 1; this.hot = true;
+          this.booms.push({ x: s.x, y: s.y, kind: 7, dmgMul: 0.6, wMul: 0.8 });     // splash: like a small grenade in the water
+          for (let q = 0; q < 8; q++) this.spawnEmber(s.x, s.y, (Math.random() - 0.5) * 60 * U, this.upY * 50 * U, 0.6 + Math.random() * 0.5, 1);
+          S.splice(k, 1); continue;
+        }
+        for (let q = 0; q < 3; q++) if (Math.random() < 30 * dt) this.spawnEmber(s.x + (Math.random() - 0.5) * 4 * U, s.y + (Math.random() - 0.5) * 4 * U, -s.vx * 0.15 + (Math.random() - 0.5) * 40 * U, -s.vy * 0.15 + (Math.random() - 0.5) * 40 * U, 0.3 + Math.random() * 0.4, 0);
+      }
+      else if (s.kind === 2 && Math.random() < 25 * dt) this.spawnEmber(s.x, s.y, (Math.random() - 0.5) * 80 * U, (Math.random() - 0.5) * 80 * U, 0.15, 2);
+      const wk = s.kind === 1 ? 0.15 : 0.3;     // heavy balls sink, drag in liquid
+      s.vx += this.gx * SHOT_G * (1 - wk * sub) * dt; s.vy += this.gy * SHOT_G * (1 - wk * sub) * dt;
+      if (sub > 0.05) { const d = Math.max(0, 1 - 2.5 * sub * dt); s.vx *= d; s.vy *= d; }
+      const edge = (this.frame || 0) + r + 2, ox = s.x, oy = s.y, dx = s.vx * dt, dy = s.vy * dt, n = Math.max(1, Math.ceil(Math.hypot(dx, dy) / 1.5));
+      let hit = null;
+      for (let q = 0; q < n && !hit; q++) {
+        const nx = s.x + dx / n, ny = s.y + dy / n;
+        if (ny < edge) { s.x = nx; s.y = ny; continue; }   // above the picture: free flight (sides & bottom are walls)
+        const d = this.sdfAt(nx, ny);
+        if (d < r) { const g = this.sdfGrad(nx, ny); hit = { gx: g[0], gy: g[1], pen: r - d }; break; }
+        for (const b of this.bodies) {
+          if (Math.abs(b.x - nx) > b.R + r || Math.abs(b.y - ny) > b.R + r) continue;
+          const db = sampleBody(b, nx, ny);
+          if (db < r) { hit = { gx: SB_NX, gy: SB_NY, pen: r - db, body: b }; break; }
+        }
+        if (hit) break;
+        for (const bb of this.bombs) {
+          if (bb.dead) continue;
+          const ex = nx - bb.x, ey = ny - bb.y, ed = Math.hypot(ex, ey);
+          if (ed < rb + r) { hit = { gx: ex / (ed || 1), gy: ey / (ed || 1), pen: rb + r - ed, bomb: bb }; break; }
+        }
+        if (hit) break;
+        for (const cn of this.cannons) {
+          if (cn.dead || (cn === s.from && s.t < 0.4)) continue;
+          const ex = nx - cn.x, ey = ny - cn.y, ed = Math.hypot(ex, ey);
+          if (ed < Rc + r) { hit = { gx: ex / (ed || 1), gy: ey / (ed || 1), pen: Rc + r - ed, cannon: cn }; break; }
+        }
+        if (hit) break;
+        s.x = nx; s.y = ny;
+      }
+      if (hit) {
+        if (s.kind === 3) {                     // splinter: small hole, a little damage
+          if (hit.cannon) this.damageCannon(hit.cannon, 15);
+          if (hit.body && !hit.body.grab) { hit.body.vx -= hit.gx * 60 * U; hit.body.vy -= hit.gy * 60 * U; }
+          if (hit.bomb) hit.bomb.lit = true;
+          this.booms.push({ x: s.x - hit.gx * r * 0.5, y: s.y - hit.gy * r * 0.5, kind: 7, dmgMul: 0.35, wMul: 0.5, shotBoom: true });   // a small grenade blast
+          for (let q = 0; q < 8; q++) this.spawnEmber(s.x, s.y, (Math.random() - 0.5) * 150 * U, (Math.random() - 0.5) * 150 * U, 0.2, 2);
+          S.splice(k, 1); continue;
+        }
+        if (s.kind === 2) {                     // grenade: bounces like a real one
+          const vn = s.vx * hit.gx + s.vy * hit.gy;
+          if (vn < 0) {
+            if (hit.cannon && vn < -100 * U) this.damageCannon(hit.cannon, 6);
+            s.vx -= 1.28 * vn * hit.gx; s.vy -= 1.28 * vn * hit.gy;
+            const tx = -hit.gy, ty = hit.gx, vt = s.vx * tx + s.vy * ty;
+            s.vx -= tx * vt * 0.2; s.vy -= ty * vt * 0.2;
+            if (hit.body && !hit.body.grab) { const m = 30 * hit.body.invM; hit.body.vx += hit.gx * vn * m; hit.body.vy += hit.gy * vn * m; }
+            if (hit.bomb && !hit.bomb.stuck && !hit.bomb.held) { hit.bomb.vx = (hit.bomb.vx || 0) + hit.gx * vn * 0.5; hit.bomb.vy = (hit.bomb.vy || 0) + hit.gy * vn * 0.5; }
+          }
+          s.x += hit.gx * Math.min(hit.pen, 2); s.y += hit.gy * Math.min(hit.pen, 2);
+        } else if (s.kind === 0) {             // fireball: sets things on fire where it lands + a fire mushroom
+          if (hit.bomb) hit.bomb.lit = true;
+          if (hit.cannon) this.damageCannon(hit.cannon, 8);
+          this.booms.push({ x: s.x - hit.gx * r * 0.5, y: s.y - hit.gy * r * 0.5, kind: 7, dmgMul: 0.6, wMul: 0.8 });   // small blast & hole
+          this.fireballBurst(s.x, s.y); this.mush.push({ x: s.x, y: s.y, t: 0, dur: 1.5, s: 0.8 }); S.splice(k, 1); continue;
+        } else {                                // fat bomb: blast on impact, oval dent in the wall
+          const cx = s.x - hit.gx * r, cy = s.y - hit.gy * r;
+          this.booms.push({ x: cx, y: cy, kind: 5, nx: hit.gx, ny: hit.gy, wMul: 0.45, dmgMul: 0.55, shotBoom: true });
+          S.splice(k, 1); continue;
+        }
+      }
+      if (s.kind === 2 && s.t >= 3) { this.booms.push({ x: s.x, y: s.y, kind: 0, wMul: 0.6, dmgMul: 0.55, shrapnel: true, shotBoom: true }); S.splice(k, 1); continue; }
+      if (s.kind === 0) {                       // real flames trailing behind the fireball
+        const L = Math.hypot(s.x - ox, s.y - oy), m = Math.max(1, Math.ceil(L / (this.h * 0.8)));
+        for (let q = 0; q <= m; q++) this.stampFlame(ox + (s.x - ox) * q / m, oy + (s.y - oy) * q / m, this.h * 1.9, 1, 0.3);
+      }
+      if (s.t > 25 || s.x < -2 * MW || s.x > 3 * MW || s.y > MH + 60 || s.y < -4 * MH) { S.splice(k, 1); continue; }
+      // splash: push the drops out of the ball's way
+      const R = r + pr, R2 = R * R, sx = s.x, sy = s.y;
+      for (let i = 0; i < this.N; i++) {
+        const ex = px[i] - sx; if (ex > R || ex < -R) continue;
+        const ey = py[i] - sy; if (ey > R || ey < -R) continue;
+        const e2 = ex * ex + ey * ey; if (e2 >= R2 || e2 < 1e-6) continue;
+        const e = Math.sqrt(e2), f = R / e;
+        px[i] = sx + ex * f; py[i] = sy + ey * f; vx[i] += s.vx * 0.06; vy[i] += s.vy * 0.06;
+      }
+    }
+  }
+  stampFlame(x, y, R, flame, temp) {             // flames to look at, only a little heat
+    const { NX, NY, h, heat, fireSrc, smokeSrc } = this;
+    const cx0 = clamp(((x - R) / h) | 0, 1, NX - 2), cx1 = clamp(((x + R) / h) | 0, 1, NX - 2);
+    const cy0 = clamp(((y - R) / h) | 0, 1, NY - 2), cy1 = clamp(((y + R) / h) | 0, 1, NY - 2);
+    for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
+      const dx = (cx + 0.5) * h - x, dy = (cy + 0.5) * h - y; if (dx * dx + dy * dy > R * R) continue;
+      const c = cy * NX + cx;
+      if (this.denW[c] > this.restDensity * 0.3) { this.steamSrc[c] = 1; continue; }
+      if (fireSrc[c] < flame) fireSrc[c] = flame;
+      if (heat[c] < temp) heat[c] = temp;
+      if (smokeSrc[c] < 0.3 * flame) smokeSrc[c] = 0.3 * flame;
+    }
+  }
+  stampSmoke(x, y, R, val) {
+    const { NX, NY, h, smokeSrc } = this;
+    const cx0 = clamp(((x - R) / h) | 0, 1, NX - 2), cx1 = clamp(((x + R) / h) | 0, 1, NX - 2), cy0 = clamp(((y - R) / h) | 0, 1, NY - 2), cy1 = clamp(((y + R) / h) | 0, 1, NY - 2);
+    for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
+      const dx = (cx + 0.5) * h - x, dy = (cy + 0.5) * h - y; if (dx * dx + dy * dy > R * R) continue;
+      const c = cy * NX + cx; if (smokeSrc[c] < val) smokeSrc[c] = val;
+    }
+  }
+  stepMush(dt) {                                 // fire mushroom: a column of flame rising into a wide burning cap
+    const M = this.mush; if (!M.length) return;
+    const U = this.U, ux = this.upX, uy = this.upY, tx = -uy, ty = ux;
+    for (let k = M.length - 1; k >= 0; k--) {
+      const m = M[k]; m.t += dt;
+      const p = Math.min(1, m.t / m.dur);
+      if (p >= 1) {                                 // afterwards: a cloud of smoke keeps rising for a while
+        const tail = m.tail || 0, tt = m.t - m.dur;
+        if (tt >= tail) { M.splice(k, 1); continue; }
+        const sc = m.s, H = 70 * U * sc, fade = 1 - tt / tail, R = (14 + 10 * tt / tail) * U * sc;
+        for (let q = 0; q < 6; q++) { const a = q / 6 * 6.283 + tt; this.stampSmoke(m.x + ux * H + tx * Math.cos(a) * R, m.y + uy * H + ty * Math.cos(a) * R + uy * Math.sin(a) * R * 0.4, R * 0.7, 1.2 * fade); }
+        this.stampSmoke(m.x + ux * H * 0.5, m.y + uy * H * 0.5, R * 0.6, 0.6 * fade);
+        continue;
+      }
+      const e = 1 - (1 - Math.min(1, m.t / (m.dur * 0.45))) ** 3, fl = p < 0.6 ? 1 : 1 - (p - 0.6) / 0.4, sc = m.s;
+      const H = 70 * U * sc * e, cw = (12 + 22 * e) * U * sc, ch = (7 + 9 * e) * U * sc;
+      const n = Math.max(2, Math.ceil(H / (this.h * 0.9)));
+      for (let q = 0; q <= n; q++) {             // the stem: thick at the bottom, thinner up high
+        const f = q / n; this.stampFlame(m.x + ux * H * f, m.y + uy * H * f, (7 - 3 * f + (m.wb || 0) * (1 - f) ** 3) * U * sc, fl, 0.35);
+      }
+      if (m.wb) for (let a = -1; a <= 1; a += 0.25) {   // a wide burning skirt at the base
+        const w = (m.wb * 3) * U * sc * (0.5 + 0.5 * e); this.stampFlame(m.x + tx * a * w + ux * 4 * U * sc, m.y + ty * a * w + uy * 4 * U * sc, 8 * U * sc, fl * (1 - Math.abs(a) * 0.3), 0.35);
+      }
+      const cx = m.x + ux * H, cy = m.y + uy * H;  // the cap: a flat, rolling oval
+      if (m.smoky) {                               // thick smoke rolling off the cap and stem
+        const sm = Math.min(1, 0.5 + p) * (p < 0.85 ? 1 : (1 - p) / 0.15);
+        for (let a = 0; a < 6.283; a += 0.8) this.stampSmoke(cx + tx * Math.cos(a) * cw * 1.1 + ux * ch * 0.8, cy + ty * Math.cos(a) * cw * 1.1 + uy * ch * 0.8, ch * 1.1, 1.3 * sm);
+        this.stampSmoke(m.x + ux * H * 0.5, m.y + uy * H * 0.5, 8 * U * sc, 0.8 * sm);
+      }
+      for (let a = 0; a < 6.283; a += 0.5) {
+        const r = 0.55 + 0.45 * Math.sin(a * 3 + m.t * 9);
+        this.stampFlame(cx + tx * Math.cos(a) * cw * r, cy + ty * Math.cos(a) * cw * r, ch, fl, 0.35);
+        this.stampFlame(cx + tx * Math.cos(a) * cw * 0.6 + ux * Math.sin(a) * ch, cy + ty * Math.cos(a) * cw * 0.6 + uy * Math.sin(a) * ch, ch * 0.9, fl, 0.35);
+      }
+      if (Math.random() < 30 * dt * fl) { const a = Math.random() * 6.283; this.spawnEmber(cx + tx * Math.cos(a) * cw, cy + ty * Math.cos(a) * cw, ux * 60 * U + (Math.random() - 0.5) * 80 * U, uy * 60 * U + (Math.random() - 0.5) * 80 * U, 0.4 + Math.random() * 0.5, 0); }
+    }
+  }
   igniteBombs(x, y, R) {
+    for (const c of this.cannons)                // a burning rope at a cannon fires it (with its saved bullet & aim)
+      if (c.rcool <= 0 && !(c.moving > 0) && Math.hypot(c.x - x, c.y - y) < R + 13 * this.U * OBJK()) { c.rcool = 3; c.cool = 0; this.fireCannon(c); }
     const rb = this.bombR();
     for (const bb of this.bombs) {
       if (bb.dead || bb.lit) continue;
@@ -2445,18 +3020,29 @@ class World {
       }
     }
   }
-  blastBodies(x, y, R, P, destroyWood) {
+  blastHole(x, y, a, b, nx, ny) {              // nx,ny: wall normal (points out of the wall)
+    const U = this.U, p = 1 / (4 * this.r * this.r) * 0.7, grains = [];
+    const box = blastOval(this, this.MW, this.MH, x, y, a, b, nx, ny, this.frame, (px, py, m) => { if (m !== 2 && Math.random() < p) grains.push(px, py); });
+    for (let k = 0; k < grains.length; k += 2) {     // broken stone crumbles into sand
+      const gx = grains[k], gy = grains[k + 1], dx = gx - x, dy = gy - y, d = Math.hypot(dx, dy) || 1, sp = (60 + Math.random() * 120) * U;
+      this.sandQueue.push(gx, gy, dx / d * sp, dy / d * sp);
+    }
+    this.refreshWalls(box);
+    if (this.onHole) this.onHole(x, y, a, b, nx, ny, box);
+  }
+  blastBodies(x, y, R, P, destroyWood, destroyAll, dR = R) {
     for (const b of this.bodies) {
       const dx = b.x - x, dy = b.y - y, d = Math.hypot(dx, dy) + 0.01;
       if (d > 2 * R + b.R) continue;
       const f = clamp(1 - (d - b.R * 0.5) / (2 * R), 0, 1), k = P * f * clamp(800 / b.mass, 0.1, 2.5);
       b.vx += dx / d * k; b.vy += dy / d * k; b.w += (Math.random() - 0.5) * 10 * f;
-      if (destroyWood && b.hasWood) {
+      if ((destroyWood && b.hasWood) || destroyAll) {
         for (let j = 0; j < b.H; j++) for (let i = 0; i < b.W; i++) {
-          if (b.m[j * b.W + i] !== 2) continue;
+          const mt = b.m[j * b.W + i];
+          if (!mt || (mt !== 2 && !destroyAll)) continue;
           const lx = i + 0.5 - b.cx, ly = j + 0.5 - b.cy;
           const wx = b.x + lx * b.c - ly * b.s, wy = b.y + lx * b.s + ly * b.c;
-          const rr = R * (0.75 + 0.5 * vnoise(i * 0.3, j * 0.3));
+          const rr = dR * (0.75 + 0.5 * vnoise(i * 0.3, j * 0.3));
           if ((wx - x) * (wx - x) + (wy - y) * (wy - y) < rr * rr) this.removeBodyPixel(b, i, j);
         }
       }
@@ -2466,8 +3052,19 @@ class World {
   sandVel(dt) {
     if (!this.sandN) return;
     const { px, py, vx, vy, pt, ox, oy } = this, N = this.N, inv = 1 / dt;
-    for (let i = 0; i < N; i++) if (pt[i] === 3) { vx[i] = (px[i] - ox[i]) * inv * 0.995; vy[i] = (py[i] - oy[i]) * inv * 0.995; }
+    const mdv = 1300 * this.U * dt;            // a grain can't be kicked faster than this in one step (no popping grains)
+    for (let i = 0; i < N; i++) if (pt[i] === 3) {
+      {                                          // a grain must never be squeezed through a thin wall: undo such a step
+        const x0 = ox[i], y0 = oy[i], x1 = px[i], y1 = py[i];
+        if ((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) > 0.25 && (this.sdfAt((x0 + x1) * 0.5, (y0 + y1) * 0.5) < 0 || this.sdfAt(x0 * 0.75 + x1 * 0.25, y0 * 0.75 + y1 * 0.25) < 0 || this.sdfAt(x0 * 0.25 + x1 * 0.75, y0 * 0.25 + y1 * 0.75) < 0)) { px[i] = x0; py[i] = y0; }
+      }
+      let ux = (px[i] - ox[i]) * inv * 0.995, uy = (py[i] - oy[i]) * inv * 0.995;
+      const dx = ux - vx[i], dy = uy - vy[i], d = Math.hypot(dx, dy);
+      if (d > mdv) { const k = mdv / d; ux = vx[i] + dx * k; uy = vy[i] + dy * k; }
+      vx[i] = ux; vy[i] = uy;
+    }
   }
+
 
   /* ---- plasteline: paintable explosive that cannot pass through walls ---- */
   freeAt(x, y) { const xi = x | 0, yi = y | 0; return xi > 0 && yi > 0 && xi < this.MW - 1 && yi < this.MH - 1 && !this.wall[yi * this.MW + xi]; }
@@ -2574,6 +3171,131 @@ class World {
   }
 
   /* ---- rope fuses: burn along their length, light what is at the end ---- */
+  /* ---- chains: wooden (burns like a rope) or steel; ends hook onto objects, bombs, walls or other chains ---- */
+  chainHook(x, y, self) {
+    const U = this.U, K = OBJK();
+    for (const b of this.bombs) if (!b.dead && Math.hypot(b.x - x, b.y - y) < this.bombR() * 1.7) return { t: 'bomb', o: b };
+    let best = null, bd = 9 * U * K;
+    for (const ch of this.chains) {                // another chain: its end, or any link in the middle
+      if (ch === self) continue;
+      for (let e = 0; e < ch.n; e++) {
+        if (!ch.alive[e]) continue;
+        const d = Math.hypot(ch.p[2 * e] - x, ch.p[2 * e + 1] - y) - (e === 0 || e === ch.n - 1 ? 3 * U : 0);
+        if (d < bd) { bd = d; best = { t: 'chain', o: ch, e }; }
+      }
+    }
+    if (best) return best;
+    for (let i = this.bodies.length - 1; i >= 0; i--) {
+      const b = this.bodies[i];
+      if (sampleBody(b, x, y) < 3 * U) { const dx = x - b.x, dy = y - b.y; return { t: 'body', o: b, lx: dx * b.c + dy * b.s, ly: -dx * b.s + dy * b.c }; }
+    }
+    if (this.sdfAt(x, y) < 3 * U) return { t: 'wall', x, y };
+    return null;
+  }
+  addChain(pts, mat) {
+    if (this.chains.length >= 24) return false;
+    const U = this.U, K = OBJK(), sp = 5 * U * K, out = [pts[0], pts[1]];
+    for (let i = 2; i < pts.length; i += 2) {
+      let lx = out[out.length - 2], ly = out[out.length - 1];
+      const tx = pts[i], ty = pts[i + 1]; let d = Math.hypot(tx - lx, ty - ly);
+      while (d >= sp && out.length < 240) { lx += (tx - lx) * sp / d; ly += (ty - ly) * sp / d; out.push(lx, ly); d = Math.hypot(tx - lx, ty - ly); }
+    }
+    const n = out.length / 2; if (n < 3) return false;
+    const ch = { n, L: sp, mat, p: new Float32Array(out), q: new Float32Array(out), st: new Float32Array(n), alive: new Uint8Array(n).fill(1), hook: [null, null] };
+    ch.hook[0] = this.chainHook(out[0], out[1], ch);
+    ch.hook[1] = this.chainHook(out[2 * n - 2], out[2 * n - 1], ch);
+    this.chains.push(ch);
+    return true;
+  }
+  hookPoint(h) {
+    if (h.t === 'body') { const b = h.o; return [b.x + h.lx * b.c - h.ly * b.s, b.y + h.lx * b.s + h.ly * b.c]; }
+    if (h.t === 'bomb') return [h.o.x, h.o.y];
+    if (h.t === 'wall') return [h.x, h.y];
+    return [h.o.p[2 * h.e], h.o.p[2 * h.e + 1]];
+  }
+  stepChains(dt) {
+    if (!this.chains.length) return;
+    const U = this.U, K = OBJK(), rest = this.restDensity, rl = 2 * U * K, gx = this.gx * dt * dt, gy = this.gy * dt * dt, h = this.h;
+    for (let ci = this.chains.length - 1; ci >= 0; ci--) {
+      const ch = this.chains[ci], { n, p, q, alive, st } = ch, L = ch.L, wood = ch.mat === 0, stepT = L / (CFG.ropeSpeed * U);   // same speed as a rope
+      for (let e = 0; e < 2; e++) {               // hooks whose target is gone come loose
+        const hk = ch.hook[e]; if (!hk) continue;
+        if ((hk.t === 'body' && !this.bodies.includes(hk.o)) || (hk.t === 'bomb' && (hk.o.dead || !this.bombs.includes(hk.o))) ||
+            (hk.t === 'chain' && (!this.chains.includes(hk.o) || !hk.o.alive[hk.e]))) ch.hook[e] = null;
+      }
+      // move: gravity, a little air drag; in liquid wood floats, steel sinks slowly
+      for (let i = 0; i < n; i++) {
+        if (!alive[i]) continue;
+        const x = p[2 * i], y = p[2 * i + 1], sub = Math.min(1, this.density[this.cellOf(x, y)] / rest);
+        const dmp = sub > 0.1 ? 0.9 : 0.995, kG = wood ? 1 - 1.7 * sub : 1 - 0.15 * sub;
+        const vx = (x - q[2 * i]) * dmp, vy = (y - q[2 * i + 1]) * dmp;
+        q[2 * i] = x; q[2 * i + 1] = y;
+        p[2 * i] = x + vx + gx * kG; p[2 * i + 1] = y + vy + gy * kG;
+      }
+      for (let it = 0; it < 14; it++) {
+        for (let i = 0; i + 1 < n; i++) {
+          if (!alive[i] || !alive[i + 1]) continue;
+          const ax = p[2 * i], ay = p[2 * i + 1], bx = p[2 * i + 2], by = p[2 * i + 3], dx = bx - ax, dy = by - ay, d = Math.hypot(dx, dy) || 1e-6;
+          const k = (d - L) / d * 0.5;
+          p[2 * i] += dx * k; p[2 * i + 1] += dy * k; p[2 * i + 2] -= dx * k; p[2 * i + 3] -= dy * k;
+        }
+        for (let e = 0; e < 2; e++) {
+          const li = e ? n - 1 : 0;
+          if (ch.drag && ch.drag[e]) { if (alive[li]) { p[2 * li] = ch.drag[e].x; p[2 * li + 1] = ch.drag[e].y; } continue; }
+          const hk = ch.hook[e]; if (!hk || !alive[li]) continue;
+          const [tx, ty] = this.hookPoint(hk);
+          if (hk.t === 'chain') { const o = hk.o, mx = (tx + p[2 * li]) / 2, my = (ty + p[2 * li + 1]) / 2; p[2 * li] = mx; p[2 * li + 1] = my; o.p[2 * hk.e] = mx; o.p[2 * hk.e + 1] = my; }
+          else { p[2 * li] = tx; p[2 * li + 1] = ty; }
+        }
+      }
+      // links bump into walls and objects
+      for (let i = 0; i < n; i++) {
+        if (!alive[i]) continue;
+        const x = p[2 * i], y = p[2 * i + 1], d = this.sdfAt(x, y);
+        if (d < rl) { const g = this.sdfGrad(x, y), pen = rl - d; p[2 * i] += g[0] * pen; p[2 * i + 1] += g[1] * pen; q[2 * i] += (p[2 * i] - q[2 * i]) * 0.3; q[2 * i + 1] += (p[2 * i + 1] - q[2 * i + 1]) * 0.3; }
+        for (const b of this.bodies) {
+          if ((ch.hook[0] && ch.hook[0].o === b) || (ch.hook[1] && ch.hook[1].o === b)) continue;
+          if (Math.abs(b.x - x) > b.R + rl || Math.abs(b.y - y) > b.R + rl) continue;
+          const db = sampleBody(b, p[2 * i], p[2 * i + 1]);
+          if (db < rl) { p[2 * i] += SB_NX * (rl - db) * 0.7; p[2 * i + 1] += SB_NY * (rl - db) * 0.7; if (!b.grab) { b.x -= SB_NX * (rl - db) * 0.05; b.y -= SB_NY * (rl - db) * 0.05; } }
+        }
+      }
+      // a taut chain holds what hangs on it: pull objects & bombs back towards the chain
+      for (let e = 0; e < 2; e++) {
+        const hk = ch.hook[e]; if (!hk || (hk.t !== 'body' && hk.t !== 'bomb')) continue;
+        const li = e ? n - 1 : 0, nb = e ? n - 2 : 1; if (!alive[li] || !alive[nb]) continue;
+        const [tx, ty] = this.hookPoint(hk), dx = p[2 * nb] - tx, dy = p[2 * nb + 1] - ty, d = Math.hypot(dx, dy);
+        if (d < L * 1.02) continue;
+        const nx = dx / d, ny = dy / d, ex = d - L;
+        if (hk.t === 'body') {
+          const b = hk.o; if (b.grab) continue;
+          bodyImpulse(b, null, tx, ty, nx, ny, 0, 0.1);
+          b.x += nx * ex * 0.5; b.y += ny * ex * 0.5;
+        } else {
+          const b = hk.o; if (b.held || b.stuck) continue;
+          const vn = b.vx * nx + b.vy * ny; if (vn < 0) { b.vx -= vn * nx; b.vy -= vn * ny; }
+          b.x += nx * ex * 0.7; b.y += ny * ex * 0.7;
+        }
+      }
+      // wooden chains burn like a fuse; a burnt link breaks the chain there
+      if (wood) {
+        let any = 0;
+        for (let i = 0; i < n; i++) {
+          if (!alive[i]) continue; any++;
+          const x = p[2 * i], y = p[2 * i + 1], cell = this.cellOf(x, y), s0 = st[i];
+          const wet = this.denW[cell] > rest * 0.3 || this.denS[cell] > rest * 0.3;
+          if (s0 === 0) { if (!wet && this.heat[cell] > 0.45 && !nearOwn(st, i)) st[i] = 1e-6; continue; }
+          const a = s0 + dt; st[i] = a; this.ropeBurning++;
+          this.igniteBombs(x, y, h * 1.4);
+          if (!wet) { this.stampHeat(x, y, h * 1.1, 1.0, 0.8); this.igniteAt(x, y, h * 1.2); }   // a wooden chain burns with real flames
+          if (a > stepT) { if (i > 0 && alive[i - 1] && st[i - 1] === 0) st[i - 1] = 1e-6; if (i < n - 1 && alive[i + 1] && st[i + 1] === 0) st[i + 1] = 1e-6; }
+          if (a > stepT * 1.6) { alive[i] = 0; this.spawnEmber(x, y, 0, this.upY * 30 * U, 0.4, 0); }
+          if (!wet && Math.random() < 18 * dt) this.spawnEmber(x, y, (Math.random() - 0.5) * 140 * U, (Math.random() - 0.5) * 140 * U, 0.15 + Math.random() * 0.25, 2);
+        }
+        if (any < 2) { this.chains.splice(ci, 1); continue; }
+      }
+    }
+  }
   addRope(pts) {
     const sp = 4 * this.U, out = [pts[0], pts[1]];
     for (let i = 2; i < pts.length; i += 2) {
@@ -2597,19 +3319,17 @@ class World {
         if (s < 0) continue;
         alive = true;
         const x = p[2 * k], y = p[2 * k + 1], cell = this.cellOf(x, y);
-        const wet = this.denW[cell] > rest * 0.3 || this.denF[cell] > rest * 0.1 || this.denO[cell] > rest * 0.3;
-        if (s === 0) { if (!wet && this.heat[cell] > 0.45) st[k] = 1e-6; continue; }
+        const wet = this.denW[cell] > rest * 0.3 || this.denF[cell] > rest * 0.1 || this.denO[cell] > rest * 0.3 || this.denS[cell] > rest * 0.3;
+        if (s === 0) { if (!wet && this.heat[cell] > 0.45 && !nearOwn(st, k)) st[k] = 1e-6; continue; }
         nb++;
         const a = s + dt; st[k] = a;
-        if (!wet) { this.stampHeat(x, y, h * 1.3, 1.0, 0.85); this.igniteAt(x, y, h * 1.4); }
-        else {                                   // a fuse keeps burning under water: no flames, just bubbles
-          this.igniteBombs(x, y, h * 1.4);
-          if (Math.random() < 5 * dt) this.spawnEmber(x, y, this.upX * 60 * U + (Math.random() - 0.5) * 30 * U, this.upY * 60 * U, 0.3 + Math.random() * 0.4, 1);
-        }
+        this.igniteBombs(x, y, h * 1.4);         // like a bomb fuse: a sparkling glow that creeps along, no flames
+        if (!wet) { this.stampHeat(x, y, h * 0.9, 0.7, 0); this.igniteAt(x, y, h * 1.2); }   // lights wood, oil and fuses it touches
+        else if (Math.random() < 5 * dt) this.spawnEmber(x, y, this.upX * 60 * U + (Math.random() - 0.5) * 30 * U, this.upY * 60 * U, 0.3 + Math.random() * 0.4, 1);
         this.igniteRopes(rp, x, y, h * 1.3);
         if (a > stepT) { if (k > 0 && st[k - 1] === 0) st[k - 1] = 1e-6; if (k < n - 1 && st[k + 1] === 0) st[k + 1] = 1e-6; }
-        if (a > stepT * 3) st[k] = -1;
-        if (Math.random() < 6 * dt) this.spawnEmber(x, y, (Math.random() - 0.5) * 80 * U, (Math.random() - 0.5) * 80 * U, 0.2 + Math.random() * 0.3, 2);
+        if (a > stepT * 1.6) st[k] = -1;
+        if (!wet && Math.random() < 22 * dt) this.spawnEmber(x, y, (Math.random() - 0.5) * 160 * U, (Math.random() - 0.5) * 160 * U, 0.15 + Math.random() * 0.25, 2);
       }
       if (!alive) this.ropes.splice(r, 1);
     }
@@ -2618,6 +3338,12 @@ class World {
 
   step(dt, gx, gy) {
     this.gx = gx; this.gy = gy;
+    // explosions happen before the drops move: the blast pushes water the same way a tap-explosion does
+    if (this.booms.length) { const q = this.booms; this.booms = []; for (const b of q) this.explode(b); }
+    if (this.sandQueue.length) {                   // sand from broken stone (added after the walls are updated)
+      const q = this.sandQueue; this.sandQueue = [];
+      for (let k = 0; k < q.length; k += 4) if (this.add(q[k], q[k + 1], q[k + 2], q[k + 3], 3)) this.pl[this.N - 1] = 1;   // grey stone grit
+    }
     this.emit(dt);
     this.integrate(dt, gx, gy);
     this.separate();
@@ -2625,9 +3351,14 @@ class World {
     this.stepMills(dt);
     this.stepBodies(dt);
     this.sandVel(dt);
+    this.stepLava(dt);
     this.stepFire(dt);
+    this.lavaFlames(dt);
     this.stepPlast(dt);
     this.updateBombs(dt);
+    this.stepCannons(dt);
+    this.stepChains(dt);
+    this.stepShots(dt);
     this.drain(dt);
     this.p2g();                              // also computes the densities (merged pass)
     this.project(dt);
@@ -2641,7 +3372,8 @@ class World {
     for (let i = 0, j = 0; i < N; i++, j += 4) {
       out[j] = px[i]; out[j + 1] = py[i];
       const s = Math.sqrt(vx[i] * vx[i] + vy[i] * vy[i]) * inv;
-      out[j + 2] = s > 1 ? 1 : s; out[j + 3] = pt[i];
+      const t = pt[i], q = this.pl[i];
+      out[j + 2] = t === 4 || t === 3 ? (q <= -1 ? Math.min(1, -q - 1) : 0) : (s > 1 ? 1 : s); out[j + 3] = t === 3 && q > 0 ? 3.2 : t;
     }
     return N;
   }
@@ -2662,22 +3394,67 @@ void main(){
   vST = aP.zw;
 }`;
 const VS_SAND = `#version 300 es
-in vec4 aP; uniform vec2 uInvDomain; uniform float uSize; out float vH;
+in vec4 aP; uniform vec2 uInvDomain; uniform float uSize; out float vH; out float vG; out float vB;
 void main(){
-  if (aP.w < 2.5) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 1.0; vH = 0.0; return; }
+  vG = step(3.1, aP.w); vB = aP.z;
+  if (aP.w < 2.5 || aP.w > 3.5) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 1.0; vH = 0.0; return; }
   vec2 c = aP.xy * uInvDomain;
   gl_Position = vec4(c.x * 2.0 - 1.0, 1.0 - c.y * 2.0, 0.0, 1.0);
   gl_PointSize = uSize;
   vH = fract(sin(dot(floor(aP.xy * 0.5), vec2(12.9898, 78.233))) * 43758.5453);
 }`;
 const FS_SAND = `#version 300 es
-precision mediump float; in float vH; out vec4 o;
+precision mediump float; in float vH; in float vG; in float vB; out vec4 o;
 void main(){
   vec2 q = gl_PointCoord * 2.0 - 1.0; float r2 = dot(q, q);
   if (r2 > 1.0) discard;
-  vec3 c = mix(vec3(0.96, 0.83, 0.5), vec3(0.78, 0.6, 0.3), vH);
+  vec3 c = mix(mix(vec3(0.96, 0.83, 0.5), vec3(0.78, 0.6, 0.3), vH), mix(vec3(0.62, 0.63, 0.67), vec3(0.42, 0.43, 0.47), vH), vG);
+  c = mix(c, vec3(0.45, 0.46, 0.5), vB);
   c *= 0.88 + 0.12 * (-q.x - q.y) * 0.7;
   o = vec4(c, 1.0);
+}`;
+const VS_LAVA = `#version 300 es
+in vec4 aP; uniform vec2 uInvDomain; uniform float uSize; out float vH;
+void main(){
+  if (aP.w < 3.5) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 1.0; vH = 0.0; return; }
+  vec2 c = aP.xy * uInvDomain;
+  gl_Position = vec4(c.x * 2.0 - 1.0, 1.0 - c.y * 2.0, 0.0, 1.0);
+  gl_PointSize = uSize; vH = aP.z;
+}`;
+const FS_LAVA = `#version 300 es
+precision mediump float; in float vH; uniform float uW; out vec4 o;
+void main(){
+  vec2 q = gl_PointCoord * 2.0 - 1.0; float r2 = dot(q, q);
+  if (r2 > 1.0) discard;
+  float w = 1.0 - r2; w = w * w * w * uW;
+  o = vec4(w, w * vH, 0.0, 0.0);
+}`;
+const FS_LAVA_COMP = `#version 300 es
+precision highp float; in vec2 vUv; uniform sampler2D uDen; uniform vec2 uTexel; uniform float uTime; out vec4 o;
+float hsh(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hsh(i), hsh(i + vec2(1, 0)), f.x), mix(hsh(i + vec2(0, 1)), hsh(i + vec2(1, 1)), f.x), f.y); }
+void main(){
+  vec4 D4 = texture(uDen, vUv); float d = D4.r, cool = clamp(D4.g / max(d, 1e-3), 0.0, 1.0);
+  const float T = 0.22;
+  if (d < T - 0.05) discard;
+  float a1 = texture(uDen, vUv + vec2(uTexel.x * 2.0, 0.0)).r - texture(uDen, vUv - vec2(uTexel.x * 2.0, 0.0)).r;
+  float a2 = texture(uDen, vUv + vec2(0.0, uTexel.y * 2.0)).r - texture(uDen, vUv - vec2(0.0, uTexel.y * 2.0)).r;
+  vec3 n = normalize(vec3(-a1 * 1.6, -a2 * 1.6, 1.0));
+  float thick = clamp((d - T) * 1.2, 0.0, 1.0);
+  vec2 p = vUv / uTexel * 0.06;
+  float cr = vn(p + vec2(uTime * 0.07, -uTime * 0.05)) * 0.6 + vn(p * 2.3 - uTime * 0.11) * 0.4;   // slowly moving crust
+  float glow = smoothstep(0.42, 0.75, cr);
+  vec3 crust = mix(vec3(0.22, 0.05, 0.03), vec3(0.45, 0.1, 0.04), thick);
+  vec3 hot = mix(vec3(1.0, 0.35, 0.04), vec3(1.0, 0.85, 0.3), glow * glow);
+  vec3 col = mix(crust, hot, clamp(glow * 1.2 + 0.25 * (1.0 - thick) + 0.15, 0.0, 1.0));
+  float L = dot(n, normalize(vec3(-0.45, 0.55, 0.75)));
+  col *= 0.75 + 0.35 * L;
+  col += pow(max(dot(n, normalize(vec3(-0.2, 0.3, 1.0))), 0.0), 40.0) * 0.25;
+  float rim = 1.0 - smoothstep(T - 0.02, T + 0.08, d);
+  col = mix(col, vec3(1.0, 0.5, 0.1), rim * 0.6);
+  col = mix(col, vec3(0.42, 0.43, 0.47) * (0.85 + 0.3 * L), smoothstep(0.0, 0.85, cool));   // cooling into stone
+  o = vec4(col, smoothstep(T - 0.05, T + 0.03, d));
 }`;
 const FS_POINTS = `#version 300 es
 precision mediump float;
@@ -2706,6 +3483,18 @@ void main(){ o = vec4(texture(uTex, vec2(vUv.x, 1.0 - vUv.y)).rgb * uBgB, 1.0); 
 const VS_SPRITE = `#version 300 es
 in vec4 aV; out vec2 vT;
 void main(){ gl_Position = vec4(aV.xy, 0.0, 1.0); vT = aV.zw; }`;
+const FS_BODY = `#version 300 es
+precision mediump float;
+in vec2 vT; uniform sampler2D uTex; uniform vec2 uTexel, uL; uniform float uMode; out vec4 o;
+float A(vec2 uv){ return (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) ? 0.0 : texture(uTex, uv).a; }
+void main(){
+  vec4 c = texture(uTex, vT);
+  if (uMode > 0.5) { o = vec4(0.0, 0.0, 0.0, c.a * 0.3); return; }       // drop shadow pass
+  vec2 e = uTexel * 2.5;
+  vec2 g = vec2(A(vT + vec2(e.x, 0.0)) - A(vT - vec2(e.x, 0.0)), A(vT + vec2(0.0, e.y)) - A(vT - vec2(0.0, e.y)));
+  float lit = dot(-g, uL);                                                  // outward normal = -alpha gradient
+  o = vec4(min(c.rgb * (1.0 + 0.55 * lit) + max(lit, 0.0) * 0.08 * c.a, vec3(c.a)), c.a);
+}`;
 const FS_SPRITE = `#version 300 es
 precision mediump float;
 in vec2 vT; uniform sampler2D uTex; uniform float uAlpha; out vec4 o;
@@ -2888,7 +3677,7 @@ void main(){
   vec2 c = aE.xy * uInvDomain;
   gl_Position = vec4(c.x * 2.0 - 1.0, 1.0 - c.y * 2.0, 0.0, 1.0);
   float l = aE.z, k = aE.w;
-  gl_PointSize = k > 5.5 ? uScale * (1.6 + (1.0 - l) * 2.2) : k > 4.5 ? uScale * (5.0 + (1.0 - l) * 11.0) : (k < 0.5 ? uScale * (0.65 + l * 0.85) : (k < 1.5 ? uScale * (5.0 + (1.0 - l) * 7.0) : (k < 2.5 ? uScale * (0.8 + l * 0.6) : uScale * 2.4)));
+  gl_PointSize = k > 5.5 ? uScale * (1.6 + (1.0 - l) * 2.2) : k > 4.5 ? uScale * (5.0 + (1.0 - l) * 11.0) : (k < 0.5 ? uScale * (0.65 + l * 0.85) * (k > 0.2 ? 2.0 : 1.0) : (k < 1.5 ? uScale * (5.0 + (1.0 - l) * 7.0) : (k < 2.5 ? uScale * (0.8 + l * 0.6) : uScale * 2.4)));
   vLK = aE.zw;
 }`;
 const FS_EMB = `#version 300 es
@@ -3067,11 +3856,17 @@ class Renderer {
     this.pBlit = this.program(VS_FULL, FS_BLIT);
     this.pSprite = this.program(VS_SPRITE, FS_SPRITE);
     this.pSand = this.program(VS_SAND, FS_SAND);
+    this.pLava = this.program(VS_LAVA, FS_LAVA);
+    this.uLv = this.uniforms(this.pLava, ['uInvDomain', 'uSize', 'uW']);
+    this.pLavaC = this.program(VS_FULL, FS_LAVA_COMP);
+    this.uLc = this.uniforms(this.pLavaC, ['uDen', 'uTexel', 'uTime']);
     this.uSd = this.uniforms(this.pSand, ['uInvDomain', 'uSize']);
     this.uP = this.uniforms(this.pPoints, ['uInvDomain', 'uSize', 'uW']);
     this.uW = this.uniforms(this.pWater, ['uBg', 'uDen', 'uTexel', 'uTime', 'uAspect', 'uShallow', 'uDeep', 'uFlipBg', 'uBgB']);
     this.uB = this.uniforms(this.pBlit, ['uTex', 'uBgB']);
     this.uS = this.uniforms(this.pSprite, ['uTex', 'uAlpha']);
+    this.pBody = this.program(VS_SPRITE, FS_BODY);
+    this.uBd = this.uniforms(this.pBody, ['uTex', 'uTexel', 'uL', 'uMode']);
     this.allocParticles(CFG.maxParticles);
     // sprites
     this.sVao = gl.createVertexArray(); gl.bindVertexArray(this.sVao);
@@ -3165,6 +3960,8 @@ class Renderer {
       if (this.denTex) { gl.deleteTexture(this.denTex); gl.deleteFramebuffer(this.fbo); }
       const r = (this.floatFB && this.makeTarget(dw, dh, true)) || this.makeTarget(dw, dh, false);
       [this.denTex, this.fbo] = r; this.dw = dw; this.dh = dh;
+      if (this.lavaTex) { gl.deleteTexture(this.lavaTex); gl.deleteFramebuffer(this.lavaFbo); }
+      [this.lavaTex, this.lavaFbo] = (this.floatFB && this.makeTarget(dw, dh, true)) || this.makeTarget(dw, dh, false);
     }
     const cw = this.canvas.width, ch = this.canvas.height;
     if (cw !== this.sw || ch !== this.sh) {
@@ -3223,15 +4020,25 @@ class Renderer {
     gl.disable(gl.BLEND);
   }
   drawBodies(world) {
-    const gl = this.gl, MW = world.MW, MH = world.MH, out = this.sBuf;
+    const gl = this.gl, MW = world.MW, MH = world.MH, out = this.sBuf, look = !!CFG.look3d;
     for (const [b, t] of this.bodyTex) if (!world.bodies.includes(b)) { gl.deleteTexture(t); this.bodyTex.delete(b); }
     if (!world.bodies.length) return;
-    gl.useProgram(this.pSprite);
+    gl.useProgram(this.pBody);
     gl.bindVertexArray(this.sVao); gl.bindBuffer(gl.ARRAY_BUFFER, this.sVbo);
-    gl.uniform1i(this.uS.uTex, 0); gl.uniform1f(this.uS.uAlpha, 1);
+    gl.uniform1i(this.uBd.uTex, 0);
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.activeTexture(gl.TEXTURE0);
-    for (const b of world.bodies) {
+    const sh = 2.2 * world.U;
+    const quad = (b, ox, oy) => {
+      const c = Math.cos(b.th), s = Math.sin(b.th), x0 = -b.cx, y0 = -b.cy, x1 = b.W - b.cx, y1 = b.H - b.cy;
+      let k = 0;
+      const put = (lx, ly, u, v) => { const wx = b.x + ox + lx * c - ly * s, wy = b.y + oy + lx * s + ly * c;
+        out[k++] = wx / MW * 2 - 1; out[k++] = 1 - wy / MH * 2; out[k++] = u; out[k++] = v; };
+      put(x0, y0, 0, 0); put(x1, y0, 1, 0); put(x1, y1, 1, 1); put(x0, y0, 0, 0); put(x1, y1, 1, 1); put(x0, y1, 0, 1);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, out, 0, 24);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+    const bind = b => {
       let t = this.bodyTex.get(b);
       if (!t) { t = this.tex(); this.bodyTex.set(b, t); b.texDirty = true; }
       gl.bindTexture(gl.TEXTURE_2D, t);
@@ -3241,13 +4048,19 @@ class Renderer {
         gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         b.texDirty = false;
       }
-      const c = Math.cos(b.th), s = Math.sin(b.th), x0 = -b.cx, y0 = -b.cy, x1 = b.W - b.cx, y1 = b.H - b.cy;
-      let k = 0;
-      const put = (lx, ly, u, v) => { const wx = b.x + lx * c - ly * s, wy = b.y + lx * s + ly * c;
-        out[k++] = wx / MW * 2 - 1; out[k++] = 1 - wy / MH * 2; out[k++] = u; out[k++] = v; };
-      put(x0, y0, 0, 0); put(x1, y0, 1, 0); put(x1, y1, 1, 1); put(x0, y0, 0, 0); put(x1, y1, 1, 1); put(x0, y1, 0, 1);
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, out, 0, 24);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+    if (look) {                                   // shadows first, under every object
+      gl.uniform1f(this.uBd.uMode, 1);
+      for (const b of world.bodies) { bind(b); quad(b, sh, sh); }
+    }
+    gl.uniform1f(this.uBd.uMode, 0);
+    for (const b of world.bodies) {
+      bind(b);
+      const c = Math.cos(b.th), s = Math.sin(b.th);
+      gl.uniform2f(this.uBd.uTexel, 1 / b.TW, 1 / b.TH);
+      if (look) gl.uniform2f(this.uBd.uL, LIGHT_X * c + LIGHT_Y * s, -LIGHT_X * s + LIGHT_Y * c);   // light in the object's own frame
+      else gl.uniform2f(this.uBd.uL, 0, 0);
+      quad(b, 0, 0);
     }
     gl.disable(gl.BLEND);
   }
@@ -3260,7 +4073,7 @@ class Renderer {
     let bgTex = this.bgTex, flip = 1;
     const nUnder = this.buildSprites(world, false);
     if (N > 0) { gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo); gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.buf, 0, N * 4); }
-    if ((nUnder > 0 || world.bodies.length || world.sandN > 0) && this.sceneFbo) {
+    if ((nUnder > 0 || world.bodies.length) && this.sceneFbo) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.sceneFbo);
       gl.viewport(0, 0, cw, ch);
       gl.useProgram(this.pBlit); gl.bindVertexArray(this.emptyVao);
@@ -3268,13 +4081,6 @@ class Renderer {
       gl.uniform1f(this.uB.uBgB, CFG.bgBright);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       this.drawBodies(world);
-      if (world.sandN > 0) {
-        gl.useProgram(this.pSand);
-        gl.uniform2f(this.uSd.uInvDomain, 1 / world.MW, 1 / world.MH);
-        gl.uniform1f(this.uSd.uSize, 2.7 * world.r * cw / world.MW);
-        gl.bindVertexArray(this.sandVao);
-        gl.drawArrays(gl.POINTS, 0, N);
-      }
       if (nUnder > 0) { this.buildSprites(world, false); this.drawSprites(nUnder, 1); }
       bgTex = this.sceneTex; flip = 0;
     }
@@ -3308,6 +4114,31 @@ class Renderer {
     const pal = PALETTES[this.palette];
     gl.uniform3fv(this.uW.uShallow, pal.shallow); gl.uniform3fv(this.uW.uDeep, pal.deep);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    // 2b) sand on top of the liquid layer: a sand bed reads as ground with the water resting above it
+    if (world.sandN > 0) {
+      gl.useProgram(this.pSand);
+      gl.uniform2f(this.uSd.uInvDomain, 1 / world.MW, 1 / world.MH);
+      gl.uniform1f(this.uSd.uSize, 2.7 * world.r * cw / world.MW);
+      gl.bindVertexArray(this.sandVao);
+      gl.drawArrays(gl.POINTS, 0, N);
+    }
+    if (world.lavaN > 0 && this.lavaFbo) {        // lava: its own metaball layer, glowing crust
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.lavaFbo); gl.viewport(0, 0, this.dw, this.dh);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+      gl.useProgram(this.pLava);
+      gl.uniform2f(this.uLv.uInvDomain, 1 / world.MW, 1 / world.MH);
+      gl.uniform1f(this.uLv.uSize, 2 * CFG.blobSize * world.r * this.dw / world.MW);
+      gl.uniform1f(this.uLv.uW, 0.28 * (3.9 / CFG.blobSize) * (3.9 / CFG.blobSize));
+      gl.bindVertexArray(this.sandVao); gl.drawArrays(gl.POINTS, 0, N);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, cw, ch);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.useProgram(this.pLavaC); gl.bindVertexArray(this.emptyVao);
+      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.lavaTex); gl.uniform1i(this.uLc.uDen, 1);
+      gl.uniform2f(this.uLc.uTexel, 1 / this.dw, 1 / this.dh); gl.uniform1f(this.uLc.uTime, time);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.disable(gl.BLEND);
+    }
     // 3) submerged creatures again at partial strength (keeps colors vivid under tint), floaters on top
     if (nUnder > 0) { this.buildSprites(world, false); this.drawSprites(nUnder, 0.55); }
     const nOver = this.buildSprites(world, true);
@@ -3326,7 +4157,7 @@ let photo = null;          // { src, rot, angle, crop{x,y,w,h}, sx, sy, sens, th
 let curCap = null, curMask = null;
 let userStrokes = [];      // { mode: stone|wood|erase|toWood|toStone|burn, rN, pts:[nx,ny,...] } normalized
 let mode = 'pour', liquid = 0;
-const tool = { pour: 1, wall: 1, wallMode: 'stone', wind: 1, mill: 1, fish: -1, fire: 1, bomb: 0, plast: 1, obj: 0, objSize: 1 };
+const tool = { pour: 1, wall: 1, wallMode: 'stone', wind: 1, mill: 1, fish: -1, fire: 1, bomb: 0, plast: 1, obj: 0, objSize: 1, cannon: 1, chain: 0 };
 let tiltOn = false;
 const grav = { x: 0, y: CFG.gravity }, gravTarget = { x: 0, y: 1 };
 const stage = $('stage'), glc = $('gl'), ov = $('ov'), octx = ov.getContext('2d');
@@ -3337,7 +4168,7 @@ function stageArea() {
   const ww = window.innerWidth, wh = window.innerHeight, land = ww >= wh;
   document.body.classList.toggle('land', land); document.body.classList.toggle('port', !land);
   // buttons live on the short side: a column on the left (landscape) or a strip at the bottom (portrait); 14 buttons long
-  const b = Math.max(32, Math.min(48, Math.floor(((land ? wh : ww) - 110) / 14 - 4)));
+  const b = Math.max(32, Math.min(48, Math.floor(((land ? wh : ww) - 110) / 15.5 - 4)));
   document.documentElement.style.setProperty('--b', b + 'px');
   const r = $('ui').getBoundingClientRect(), m = 6;
   document.documentElement.style.setProperty('--uiw', (land ? r.right : 0) + 'px');
@@ -3371,6 +4202,8 @@ function rebuildWorld(cap, mask, keep) {   // keep: 'all' | 'creatures' | null
   const nw = new World(MW, MH, A);
   nw.onBurn = onWorldBurn;
   nw.onBg = box => renderBG(box[0], box[1], box[2], box[3]);
+  nw.onDots = st => { const L = userStrokes[userStrokes.length - 1]; if (L && L.mode === 'dots' && L.pts.length < 4000) L.pts.push(...st.pts); else userStrokes.push({ ...st, pts: st.pts.slice() }); };
+  nw.onHole = (x, y, a, b, nx, ny, box) => { userStrokes.push({ mode: 'oval', a: a / nw.MW, b: b / nw.MW, n: [nx, ny], pts: [x / nw.MW, y / nw.MH] }); renderBG(box[0], box[1], box[2], box[3]); };
   if (old) { nw.upAng = old.upAng; nw.upX = old.upX; nw.upY = old.upY; }
   if (old && keep) {
     const sx = nw.MW / old.MW, sy = nw.MH / old.MH;
@@ -3381,9 +4214,12 @@ function rebuildWorld(cap, mask, keep) {   // keep: 'all' | 'creatures' | null
       const sc = o => ({ ...o, x: o.x * sx, y: o.y * sy });
       nw.pipes = old.pipes.map(sc); nw.sewers = old.sewers.map(sc); nw.mills = old.mills.map(sc);
       nw.bombs = old.bombs.filter(b => !b.dead).map(sc);
+      nw.cannons = old.cannons.map(sc);
       nw.winds = old.winds.map(w => ({ ...w, pts: w.pts.map((v, i) => v * (i & 1 ? sy : sx)) }));
       nw.rebuildWind();
       nw.ropes = old.ropes.map(r => ({ pts: r.pts.map((v, i) => v * (i & 1 ? sy : sx)), st: r.st.slice() }));
+      nw.chains = old.chains.map(ch => ({ ...ch, p: ch.p.map((v, i) => v * (i & 1 ? sy : sx)), q: ch.q.map((v, i) => v * (i & 1 ? sy : sx)),
+        hook: ch.hook.map(h => h && h.t === 'wall' ? { ...h, x: h.x * sx, y: h.y * sy } : (h && h.t === 'body' && old.MW === nw.MW && old.MH === nw.MH ? h : null)) }));
       for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
         const o = Math.min(old.MH - 1, (y / sy) | 0) * old.MW + Math.min(old.MW - 1, (x / sx) | 0), i = y * MW + x;
         if (old.plast[o] && !nw.wall[i]) { nw.plast[i] = 1; nw.plastCnt[nw.cellOf(x, y)]++; }
@@ -3423,6 +4259,7 @@ function drawOverlay(time) {
 function drawOverlayScene(time) {
   const k = ov.width / world.MW;
   octx.setTransform(k, 0, 0, k, 0, 0);
+  drawZones(octx);
   if (mode === 'wind' || mode === 'erase' || NET.windView) for (const w of world.winds) drawWind(w, time);
   for (const w of drawingWinds) drawWind(w, time);
   for (const s of world.sewers) drawSewer(s);
@@ -3430,9 +4267,14 @@ function drawOverlayScene(time) {
   for (const p of world.pipes) drawPipe(p);
   for (const r of world.ropes) drawRope(r.pts, r.st, time);
   for (const r of drawingRopes) drawRope(r, null, time);
+  for (const o of drawingBoxes) {                 // crate under the finger, placed on release
+    const S = [16, 24, 34][tool.objSize] * world.U * CFG.objScale / 50;
+    octx.save(); octx.globalAlpha = 0.6; octx.fillStyle = o.stone ? '#80838e' : '#9a6a3a'; octx.strokeStyle = '#2a2e36'; octx.lineWidth = 1.5;
+    octx.fillRect(o.x - S / 2, o.y - S / 2, S, S); octx.strokeRect(o.x - S / 2, o.y - S / 2, S, S); octx.restore();
+  }
   for (const o of drawingObjs) {
     octx.save(); octx.lineCap = 'round'; octx.lineJoin = 'round'; octx.lineWidth = o.rad * 2;
-    octx.strokeStyle = o.kind === 2 ? 'rgba(170,105,45,.75)' : (o.kind === 3 ? 'rgba(125,128,140,.75)' : 'rgba(255,210,63,.55)');
+    octx.strokeStyle = o.kind === 2 ? 'rgba(110,62,22,.85)' : (o.kind === 3 ? 'rgba(80,83,94,.85)' : 'rgba(255,210,63,.55)');
     octx.beginPath(); octx.moveTo(o.pts[0], o.pts[1]);
     for (let k = 2; k < o.pts.length; k += 2) octx.lineTo(o.pts[k], o.pts[k + 1]);
     if (o.pts.length === 2) octx.lineTo(o.pts[0] + 0.1, o.pts[1]);
@@ -3448,6 +4290,22 @@ function drawOverlayScene(time) {
     octx.restore();
   }
   for (const b of world.bombs) drawBomb(b, time);
+  chainGlow.clear();                              // which chain ends would connect if released now
+  for (const st of pointers.values()) {
+    if (st.chainEnd) {
+      const { ch, e } = st.chainEnd, d = ch.drag && ch.drag[e];
+      if (d) { const h = world.chainHook(d.x, d.y, ch); if (h) chainGlow.set(ch.p, e); }
+    } else {
+      const q = st.newBox || (st.throwBomb && st.target) || (st.grab && st.last); if (!q) continue;
+      let best = null, bd = 16 * world.U * OBJK();
+      for (const ch of world.chains) for (let e = 0; e < 2; e++) { const li = e ? ch.n - 1 : 0; if (ch.hook[e] || !ch.alive[li]) continue; const dd = Math.hypot(ch.p[2 * li] - q.x, ch.p[2 * li + 1] - q.y); if (dd < bd) { bd = dd; best = [ch, e]; } }
+      if (best) chainGlow.set(best[0].p, best[1]);
+    }
+  }
+  for (const ch of world.chains) drawChain(ch, time);
+  for (const l of drawingChains) drawChainPreview(l);
+  for (const c of world.cannons) drawCannon(c, time);
+  for (const sh of world.shots) drawShot(sh, time);
   const now = performance.now();
   world.rings = world.rings.filter(r => now - r.t0 < 400);
   for (const r of world.rings) {
@@ -3468,7 +4326,7 @@ function drawWind(w, time) {
   c.restore();
 }
 function drawSewer(s) {
-  const R = CFG.sewerRadius * world.U + 2, c = octx;
+  const R = CFG.sewerRadius * world.U * OBJK() + 2, c = octx;
   c.save(); c.translate(s.x, s.y);
   c.beginPath(); c.arc(0, 1.5, R + 2.5, 0, Math.PI * 2); c.fillStyle = 'rgba(0,0,0,.25)'; c.fill();
   c.beginPath(); c.arc(0, 0, R + 2.5, 0, Math.PI * 2); c.fillStyle = '#8b95a5'; c.fill();
@@ -3481,7 +4339,7 @@ function drawSewer(s) {
   c.restore();
 }
 function drawPipe(p) {
-  const c = octx, U = world.U, W = CFG.pipeWidth * U + 4, L = 24 * U, rim = 6.5 * U;
+  const c = octx, U = world.U, W = CFG.pipeWidth * U * OBJK() + 4, L = 24 * U * OBJK(), rim = 6.5 * U * OBJK();
   c.save(); c.translate(p.x, p.y); c.rotate(p.a);
   c.fillStyle = 'rgba(0,0,0,.22)'; c.fillRect(-L + 2, -W / 2 + 2, L, W);
   const g = c.createLinearGradient(0, -W / 2, 0, W / 2);
@@ -3497,10 +4355,18 @@ function drawPipe(p) {
 }
 const MILL_COLORS = ['#ff5a5a', '#ffd23f', '#3fa9ff', '#5be37d'];
 function drawMill(m) {
-  const c = octx, U = world.U, R = CFG.millSize * U * m.mul, hub = R * 0.18;
+  const c = octx, U = world.U, R = CFG.millSize * U * m.mul * OBJK(), hub = R * 0.18;
   const bt0 = Math.max(1.4, 1.2 * U), bt1 = R * 0.16;
   c.save(); c.translate(m.x, m.y);
   c.beginPath(); c.arc(1.5, 2.5, R * 0.22, 0, 7); c.fillStyle = 'rgba(0,0,0,.2)'; c.fill();
+  if (CFG.look3d) {                                // blade shadows (screen-space offset, like the walls)
+    c.save(); c.translate(2.2 * U, 2.2 * U); c.rotate(m.th); c.fillStyle = 'rgba(0,0,0,.22)'; c.beginPath();
+    for (let k = 0; k < 4; k++) {
+      const a = k * Math.PI / 2, ca = Math.cos(a), sa = Math.sin(a), P = (x, y) => [x * ca - y * sa, x * sa + y * ca];
+      let p = P(hub * 0.5, -bt0); c.moveTo(p[0], p[1]); p = P(R, -bt1); c.lineTo(p[0], p[1]); p = P(R, bt1); c.lineTo(p[0], p[1]); p = P(hub * 0.5, bt0); c.lineTo(p[0], p[1]); c.closePath();
+    }
+    c.fill(); c.restore();
+  }
   c.rotate(m.th);
   for (let k = 0; k < 4; k++) {
     c.save(); c.rotate(k * Math.PI / 2);
@@ -3537,6 +4403,133 @@ function drawRope(p, st, time) {
   }
   c.restore();
 }
+const chainGlow = new Map();
+function drawChain(ch, time) {
+  const x = octx, U = world.U, K = OBJK(), { n, p, alive, st } = ch, wood = ch.mat === 0;
+  x.save(); x.lineWidth = 1.6 * U * K;
+  for (let i = 0; i + 1 < n; i++) {
+    if (!alive[i] || !alive[i + 1]) continue;
+    const ax = p[2 * i], ay = p[2 * i + 1], bx = p[2 * i + 2], by = p[2 * i + 3], a = Math.atan2(by - ay, bx - ax);
+    const burning = wood && (st[i] > 0 || st[i + 1] > 0);
+    x.save(); x.translate((ax + bx) / 2, (ay + by) / 2); x.rotate(a);
+    x.strokeStyle = burning ? '#ff8a1a' : (wood ? '#6e4420' : '#4d545e');
+    x.fillStyle = 'rgba(0,0,0,0)';
+    x.beginPath();
+    if (i & 1) x.ellipse(0, 0, ch.L * 0.75, 0.9 * U * K, 0, 0, 7);           // link seen from the side
+    else x.ellipse(0, 0, ch.L * 0.75, 2.4 * U * K, 0, 0, 7);                // link seen from the front
+    x.stroke();
+    x.strokeStyle = burning ? '#ffe066' : (wood ? '#b07a44' : '#c4cbd4'); x.lineWidth = 0.7 * U * K;
+    x.beginPath(); if (i & 1) x.ellipse(0, -0.3 * U * K, ch.L * 0.7, 0.5 * U * K, 0, Math.PI, 2 * Math.PI); else x.ellipse(0, 0, ch.L * 0.72, 2.1 * U * K, 0, Math.PI * 1.1, Math.PI * 1.9); x.stroke();
+    x.lineWidth = 1.6 * U * K; x.restore();
+  }
+  for (let e = 0; e < 2; e++) {                   // small hooks at the ends
+    const li = e ? n - 1 : 0; if (!alive[li]) continue;
+    if (chainGlow.has(ch.p) && chainGlow.get(ch.p) === e) {   // it would hook here: glowing green ring
+      const pulse = 1;
+      x.beginPath(); x.arc(p[2 * li], p[2 * li + 1], 9 * U * K * pulse, 0, 7); x.fillStyle = 'rgba(91,227,125,.35)'; x.fill();
+      x.strokeStyle = '#5be37d'; x.lineWidth = 2.5 * U * K; x.stroke();
+    }
+    x.beginPath(); x.arc(p[2 * li], p[2 * li + 1], 5.4 * U * K, 0, 7); x.fillStyle = ch.hook[e] ? (wood ? '#8a5a2b' : '#6a727e') : 'rgba(0,0,0,0)';
+    x.strokeStyle = wood ? '#4a2e12' : '#2a2e36'; x.lineWidth = 2 * U * K; x.fill(); x.stroke();
+  }
+  x.restore();
+}
+function drawChainPreview(l) {
+  if (l.length < 4) return;
+  const x = octx, U = world.U;
+  x.save(); x.lineCap = 'round'; x.lineJoin = 'round'; x.setLineDash([4 * U, 3 * U]);
+  x.strokeStyle = tool.chain === 0 ? 'rgba(110,62,22,.9)' : 'rgba(70,76,86,.9)'; x.lineWidth = 3 * U * OBJK();
+  x.beginPath(); x.moveTo(l[0], l[1]); for (let k = 2; k < l.length; k += 2) x.lineTo(l[k], l[k + 1]); x.stroke(); x.restore();
+}
+const SHOT_COL = ['#ff8a1a', '#22252e', '#4c9a2a'];
+function drawCannon(c, time) {
+  const x = octx, U = world.U, K = OBJK();
+  if (c.aiming) {                                  // dotted flight preview (no spread)
+    const v = CFG.cannonSpeed * U * c.pow * (c.kind === 2 ? 1.1 : 1), L = 21 * U * K;
+    let qx = c.x + Math.cos(c.a) * L, qy = c.y + Math.sin(c.a) * L, vx = Math.cos(c.a) * v, vy = Math.sin(c.a) * v;
+    x.save(); x.fillStyle = '#fff'; x.strokeStyle = 'rgba(30,30,40,.7)'; x.lineWidth = 1;
+    for (let i = 0, nI = Math.round(20 * K); i < nI; i++) {
+      const dt = 1 / 50; vx += grav.x * SHOT_G * dt; vy += grav.y * SHOT_G * dt; qx += vx * dt; qy += vy * dt;
+      if (qx < 0 || qy < 0 || qx > world.MW || qy > world.MH || world.sdfAt(qx, qy) < 0) break;
+      x.beginPath(); x.arc(qx, qy, 1.7 * U * K, 0, 7); x.fill(); x.stroke();
+    }
+    x.restore();
+  }
+  const gA = Math.atan2(grav.y, grav.x) - Math.PI / 2;
+  if (c.sx === undefined || Math.hypot(c.x - c.sx, c.y - c.sy) > 30 * U) { c.sx = c.x; c.sy = c.y; }
+  c.sx += (c.x - c.sx) * 0.3; c.sy += (c.y - c.sy) * 0.3;   // drawn slightly smoothed: rolls over bumps softly
+  x.save(); x.translate(c.sx, c.sy);
+  if (c.driving) x.translate(Math.sin(time * 40) * 0.6, 0);        // rattles while driving
+  x.scale(K, K);
+  const tA = c.tilt ?? gA;
+  x.save(); x.rotate(tA); x.beginPath(); x.ellipse(2 * U, 13 * U, 14 * U, 2.5 * U, 0, 0, 7); x.fillStyle = 'rgba(0,0,0,.25)'; x.fill(); x.restore();
+  // barrel (fat, short), recoils when fired
+  x.save(); x.rotate(c.a); x.translate(-c.recoil * 5 * U, 0);
+  const g = x.createLinearGradient(0, -8 * U, 0, 8 * U);
+  g.addColorStop(0, '#7a808e'); g.addColorStop(0.35, '#3a3f4c'); g.addColorStop(1, '#16181e');
+  x.fillStyle = g; x.strokeStyle = '#0d0e12'; x.lineWidth = 1.2;
+  x.beginPath(); x.moveTo(-8 * U, -7.5 * U); x.lineTo(17 * U, -6 * U); x.lineTo(17 * U, 6 * U); x.lineTo(-8 * U, 7.5 * U);
+  x.arc(-8 * U, 0, 7.5 * U, Math.PI / 2, Math.PI * 1.5); x.closePath(); x.fill(); x.stroke();
+  x.fillStyle = '#4a505c'; x.fillRect(16 * U, -7.5 * U, 5 * U, 15 * U); x.strokeRect(16 * U, -7.5 * U, 5 * U, 15 * U);
+  x.fillStyle = '#0d0e12'; x.fillRect(20.2 * U, -4 * U, 1.2 * U, 8 * U);
+  x.fillStyle = '#c99a3a'; x.fillRect(3 * U, -7 * U, 2.5 * U, 14 * U);            // brass band
+  x.beginPath(); x.arc(-15 * U, 0, 3 * U, 0, 7); x.fillStyle = '#3a3f4c'; x.fill(); x.stroke();
+  x.fillStyle = 'rgba(255,255,255,.3)'; x.fillRect(-6 * U, -5.5 * U, 20 * U, 1.6 * U);
+  x.beginPath(); x.arc(-5 * U, -6.5 * U, 1.4 * U, 0, 7); x.fillStyle = c.rcool > 0 ? '#ffd23f' : '#ff7a1a'; x.fill();   // touch hole (rope)
+  x.restore();
+  // wooden carriage on four small wheels (stands on the floor, whichever way is down)
+  x.rotate(tA);
+  x.fillStyle = '#9a6a3a'; x.strokeStyle = '#4a2e12'; x.lineWidth = 1.2;
+  x.beginPath(); x.moveTo(-13 * U, 10 * U); x.lineTo(13 * U, 10 * U); x.lineTo(8 * U, 0); x.lineTo(-8 * U, 0); x.closePath(); x.fill(); x.stroke();
+  const wr = 2.9 * U, wa = (c.wheel || 0);
+  for (const wx of [-10 * U, -3.5 * U, 3.5 * U, 10 * U]) {
+    x.beginPath(); x.arc(wx, 11 * U, wr, 0, 7); x.fillStyle = '#5a3a1a'; x.fill(); x.stroke();
+    x.beginPath(); x.moveTo(wx + Math.cos(wa) * wr, 11 * U + Math.sin(wa) * wr); x.lineTo(wx - Math.cos(wa) * wr, 11 * U - Math.sin(wa) * wr); x.stroke();
+    x.beginPath(); x.arc(wx, 11 * U, 0.9 * U, 0, 7); x.fillStyle = '#c99a3a'; x.fill();
+  }
+  x.beginPath(); x.arc(0, 5 * U, 2.6 * U, 0, 7); x.fillStyle = SHOT_COL[c.kind]; x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 1; x.stroke();   // loaded bullet
+  if (c.hit > 0) { x.globalAlpha = Math.min(1, c.hit * 2.5) * 0.45; x.beginPath(); x.arc(0, 2 * U, 15 * U, 0, 7); x.fillStyle = '#ff3b30'; x.fill(); x.globalAlpha = 1; }
+  if (c.driving) {                                  // drive mode: two arrows above it
+    const b = 1 + 0.12 * Math.sin(time * 8);
+    x.fillStyle = '#fff'; x.strokeStyle = '#1f2430'; x.lineWidth = 1.4;
+    for (const sg of [-1, 1]) {
+      x.beginPath(); x.moveTo(sg * 6 * U, -26 * U); x.lineTo(sg * (6 + 9 * b) * U, -21 * U); x.lineTo(sg * 6 * U, -16 * U); x.closePath(); x.fill(); x.stroke();
+    }
+  }
+  const hp = c.hp ?? CFG.cannonLife;
+  if (hp < CFG.cannonLife) {                             // life bar
+    const w = 24 * U, y = 16 * U, q = clamp(hp / CFG.cannonLife, 0, 1);
+    x.fillStyle = 'rgba(20,20,30,.75)'; x.fillRect(-w / 2 - 1, y - 1, w + 2, 4.5 * U + 2);
+    x.fillStyle = q > 0.5 ? '#5be37d' : (q > 0.25 ? '#ffd23f' : '#ff5a4a'); x.fillRect(-w / 2, y, w * q, 4.5 * U);
+  }
+  x.restore();
+}
+function drawShot(s, time) {
+  const x = octx, U = world.U;
+  x.save(); x.translate(s.x, s.y); x.scale(OBJK(), OBJK());
+  if (s.kind === 0) {
+    const g = x.createRadialGradient(0, 0, 0, 0, 0, 8 * U);
+    g.addColorStop(0, '#fff6c0'); g.addColorStop(0.35, '#ffb020'); g.addColorStop(0.7, 'rgba(255,90,20,.7)'); g.addColorStop(1, 'rgba(255,60,0,0)');
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, 8 * U, 0, 7); x.fill();
+  } else if (s.kind === 3) {
+    x.rotate(s.t * 14 + (s.vx > 0 ? 1 : 2)); x.fillStyle = '#1c1f26'; x.strokeStyle = '#000'; x.lineWidth = 0.8;
+    x.beginPath(); x.moveTo(-3.6 * U, -1.2 * U); x.lineTo(-0.6 * U, -2.8 * U); x.lineTo(3.4 * U, -1.6 * U); x.lineTo(2.2 * U, 1.4 * U); x.lineTo(-0.8 * U, 2.6 * U); x.lineTo(-2.6 * U, 1.2 * U); x.closePath(); x.fill(); x.stroke();
+    x.strokeStyle = 'rgba(160,170,180,.6)'; x.beginPath(); x.moveTo(-0.6 * U, -2.4 * U); x.lineTo(2.8 * U, -1.4 * U); x.stroke();
+  } else if (s.kind === 1) {
+    const g = x.createRadialGradient(-2 * U, -2 * U, U, 0, 0, 6 * U); g.addColorStop(0, '#6a6f7a'); g.addColorStop(1, '#101216');
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, 6 * U, 0, 7); x.fill();
+    x.strokeStyle = '#ffd23f'; x.lineWidth = 1.6 * U; x.beginPath(); x.arc(0, 0, 4.3 * U, -0.6, 0.9); x.stroke();
+  } else {                                           // grenade (bigger)
+    x.rotate(s.t * 7); x.scale(1.5, 1.5);
+    x.fillStyle = '#4c9a2a'; x.strokeStyle = '#1e4a10'; x.lineWidth = 0.8;
+    x.beginPath(); x.ellipse(0, 0, 4 * U, 4.6 * U, 0, 0, 7); x.fill(); x.stroke();
+    x.beginPath(); x.moveTo(-4 * U, 0); x.lineTo(4 * U, 0); x.moveTo(0, -4.6 * U); x.lineTo(0, 4.6 * U); x.stroke();
+    x.fillStyle = '#8b95a5'; x.fillRect(-1.3 * U, -6.2 * U, 2.6 * U, 1.8 * U);
+    const blink = Math.sin(s.t * (6 + s.t * 10)) > 0;
+    x.beginPath(); x.arc(0, -6.6 * U, 1.1 * U, 0, 7); x.fillStyle = blink ? '#ff3b30' : '#7a1a14'; x.fill();
+  }
+  x.restore();
+}
 function drawBomb(b, time) {
   const c = octx, rb = world.bombR(), fire = b.kind === 1, sticky = b.kind === 2;
   c.save(); c.translate(b.x, b.y); c.rotate(world.upAng);
@@ -3550,24 +4543,27 @@ function drawBomb(b, time) {
   const tip = fusePoint(rb, t);
   if (b.lit) {
     const f = 0.7 + 0.3 * Math.sin(time * 40 + b.x);
-    const g = c.createRadialGradient(tip[0], tip[1], 0, tip[0], tip[1], rb * 0.9 * f);
+    const g = c.createRadialGradient(tip[0], tip[1], 0, tip[0], tip[1], rb * 1.3 * f);
     g.addColorStop(0, '#fff'); g.addColorStop(0.3, '#ffe066'); g.addColorStop(1, 'rgba(255,120,0,0)');
-    c.fillStyle = g; c.beginPath(); c.arc(tip[0], tip[1], rb * 0.9 * f, 0, 7); c.fill();
+    c.fillStyle = g; c.beginPath(); c.arc(tip[0], tip[1], rb * 1.3 * f, 0, 7); c.fill();
   } else {
-    c.beginPath(); c.arc(tip[0], tip[1], rb * 0.26, 0, 7); c.fillStyle = '#6b4a22'; c.fill();
+    c.beginPath(); c.arc(tip[0], tip[1], rb * 0.36, 0, 7); c.fillStyle = '#6b4a22'; c.fill();
     c.strokeStyle = '#d9b87a'; c.lineWidth = 1; c.stroke();
   }
   // cap + body
-  c.fillStyle = '#6d7480'; c.fillRect(-rb * 0.38, -rb * 1.2, rb * 0.76, rb * 0.35);
+  c.save(); c.rotate(Math.PI / 4); c.fillStyle = '#6d7480'; c.fillRect(-rb * 0.38, -rb * 1.2, rb * 0.76, rb * 0.35); c.restore();
   const g = c.createRadialGradient(-rb * 0.35, -rb * 0.35, rb * 0.1, 0, 0, rb);
   if (fire) { g.addColorStop(0, '#ff9a6a'); g.addColorStop(1, '#9e1a0c'); }
   else if (sticky) { g.addColorStop(0, '#b8f07a'); g.addColorStop(1, '#2e7a18'); }
   else { g.addColorStop(0, '#6a6f7a'); g.addColorStop(1, '#14161c'); }
   c.fillStyle = g; c.beginPath(); c.arc(0, 0, rb, 0, 7); c.fill();
-  if (sticky) {          // goo drips
-    c.fillStyle = '#7ad23a';
-    for (const [dx, l] of [[-0.5, 0.55], [0.1, 0.8], [0.55, 0.45]]) {
-      c.beginPath(); c.ellipse(rb * dx, rb * (0.75 + l * 0.4), rb * 0.16, rb * l * 0.45, 0, 0, 7); c.fill();
+  if (sticky) {          // sticky spikes all around, each with a blob of glue on the tip
+    for (let k = 0; k < 12; k++) {
+      const a = k / 12 * 6.283 + 0.13, ca = Math.cos(a), sa = Math.sin(a), l = k % 2 ? 1.42 : 1.55;
+      if (ca > 0.45 && sa < -0.45) continue;         // leave room for the fuse
+      c.beginPath(); c.moveTo(ca * rb * 0.85 - sa * rb * 0.14, sa * rb * 0.85 + ca * rb * 0.14); c.lineTo(ca * rb * l, sa * rb * l); c.lineTo(ca * rb * 0.85 + sa * rb * 0.14, sa * rb * 0.85 - ca * rb * 0.14);
+      c.closePath(); c.fillStyle = '#3e8a1e'; c.fill(); c.strokeStyle = '#1e4a10'; c.lineWidth = 1; c.stroke();
+      c.beginPath(); c.arc(ca * rb * l, sa * rb * l, rb * 0.15, 0, 7); c.fillStyle = '#b8f07a'; c.fill(); c.stroke();
     }
   }
   c.fillStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.ellipse(-rb * 0.38, -rb * 0.4, rb * 0.22, rb * 0.13, -0.6, 0, 7); c.fill();
@@ -3583,6 +4579,7 @@ function drawBomb(b, time) {
 let hintTimer = 0;
 let hintSink = null;        // while a remote player's input is applied, hints go to that player
 function hint(text, ms = 2600) {
+  return;                                       // no text messages on the picture
   if (hintSink) { netHintTo(hintSink, text); return; }
   const h = $('hint'); h.textContent = text; h.classList.add('show');
   clearTimeout(hintTimer); hintTimer = setTimeout(() => h.classList.remove('show'), ms);
@@ -3597,7 +4594,8 @@ const HINTS = {
   fish: 'Tap to add an animal!',
   fire: 'Touch to light a fire 🔥 – wood and oil burn',
   object: 'Drop boxes or draw things that fall – wood floats, stone sinks. Drag them around!',
-  bomb: 'Tap to place a bomb · tap a bomb to explode it',
+  bomb: 'Tap to place a bomb · tap a bomb to light its fuse · drag to throw',
+  cannon: 'Tap to place a cannon · drag from it to aim (further = stronger) · tap it to fire!',
   erase: 'Rub to remove liquid · tap things to remove them',
 };
 
@@ -3637,6 +4635,16 @@ const BOMB_CHIPS = [
   ['🟣', 'Paint', 3, 'Paint plasteline 🟣 (not through walls) · tap it to blow it up'],
   ['🪢', 'Rope', 4, 'Draw a rope fuse – fire runs along it'],
 ];
+const SI = (inner) => `<svg class="ic" viewBox="0 0 32 32">${inner}</svg>`;
+const CANNON_CHIPS = [
+  [SI('<circle cx="16" cy="17" r="11.5" fill="#2a2d36" stroke="#0d0e12" stroke-width="2"/><path d="M8 13a9 9 0 0 1 9-6" fill="none" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><ellipse cx="12" cy="12" rx="3" ry="2" fill="#fff" opacity=".4"/>'), 'Fat bomb', 1, 'Fat bomb – explodes on impact, even stone breaks 💣'],
+  [SI('<circle cx="16" cy="16" r="11" fill="url(#gF)" stroke="#a83a0a" stroke-width="2"/><path d="M16 9c3 3 5 5 5 8a5 5 0 0 1-10 0c0-2 2-4 5-8z" fill="#fff3a0"/>'), 'Fireball', 0, 'Fireball – sets things on fire where it lands 🔥'],
+  [SI('<ellipse cx="16" cy="18" rx="9" ry="10.5" fill="#4c9a2a" stroke="#1e4a10" stroke-width="2"/><path d="M7 18h18M16 8v21M9 12h14M9 24h14" stroke="#1e4a10" stroke-width="1.4"/><rect x="13" y="3" width="6" height="5" rx="1" fill="#8b95a5" stroke="#28304a" stroke-width="1.4"/><path d="M19 5q5-1 6 3" fill="none" stroke="#8b95a5" stroke-width="2"/>'), 'Grenade', 2, 'Grenade – bounces around and explodes after 3 seconds'],
+];
+const CHAIN_CHIPS = [
+  [SI('<g fill="none" stroke-width="3.2"><ellipse cx="10" cy="11" rx="6" ry="3.6" transform="rotate(-40 10 11)" stroke="#6e4420"/><ellipse cx="17" cy="17" rx="6" ry="2" transform="rotate(-40 17 17)" stroke="#8a5a2b"/><ellipse cx="23" cy="23" rx="6" ry="3.6" transform="rotate(-40 23 23)" stroke="#6e4420"/></g>'), 'Wood', 0],
+  [SI('<g fill="none" stroke-width="3.2"><ellipse cx="10" cy="11" rx="6" ry="3.6" transform="rotate(-40 10 11)" stroke="#4d545e"/><ellipse cx="17" cy="17" rx="6" ry="2" transform="rotate(-40 17 17)" stroke="#8b95a5"/><ellipse cx="23" cy="23" rx="6" ry="3.6" transform="rotate(-40 23 23)" stroke="#4d545e"/></g>'), 'Steel', 1],
+];
 const OBJ_CHIPS = [
   ['📦', 'Crate', 0, 'Tap to drop a wooden crate – it floats'],
   ['🧱', 'Block', 1, 'Tap to drop a stone block – it sinks'],
@@ -3650,7 +4658,9 @@ function buildFlyout() {
   else if (mode === 'pipe') flyout.appendChild(liquidChips());
   else if (mode === 'wall') {
     flyout.appendChild(group(WALL_MODES.map(([m, ic, l]) => chip(`${ic}<small>${l}</small>`, tool.wallMode === m, () => tool.wallMode = m))));
-    flyout.appendChild(sizeChips('wall'));
+    const sz = sizeChips('wall');
+    sz.appendChild(chip(`<span style="font-size:20px;line-height:1">➰</span><small>Lasso</small>`, tool.wall === 3, () => { tool.wall = 3; hint('Draw a loop – the inside gets the chosen wall type ➰', 1800); }));
+    flyout.appendChild(sz);
   }
   else if (mode === 'wind') flyout.appendChild(sizeChips('wind'));
   else if (mode === 'mill') flyout.appendChild(sizeChips('mill'));
@@ -3663,6 +4673,8 @@ function buildFlyout() {
     flyout.appendChild(group(OBJ_CHIPS.map(([ic, l, k, hn]) => chip(`${ic}<small>${l}</small>`, tool.obj === k, () => { tool.obj = k; hint(hn); }))));
     flyout.appendChild(sizeChips('objSize'));
   }
+  else if (mode === 'chain') flyout.appendChild(group(CHAIN_CHIPS.map(([ic, l, k]) => chip(`${ic}<small>${l}</small>`, tool.chain === k, () => { tool.chain = k; }))));
+  else if (mode === 'cannon') flyout.appendChild(group(CANNON_CHIPS.map(([ic, l, k, hn]) => chip(`${ic}<small>${l}</small>`, tool.cannon === k, () => { tool.cannon = k; hint(hn); }))));
   else if (mode === 'fish') flyout.appendChild(group(CREATURE_CHIPS.map(cc => chip(`${cc.icon}<small>${cc.label}</small>`, tool.fish === cc.kind, () => tool.fish = cc.kind))));
 }
 
@@ -3672,7 +4684,7 @@ function buildFlyout() {
 const pointers = new Map();
 function toDomain(e) {
   const r = glc.getBoundingClientRect();
-  return { x: (e.clientX - r.left) / r.width * world.MW, y: (e.clientY - r.top) / r.height * world.MH, t: performance.now() };
+  return { x: clamp((e.clientX - r.left) / r.width, 0, 1) * world.MW, y: clamp((e.clientY - r.top) / r.height, 0, 1) * world.MH, t: performance.now() };   // off the picture: stays on its edge
 }
 function findNear(list, p, R) {
   let best = -1, bd = R * R;
@@ -3693,11 +4705,13 @@ function eraseThingAt(p) {
   let i = findNear(world.bombs, p, world.bombR() * 2); if (i >= 0) { world.bombs.splice(i, 1); return true; }
   i = findNear(world.pipes, p, 22 * U); if (i >= 0) { world.pipes.splice(i, 1); return true; }
   i = findNear(world.sewers, p, 22 * U); if (i >= 0) { world.sewers.splice(i, 1); return true; }
-  i = world.mills.findIndex(m => Math.hypot(m.x - p.x, m.y - p.y) < CFG.millSize * U * m.mul); if (i >= 0) { world.mills.splice(i, 1); return true; }
+  i = world.mills.findIndex(m => Math.hypot(m.x - p.x, m.y - p.y) < CFG.millSize * U * m.mul * OBJK()); if (i >= 0) { world.mills.splice(i, 1); return true; }
   i = world.creatures.findIndex(c => Math.hypot(c.x - p.x, c.y - p.y) < world.creatureSize(c) * 0.6); if (i >= 0) { world.creatures.splice(i, 1); return true; }
   i = world.winds.findIndex(w => distToPath(w.pts, p) < 14 * U); if (i >= 0) { world.winds.splice(i, 1); world.rebuildWind(); return true; }
   const bb = world.bodyAt(p.x, p.y); if (bb) { world.bodies.splice(world.bodies.indexOf(bb), 1); return true; }
   i = world.ropes.findIndex(r => distToPath(r.pts, p) < 10 * U); if (i >= 0) { world.ropes.splice(i, 1); return true; }
+  i = world.chains.findIndex(ch => distToPath(ch.p, p) < 9 * U); if (i >= 0) { world.chains.splice(i, 1); return true; }
+  i = world.cannons.findIndex(c => Math.hypot(c.x - p.x, c.y - p.y) < 18 * U * OBJK()); if (i >= 0) { world.cannons.splice(i, 1); return true; }
   return false;
 }
 function wallSegment(st, a, b) {
@@ -3722,6 +4736,45 @@ function texBox(W, H) {
     else { if (edge) k = 0.68; else if (i < e * 2 || j < e * 2) k = 1.12; }
     out[0] *= k; out[1] *= k; out[2] *= k;
   };
+}
+function scaleBody(b, k) {                     // resample an object's pixels to a new size, keeping its place
+  const W = Math.max(2, Math.round(b.W * k)), H = Math.max(2, Math.round(b.H * k)), m = new Uint8Array(W * H);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) m[j * W + i] = b.m[Math.min(b.H - 1, (j * b.H / H) | 0) * b.W + Math.min(b.W - 1, (i * b.W / W) | 0)];
+  const TW = Math.max(1, Math.round(b.TW * k)), TH = Math.max(1, Math.round(b.TH * k)), tex = new Uint8ClampedArray(TW * TH * 4);
+  for (let j = 0; j < TH; j++) for (let i = 0; i < TW; i++) {
+    const o = (Math.min(b.TH - 1, (j * b.TH / TH) | 0) * b.TW + Math.min(b.TW - 1, (i * b.TW / TW) | 0)) * 4, q = (j * TW + i) * 4;
+    tex[q] = b.tex[o]; tex[q + 1] = b.tex[o + 1]; tex[q + 2] = b.tex[o + 2]; tex[q + 3] = b.tex[o + 3];
+  }
+  const BW0 = Math.ceil(b.W / 2), BW = Math.ceil(W / 2), BH = Math.ceil(H / 2), bb = new Float32Array(BW * BH);
+  for (let j = 0; j < BH; j++) for (let i = 0; i < BW; i++) bb[j * BW + i] = b.blockBurn[Math.min(Math.ceil(b.H / 2) - 1, (j / k) | 0) * BW0 + Math.min(BW0 - 1, (i / k) | 0)];
+  const old = { W: b.W, H: b.H, m: b.m, tex: b.tex, TW: b.TW, TH: b.TH, blockBurn: b.blockBurn, cx: b.cx, cy: b.cy };
+  Object.assign(b, { W, H, m, tex, TW, TH, blockBurn: bb, texDirty: true });
+  b.cx = undefined;
+  if (!buildBodyProps(b)) { Object.assign(b, old); buildBodyProps(b); return false; }
+  b.n0 = Math.round((b.n0 || b.n) * k * k);
+  return true;
+}
+function cannonHolds() {                     // hold a cannon still for a moment -> aim mode; hold a bomb still -> its fuse lights
+  const now = performance.now();
+  for (const st of pointers.values()) {
+    if (!st.throwBomb || !st.target || st.target.lit || st.target.dead) continue;
+    if (now - (st.stillSince || st.t0b || now) > 1200) { st.target.lit = true; st.target.left = CFG.fuseTime; }
+  }
+  for (const [pid, st] of pointers) {
+    if (!st.cannon || st.moved || st.drive || st.aimMode || now - st.t0 < 400) continue;
+    st.aimMode = true; st.cannon.aiming = true;      // held still: now dragging aims
+  }
+}
+function hookChainEnd(p, body, bomb) {          // dropped onto a free chain end: hook it on
+  const U = world.U, K = OBJK(); let best = null, bd = 16 * U * K;
+  for (const ch of world.chains) for (let e = 0; e < 2; e++) {
+    const li = e ? ch.n - 1 : 0; if (ch.hook[e] || !ch.alive[li] || (ch.drag && ch.drag[e])) continue;
+    const d = Math.hypot(ch.p[2 * li] - p.x, ch.p[2 * li + 1] - p.y); if (d < bd) { bd = d; best = { ch, e, li }; }
+  }
+  if (!best) return false;
+  if (bomb) best.ch.hook[best.e] = { t: 'bomb', o: bomb };
+  else { const hx = best.ch.p[2 * best.li], hy = best.ch.p[2 * best.li + 1], dx = hx - body.x, dy = hy - body.y; best.ch.hook[best.e] = { t: 'body', o: body, lx: dx * body.c + dy * body.s, ly: -dx * body.s + dy * body.c }; }
+  return true;
 }
 function dropBox(p, stone) {
   const S = Math.round([16, 24, 34][tool.objSize] * world.U * CFG.objScale / 50), x0 = Math.round(p.x - S / 2), y0 = Math.round(p.y - S / 2);
@@ -3777,7 +4830,14 @@ function paintPlastTo(st, p) {
   st.cursor = nc;
   if (box) renderBG(box[0], box[1], box[2], box[3]);
 }
-const drawingObjs = new Set(), drawingRopes = new Set(), drawingLasso = new Set();
+const drawingObjs = new Set(), drawingRopes = new Set(), drawingLasso = new Set(), drawingChains = new Set(), drawingBoxes = new Set();
+function finishWallFill(pts, fm) {            // freehand loop -> the inside gets the chosen wall type
+  if (pts.length < 10) { hint('Draw a loop – the inside gets the chosen wall type ➰'); return; }
+  const stroke = { mode: 'fillPoly', fm, pts: pts.map((v, i) => v / (i & 1 ? world.MH : world.MW)) };
+  userStrokes.push(stroke);
+  const box = applyStrokeAll(world, world.MW, world.MH, stroke, world.frame);
+  world.refreshWalls(box); renderBG(box[0] - 1, box[1] - 1, box[2] + 1, box[3] + 1);
+}
 function finishLasso(pts) {
   const MW = world.MW, MH = world.MH, fr = world.frame;
   if (pts.length < 16) { hint('Draw a loop around the walls you want to cut out ✂️'); return; }
@@ -3809,8 +4869,16 @@ glc.addEventListener('pointerdown', e => {
 });
 // one input path for everybody: local fingers and remote players (multiplayer) both end up here
 function ptrDown(pid, p) {
-  const U = world.U;
-  const st = { start: p, last: p, vx: 0, vy: 0, moved: false };
+  const U = world.U, pn = hintSink ? hintSink.n : 0, zone = zoneFor(pn);
+  let cn = null, cd = 26 * U * OBJK();          // the cannon under the finger (any tool): only cannon play there
+  for (const c of world.cannons) { const d = Math.hypot(c.x - p.x, c.y - p.y); if (d < cd) { cd = d; cn = c; } }
+  if (zone && !inZone(zone, p) && !(cn && cn.owner === pn)) { hint('That’s not your part – play in your own part ✂️', 1400); return; }
+  const st = { start: p, last: p, vx: 0, vy: 0, moved: false, zone };
+  if (cn && mode !== 'erase') {
+    if (zone && cn.owner !== pn) { hint('That’s a friend’s cannon 🙂'); return; }
+    st.cannon = cn; st.cannonKind = mode === 'cannon' ? tool.cannon : cn.kind; st.t0 = performance.now();
+    pointers.set(pid, st); return;
+  }
   switch (mode) {
     case 'pour':
       st.brush = { x: p.x, y: p.y, vx: 0, vy: 0, erase: false, R: CFG.brushRadius * U * SIZE_MUL[tool.pour], type: liquid };
@@ -3829,7 +4897,7 @@ function ptrDown(pid, p) {
         const dx = p.x - b.x, dy = p.y - b.y;
         st.grab = { b, lx: dx * b.c + dy * b.s, ly: -dx * b.s + dy * b.c, tx: p.x, ty: p.y };
         b.grab = true; world.grabs.push(st.grab);
-      } else if (tool.obj <= 1) dropBox(p, tool.obj === 1);
+      } else if (tool.obj <= 1) { st.newBox = { x: p.x, y: p.y, stone: tool.obj === 1 }; drawingBoxes.add(st.newBox); }   // made when the finger lifts
       else if (tool.obj === 4) { st.lasso = [p.x, p.y]; drawingLasso.add(st.lasso); }
       else {
         st.obj = { kind: tool.obj, rad: [CFG.wallS, CFG.wallM, CFG.wallL][tool.objSize] * U * (tool.obj === 4 ? 1.6 : 1.4) * CFG.objScale / 50, pts: [p.x, p.y] };
@@ -3852,7 +4920,7 @@ function ptrDown(pid, p) {
       break;
     }
     case 'mill': {
-      const i = world.mills.findIndex(m => Math.hypot(m.x - p.x, m.y - p.y) < CFG.millSize * U * m.mul);
+      const i = world.mills.findIndex(m => Math.hypot(m.x - p.x, m.y - p.y) < CFG.millSize * U * m.mul * OBJK());
       if (i >= 0) st.target = world.mills[i];
       else if (world.mills.length < 10) { st.target = { x: p.x, y: p.y, th: 0, om: 0, mul: SIZE_MUL[tool.mill] }; world.mills.push(st.target); }
       else hint('That’s a lot of mills! Erase one first.');
@@ -3867,8 +4935,8 @@ function ptrDown(pid, p) {
       }
       if (tool.bomb === 4) { st.rope = [p.x, p.y]; drawingRopes.add(st.rope); break; }
       const i = findNear(world.bombs, p, world.bombR() * 2);
-      if (i >= 0) { st.target = world.bombs[i]; st.bombTap = true; st.target.held = true; }
-      else if (world.bombs.length < 30) { st.target = { x: p.x, y: p.y, vx: 0, vy: 0, kind: tool.bomb, lit: false, left: CFG.fuseTime, held: true }; world.bombs.push(st.target); }
+      if (i >= 0) { st.target = world.bombs[i]; st.bombTap = true; st.target.held = true; st.throwBomb = true; st.t0b = performance.now(); }
+      else if (world.bombs.length < 30) { st.target = { x: p.x, y: p.y, vx: 0, vy: 0, kind: tool.bomb, lit: false, left: CFG.fuseTime, held: true }; world.bombs.push(st.target); st.throwBomb = true; st.t0b = performance.now(); }
       else hint('That’s a lot of bombs! 💥');
       break;
     }
@@ -3876,6 +4944,7 @@ function ptrDown(pid, p) {
       st.torch = { x: p.x, y: p.y, R: CFG.fireBrush * U * SIZE_MUL[tool.fire] };
       world.torches.push(st.torch); break;
     case 'wall': {
+      if (tool.wall === 3) { st.lasso = [p.x, p.y]; st.fillMode = tool.wallMode; drawingLasso.add(st.lasso); break; }
       const rad = [CFG.wallS, CFG.wallM, CFG.wallL][tool.wall] * U * (tool.wallMode.startsWith('to') ? 1.6 : 1);
       st.stroke = { mode: tool.wallMode, rN: rad / world.MW, pts: [p.x / world.MW, p.y / world.MH] };
       userStrokes.push(st.stroke);
@@ -3885,6 +4954,36 @@ function ptrDown(pid, p) {
     case 'wind':
       st.wind = { pts: [p.x, p.y], mul: SIZE_MUL[tool.wind] };
       drawingWinds.add(st.wind); break;
+    case 'cannon': {
+      const K = OBJK();
+      if (world.cannons.some(c => Math.hypot(c.x - p.x, c.y - p.y) < 48 * U * K)) hint('Too close to another cannon');
+      else if (world.cannons.filter(c => c.owner === (hintSink ? hintSink.n : 0)).length >= CFG.cannonMax) hint('You have 3 cannons already – erase one first');
+      else if (world.sdfAt(p.x, p.y) < 6 * U) hint('Put the cannon on free paper');
+      else {
+        world.cannons.push({ x: p.x, y: p.y, vx: 0, vy: 0, a: Math.atan2(world.upY, world.upX) + (((p.x - world.MW / 2) * -world.upY + (p.y - world.MH / 2) * world.upX) > 0 ? -1 : 1) * Math.PI / 4, pow: 0.6, kind: tool.cannon, cool: 0, rcool: 0, recoil: 0, owner: hintSink ? hintSink.n : 0 });
+        hint('Tap the cannon to fire 💥 · drag it to drive · hold it, then drag to aim', 3200);
+      }
+      break;
+    }
+    case 'hand': {                                // pick up objects, bombs & chain ends, move them, hook them on chains
+      { let best = null, bd = 14 * U * OBJK();
+        for (const ch of world.chains) for (let e = 0; e < 2; e++) { const li = e ? ch.n - 1 : 0; if (!ch.alive[li]) continue; const d = Math.hypot(ch.p[2 * li] - p.x, ch.p[2 * li + 1] - p.y); if (d < bd) { bd = d; best = { ch, e }; } }
+        if (best) { st.chainEnd = best; best.ch.hook[best.e] = null; best.ch.drag = best.ch.drag || [null, null]; best.ch.drag[best.e] = { x: p.x, y: p.y }; break; } }
+      const bi = findNear(world.bombs, p, world.bombR() * 2.2);
+      if (bi >= 0) { st.target = world.bombs[bi]; st.target.held = true; st.throwBomb = true; st.t0b = performance.now(); st.moved = false; break; }
+      const b = world.bodyAt(p.x, p.y);
+      if (b) { const dx = p.x - b.x, dy = p.y - b.y; st.grab = { b, lx: dx * b.c + dy * b.s, ly: -dx * b.s + dy * b.c, tx: p.x, ty: p.y }; b.grab = true; world.grabs.push(st.grab); }
+      break;
+    }
+    case 'chain': {
+      let best = null, bd = 14 * U * OBJK();          // grab the end of a chain to hook it somewhere else
+      for (const ch of world.chains) for (let e = 0; e < 2; e++) {
+        const li = e ? ch.n - 1 : 0; if (!ch.alive[li]) continue;
+        const d = Math.hypot(ch.p[2 * li] - p.x, ch.p[2 * li + 1] - p.y); if (d < bd) { bd = d; best = { ch, e }; }
+      }
+      if (best) { st.chainEnd = best; best.ch.hook[best.e] = null; best.ch.drag = best.ch.drag || [null, null]; best.ch.drag[best.e] = { x: p.x, y: p.y }; break; }
+      st.chain = [p.x, p.y]; drawingChains.add(st.chain); break;
+    }
     case 'fish':
       if (world.creatures.length >= CFG.maxCreatures) hint('The pond is full! (see Setup)');
       else if (!world.spawnCreature(p.x, p.y, tool.fish)) hint('Not inside a wall 🙂');
@@ -3898,9 +4997,11 @@ glc.addEventListener('pointermove', e => {
 });
 function ptrMove(pid, p) {
   const st = pointers.get(pid); if (!st || !world) return;
+  if (st.zone && !(st.cannon && st.aimMode)) p = clampZone(st.zone, p);   // strokes & dragged things stop at the border (aiming may point anywhere)
+  if (st.throwBomb && Math.hypot(p.x - st.last.x, p.y - st.last.y) > 1.5 * world.U) st.stillSince = performance.now();
   const dt = Math.max(1, p.t - st.last.t) / 1000;
   st.vx = st.vx * 0.6 + 0.4 * (p.x - st.last.x) / dt;
-  st.vy = st.vy * 0.6 + 0.4 * (p.y - st.last.y) / dt;
+  st.vy = st.vy * 0.6 + 0.4 * (p.y - st.last.y) / dt; st.lastMoveT = performance.now();
   st.last = p;
   const lim = 500 * world.U;
   if (st.brush) {
@@ -3909,6 +5010,7 @@ function ptrMove(pid, p) {
     if (st.brush.erase && !st.liquidOnly) { eraseThingAt(p); const eb = world.erasePlast(p.x, p.y, st.brush.R); if (eb) renderBG(eb[0], eb[1], eb[2], eb[3]); }
   } else if (st.torch) { st.torch.x = p.x; st.torch.y = p.y; }
   else if (st.grab) { st.grab.tx = p.x; st.grab.ty = p.y; }
+  else if (st.newBox) { st.newBox.x = p.x; st.newBox.y = p.y; }
   else if (st.lasso) { const l = st.lasso, n = l.length; if (Math.hypot(p.x - l[n - 2], p.y - l[n - 1]) > 2.5) l.push(p.x, p.y); }
   else if (st.obj) {
     const o = st.obj.pts, n = o.length;
@@ -3916,9 +5018,21 @@ function ptrMove(pid, p) {
   } else if (st.cursor !== undefined || st.plastTap) {
     if (Math.hypot(p.x - st.start.x, p.y - st.start.y) > 8) { st.moved = true; st.plastTap = false; }
     if (!st.plastTap) paintPlastTo(st, p);
+  } else if (st.chainEnd) {
+    st.chainEnd.ch.drag[st.chainEnd.e] = { x: p.x, y: p.y };
+  } else if (st.chain) {
+    const r = st.chain, n = r.length;
+    if (Math.hypot(p.x - r[n - 2], p.y - r[n - 1]) > 3) r.push(p.x, p.y);
   } else if (st.rope) {
     const r = st.rope, n = r.length;
     if (Math.hypot(p.x - r[n - 2], p.y - r[n - 1]) > 3) r.push(p.x, p.y);
+  }
+  else if (st.cannon) {
+    const c = st.cannon, dx = p.x - c.x, dy = p.y - c.y, d = Math.hypot(dx, dy);
+    if (Math.hypot(p.x - st.start.x, p.y - st.start.y) > 10 * world.U) st.moved = true;
+    if (st.aimMode) {                       // hold, then drag: aim (direction to the finger, distance = strength)
+      if (d > 6 * world.U) { c.a = Math.atan2(dy, dx); c.pow = clamp(d / (140 * world.U), 0.15, 1); }
+    } else if (st.moved) { st.drive = true; c.driving = true; c.driveTo = { x: p.x, y: p.y }; }   // drag: it rolls after the finger
   }
   else if (st.target) {
     const dx = p.x - st.start.x, dy = p.y - st.start.y;
@@ -3946,12 +5060,23 @@ function ptrEnd(pid) {
     if (st.brush) { const i = world.brushes.indexOf(st.brush); if (i >= 0) world.brushes.splice(i, 1); }
     if (st.torch) { const i = world.torches.indexOf(st.torch); if (i >= 0) world.torches.splice(i, 1); }
     if (st.target && st.target.held) st.target.held = false;
-    if (st.grab) { st.grab.b.grab = false; const i = world.grabs.indexOf(st.grab); if (i >= 0) world.grabs.splice(i, 1); }
+    if (st.throwBomb && st.moved && performance.now() - (st.lastMoveT || 0) < 120) {   // flick: the bomb flies the way the finger went
+      const v = Math.hypot(st.vx, st.vy), mx = 900 * world.U, k = v > mx ? mx / v : 1;
+      st.target.vx = st.vx * k * 0.7; st.target.vy = st.vy * k * 0.7; st.target.stuck = false;
+    }
+    if (st.grab) { st.grab.b.grab = false; const i = world.grabs.indexOf(st.grab); if (i >= 0) world.grabs.splice(i, 1); hookChainEnd(st.last, st.grab.b, null); }
+    if (st.newBox) { drawingBoxes.delete(st.newBox); const n0 = world.bodies.length; dropBox(st.newBox, st.newBox.stone); if (world.bodies.length > n0) hookChainEnd(st.newBox, world.bodies[world.bodies.length - 1], null); }
+    if (st.throwBomb && st.target && !st.target.dead) hookChainEnd(st.target, null, st.target);
     if (st.obj) { drawingObjs.delete(st.obj); finishObject(st.obj); }
-    if (st.lasso) { drawingLasso.delete(st.lasso); finishLasso(st.lasso); }
+    if (st.lasso) { drawingLasso.delete(st.lasso); if (st.fillMode) finishWallFill(st.lasso, st.fillMode); else finishLasso(st.lasso); }
     if (st.plastTap && !st.moved) { const c = world.nearPlast(st.start.x, st.start.y, 3); if (c >= 0) world.triggerPlast(c); }
+    if (st.chain) { drawingChains.delete(st.chain); world.addChain(st.chain, tool.chain); }
+    if (st.chainEnd) { const { ch, e } = st.chainEnd, d = ch.drag[e]; ch.drag[e] = null; if (d) ch.hook[e] = world.chainHook(d.x, d.y, ch); }
     if (st.rope) { drawingRopes.delete(st.rope); if (!world.addRope(st.rope)) hint('Draw a longer rope 🪢'); }
-    if (st.bombTap && !st.moved) world.explode(st.target);
+    if (st.cannon) {
+      const c = st.cannon; c.aiming = false; c.driveTo = null; c.driving = false;
+      if (!st.moved && !st.drive && !st.aimMode) { c.kind = st.cannonKind; if (!world.fireCannon(c) && c.moving > 0) hint('It can’t shoot while it rolls'); }
+    }
     if (st.wind) {
       drawingWinds.delete(st.wind);
       const p = st.wind.pts; let len = 0;
@@ -3978,7 +5103,7 @@ const ICONS = {
   bEdit: `<rect x="6" y="6" width="20" height="20" rx="2" fill="#fff" ${IC_O}/><path d="M7 24l6-8 4 5 3-3 5 6z" fill="#5be37d"/><circle cx="20" cy="12" r="2.5" fill="#ffd23f"/><path d="M2 8h6V2M30 24h-6v6" fill="none" stroke="#ff7a1a" stroke-width="3" stroke-linecap="round"/>`,
   bClear: `<path d="M20 3l-5 14" stroke="#9a6a3a" stroke-width="3.5" stroke-linecap="round"/><path d="M8 17h14l3 12H5z" fill="#ffd23f" ${IC_O}/><path d="M10 21l-1 7M15 21v7M20 21l1 7" stroke="#c99a1a" stroke-width="1.6"/>`,
   bNet: `<circle cx="11" cy="11" r="5" fill="#5aa9ff" ${IC_O}/><path d="M2 28c0-6 4-9 9-9s9 3 9 9z" fill="#5aa9ff" ${IC_O}/><circle cx="22" cy="12" r="4.5" fill="#5be37d" ${IC_O}/><path d="M17 28c0-5 2-8 6-8s7 3 7 8z" fill="#5be37d" ${IC_O}/>`,
-  pour: `<path d="M16 3C11 11 7 15 7 20a9 9 0 0 0 18 0c0-5-4-9-9-17z" fill="url(#gW)" ${IC_O}/><path d="M12 20a4 4 0 0 0 4 4" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>`,
+  pour: `<path d="M16 3C11 11 7 15 7 20a9 9 0 0 0 18 0c0-5-4-9-9-17z" fill="#9aa1ac" ${IC_O}/><path d="M12 20a4 4 0 0 0 4 4" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>`,
   pipe: `<path d="M3 9h14a6 6 0 0 1 6 6v3h-6v-3H3z" fill="url(#gC)" ${IC_O}/><rect x="15" y="17" width="10" height="4" rx="1.5" fill="#ffd9a8" ${IC_O}/><path d="M20 24c-2 3-2 5 0 5s2-2 0-5z" fill="#3fa9ff" stroke="#1f6fbf" stroke-width="1.2"/><rect x="8" y="4" width="4" height="5" rx="1" fill="#ff5a5a" ${IC_O}/>`,
   sewer: `<circle cx="16" cy="16" r="12" fill="#8b95a5" ${IC_O}/><circle cx="16" cy="16" r="8.5" fill="#1f2430"/><path d="M11 9.5v13M16 7.5v17M21 9.5v13" stroke="#8b95a5" stroke-width="2"/>`,
   wall: `<rect x="3" y="6" width="26" height="20" rx="2" fill="#e8734a" ${IC_O}/><path d="M3 12.7h26M3 19.3h26M12 6v6.7M22 6v6.7M8 12.7v6.6M17 12.7v6.6M26 12.7v6.6M12 19.3V26M22 19.3V26" stroke="#28304a" stroke-width="1.6"/>`,
@@ -3986,6 +5111,9 @@ const ICONS = {
   fish: `<path d="M8 16L2 9v14z" fill="#ff7a1a" ${IC_O}/><ellipse cx="17" cy="16" rx="11" ry="8" fill="#ff9a2e" ${IC_O}/><path d="M14 9q4-6 8 0" fill="#ff7a1a" ${IC_O}/><circle cx="22" cy="14" r="2.6" fill="#fff" stroke="#28304a" stroke-width="1.2"/><circle cx="22.6" cy="14" r="1.3" fill="#28304a"/>`,
   fire: `<path d="M16 2c1 6 9 9 9 17a9 9 0 0 1-18 0c0-5 3-7 4-10 1 3 2 4 3 4 0-4 1-8 2-11z" fill="url(#gF)" ${IC_O}/><path d="M16 29a4.5 4.5 0 0 1-4.5-4.5c0-3 3-4 3.5-7 2 2 5.5 4 5.5 7A4.5 4.5 0 0 1 16 29z" fill="#fff3a0"/>`,
   bomb: `<circle cx="14" cy="19" r="10" fill="#3a3f4c" ${IC_O}/><rect x="11" y="6.5" width="6" height="4" rx="1" fill="#8b95a5" ${IC_O}/><path d="M17 8q5-5 9-2" fill="none" stroke="#b8925a" stroke-width="2.2" stroke-linecap="round"/><path d="M27 2l1 3 3 1-3 1-1 3-1-3-3-1 3-1z" fill="#ffd23f"/><ellipse cx="10.5" cy="15.5" rx="3" ry="2" fill="#fff" opacity=".45"/>`,
+  hand: `<path d="M9 17V8.5a2 2 0 0 1 4 0V15M13 14V6.5a2 2 0 0 1 4 0V14M17 14V7.5a2 2 0 0 1 4 0V16M21 15.5v-4a2 2 0 0 1 4 0V19c0 6-4 10-9 10-4 0-6-2-8-5l-3.5-6a2 2 0 0 1 3.4-2L9 18" fill="#ffd9b0" stroke="#28304a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`,
+  chain: `<g fill="none" stroke-linecap="round"><ellipse cx="8.5" cy="9.5" rx="6.5" ry="4" transform="rotate(-42 8.5 9.5)" stroke="#28304a" stroke-width="5"/><ellipse cx="8.5" cy="9.5" rx="6.5" ry="4" transform="rotate(-42 8.5 9.5)" stroke="#9aa3ad" stroke-width="2.6"/><ellipse cx="16" cy="16" rx="6.5" ry="1.6" transform="rotate(-42 16 16)" stroke="#28304a" stroke-width="5"/><ellipse cx="16" cy="16" rx="6.5" ry="1.6" transform="rotate(-42 16 16)" stroke="#c4cbd4" stroke-width="2.6"/><ellipse cx="23.5" cy="22.5" rx="6.5" ry="4" transform="rotate(-42 23.5 22.5)" stroke="#28304a" stroke-width="5"/><ellipse cx="23.5" cy="22.5" rx="6.5" ry="4" transform="rotate(-42 23.5 22.5)" stroke="#9aa3ad" stroke-width="2.6"/></g>`,
+  cannon: `<ellipse cx="17" cy="27" rx="12" ry="2.5" fill="#28304a" opacity=".25"/><g transform="rotate(-28 14 17)"><path d="M6 11l18 1.5v9L6 23a6 6 0 0 1 0-12z" fill="#3a3f4c" stroke="#28304a" stroke-width="2" stroke-linejoin="round"/><rect x="23" y="10.5" width="5" height="13" rx="1" fill="#6a707e" stroke="#28304a" stroke-width="1.8"/><rect x="12" y="11.5" width="2.5" height="11" fill="#c99a3a"/></g><path d="M5 27l4-7h12l4 7z" fill="#9a6a3a" stroke="#28304a" stroke-width="1.8" stroke-linejoin="round"/><circle cx="10" cy="27" r="3.6" fill="#6b4520" stroke="#28304a" stroke-width="1.6"/><circle cx="21" cy="27" r="3.6" fill="#6b4520" stroke="#28304a" stroke-width="1.6"/>`,
   object: `<rect x="4" y="6" width="24" height="22" rx="2" fill="#c98a4a" ${IC_O}/><path d="M4 12h24M4 22h24M8 22L24 12" stroke="#28304a" stroke-width="1.8"/><path d="M8 7v4M24 23v4" stroke="#8a5a2a" stroke-width="1.6"/>`,
   erase: `<path d="M5 20L17 8l10 10-8 8H11z" fill="#ff8fb8" ${IC_O}/><path d="M5 20l6 6h8l-4-4-4-6z" fill="#fff" ${IC_O}/><path d="M14 29h14" stroke="#28304a" stroke-width="2" stroke-linecap="round"/>`,
   bTilt: `<rect x="9" y="5" width="14" height="22" rx="3" fill="#cfd6ea" transform="rotate(-18 16 16)" ${IC_O}/><circle cx="18.5" cy="23" r="1.3" fill="#28304a" transform="rotate(-18 16 16)"/><path d="M3 12a13 13 0 0 1 4-6M29 20a13 13 0 0 1-4 6" fill="none" stroke="#5be37d" stroke-width="2.6" stroke-linecap="round"/>`,
@@ -4286,21 +5414,26 @@ $('edReset').addEventListener('click', () => {
   photo = Object.assign(defaultPhoto(photo.src), keep);
   edSyncControls(); edRebuild();
 });
-let clearArm = 0;
-$('edClearAll').addEventListener('click', () => {      // two taps: removes water, objects, tools, animals and drawn walls
-  const b = $('edClearAll');
-  if (performance.now() - clearArm > 3000) {
-    clearArm = performance.now(); b.textContent = 'Tap again to clear everything';
-    setTimeout(() => { if (performance.now() - clearArm >= 2900) b.textContent = '🗑️ Clear all'; }, 3000);
-    return;
-  }
-  clearArm = 0; b.textContent = '🗑️ Clear all';
-  $('editor').classList.add('hidden');
-  if (ED.fromNew && ED.prevPhoto) photo = ED.prevPhoto; else Object.assign(photo, ED.snapshot);
+function askConfirm(text, yesLabel, onYes) {
+  $('askText').textContent = text; $('askYes').textContent = yesLabel;
+  $('askScr').classList.remove('hidden');
+  $('askYes').onclick = () => { $('askScr').classList.add('hidden'); onYes(); };
+  $('askNo').onclick = () => $('askScr').classList.add('hidden');
+}
+function clearEverything() {                 // a clean sheet of paper: no drawing, no water, no things
   for (const id of [...pointers.keys()]) ptrEnd(id);
+  const blank = makeBlankPaper(screenAspect());
+  photo = defaultPhoto(blank); photo.edited = makeEdited(photo);
+  curCap = prepareCapture(photo.edited); curMask = new Uint8Array(curCap.MW * curCap.MH);
   userStrokes = [];
   rebuildWorld(curCap, curMask, null);
-  hint('Everything cleared – a fresh start ✨', 1800);
+  hint('A clean sheet of paper ✨ Draw walls or take a 📷 photo', 2600);
+}
+$('edClearAll').addEventListener('click', () => {
+  askConfirm('Clear the whole picture? The drawing, water, objects, bombs, pipes and animals will all be removed.', '🗑️ Clear all', () => {
+    $('editor').classList.add('hidden');
+    clearEverything();
+  });
 });
 $('edCancel').addEventListener('click', () => {
   $('editor').classList.add('hidden');
@@ -4368,9 +5501,22 @@ const QUALITY = [
     v: { pressureIters: 50, separateIters: 3, cell: 5, fireRes: 2, denScale: 1.25 } },
 ];
 function currentQuality() { return QUALITY.findIndex(q => Object.entries(q.v).every(([k, v]) => CFG[k] === v)); }
+let setSection = 'Speed / quality';
 function buildSettings() {
-  const box = $('setList'); box.innerHTML = '';
-  {
+  const list = $('setList'); list.innerHTML = ''; list.classList.add('split'); $('setBox').classList.add('two');
+  list.classList.toggle('ro', NET.role === 'guest');
+  const nav = document.createElement('div'); nav.id = 'setNav'; list.appendChild(nav);
+  const box = document.createElement('div'); box.id = 'setPane'; list.appendChild(box);
+  const secs = ['Speed / quality', ...SETTINGS.filter(s => s.g).map(s => s.g)];
+  if (!secs.includes(setSection)) setSection = secs[0];
+  for (const g of secs) { const b = document.createElement('button'); b.textContent = g; b.classList.toggle('on', g === setSection); b.addEventListener('click', () => { setSection = g; buildSettings(); }); nav.appendChild(b); }
+  const _box = box;
+  if (NET.role === 'guest') {
+    const n = document.createElement('div'); n.className = 'roNote';
+    n.textContent = '🏠 In a room everybody plays with the host’s settings. You can look, but only the host can change them.';
+    box.appendChild(n);
+  }
+  if (setSection === 'Speed / quality') {
     const h = document.createElement('h3'); h.textContent = 'Speed / quality'; box.appendChild(h);
     const seg = document.createElement('div'); seg.className = 'nseg'; seg.style.margin = '6px 0';
     const cur = currentQuality();
@@ -4388,8 +5534,10 @@ function buildSettings() {
     n.innerHTML = `<div class="note">${cur >= 0 ? QUALITY[cur].note : 'Custom – you changed the sliders below yourself'}</div>`;
     box.appendChild(n);
   }
+  let curG = null;
   for (const s of SETTINGS) {
-    if (s.g) { const h = document.createElement('h3'); h.textContent = s.g; box.appendChild(h); continue; }
+    if (s.g) { curG = s.g; if (curG === setSection) { const h = document.createElement('h3'); h.textContent = s.g; box.appendChild(h); } continue; }
+    if (curG !== setSection) continue;
     const row = document.createElement('div'); row.className = 'srow';
     const lab = document.createElement('label'); lab.textContent = s.l; row.appendChild(lab);
     const rst = document.createElement('button'); rst.className = 'rst'; rst.textContent = '↺'; rst.title = 'Reset to default';
@@ -4425,15 +5573,22 @@ function buildSettings() {
   });
   mk('🧽 Undo drawn walls & burns', () => { userStrokes = []; rebuildWorld(curCap, curMask, 'all'); hint('Walls restored', 1400); });
   mk('🗑️ Remove pipes, mills, bombs, wind, objects', () => {
-    world.pipes = []; world.sewers = []; world.mills = []; world.bombs = []; world.winds = []; world.bodies = []; world.ropes = [];
+    world.pipes = []; world.sewers = []; world.mills = []; world.bombs = []; world.winds = []; world.bodies = []; world.ropes = []; world.cannons = []; world.shots = []; world.chains = [];
     world.plast.fill(0); world.plastCnt.fill(0); world.rebuildWind(); renderBG(0, 0, world.MW, world.MH); hint('All tools removed', 1400);
   });
   mk('🐟 Remove animals', () => { world.creatures = []; });
   box.appendChild(btns);
 }
-function applyLive() { $('stats').style.display = CFG.showStats ? '' : 'none'; }
-$('bSettings').addEventListener('click', () => { setPending = 0; setLayout = false; setWind = false; buildSettings(); $('settings').classList.remove('hidden'); });
+let lastLook = null;
+function applyLive() {
+  $('stats').style.display = CFG.showStats ? '' : 'none';
+  if (world && BG.img && lastLook !== null && lastLook !== CFG.look3d) renderBG(0, 0, world.MW, world.MH);   // re-bake the walls
+  lastLook = CFG.look3d;
+}
+let objScale0 = CFG.objScale;
+$('bSettings').addEventListener('click', () => { setPending = 0; setLayout = false; setWind = false; objScale0 = CFG.objScale; buildSettings(); $('settings').classList.remove('hidden'); });
 $('setResetAll').addEventListener('click', () => {
+  if (NET.role === 'guest') { hint('Only the host can change settings'); return; }
   const changedRes = CFG.maskLong !== DEFAULTS.maskLong, changedGrid = CFG.cell !== DEFAULTS.cell || CFG.maxParticles !== DEFAULTS.maxParticles;
   Object.assign(CFG, DEFAULTS);
   setPending = Math.max(setPending, changedRes ? 2 : (changedGrid ? 1 : 0)); setLayout = true; setWind = true;
@@ -4441,7 +5596,10 @@ $('setResetAll').addEventListener('click', () => {
 });
 $('setClose').addEventListener('click', () => {
   $('settings').classList.add('hidden');
+  if (NET.role === 'guest') return;           // a friend only looks at the host's settings
   saveCfg();
+  if (world && CFG.objScale !== objScale0) { const k = CFG.objScale / objScale0; for (const b of world.bodies) scaleBody(b, k); objScale0 = CFG.objScale; }
+  if (NET.role === 'host') netSendCfg();
   if (setPending === 2) {           // new simulation resolution -> redo wall detection
     curCap = prepareCapture(photo.edited);
     curMask = computeWalls(curCap, photo.sens, photo.thick, photo.dots);
@@ -4456,7 +5614,8 @@ $('setClose').addEventListener('click', () => {
 /* ---------------------------------------------------------------------
    Demo drawing (procedural "pencil on paper" photo)
    --------------------------------------------------------------------- */
-function makeDemoPhoto(aspect) {
+function makeBlankPaper(aspect) { return makeDemoPhoto(aspect, true); }
+function makeDemoPhoto(aspect, blank) {
   const W = 1600, H = Math.round(W / aspect);
   const c = makeCanvas(W, H), x = c.getContext('2d');
   const g = x.createRadialGradient(W * 0.35, H * 0.3, 50, W * 0.5, H * 0.5, W * 0.85);
@@ -4465,6 +5624,7 @@ function makeDemoPhoto(aspect) {
   const img = x.getImageData(0, 0, W, H), d = img.data;
   for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - 0.5) * 14; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
   x.putImageData(img, 0, 0);
+  if (blank) return c;
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const pencil = (pts, wdt = 4.2) => {
     for (let pass = 0; pass < 2; pass++) {
@@ -4536,6 +5696,7 @@ function frame(t) {
   const base = 1 / 60, ts = CFG.timeScale, sub = Math.ceil(ts), sdt = base * ts / sub;
   let ticks = 0;
   const t0 = performance.now();
+  cannonHolds();
   while (acc >= base && ticks < 2) {
     for (let k = 0; k < sub; k++) world.step(sdt, grav.x, grav.y);
     acc -= base; ticks++;
@@ -4544,7 +5705,7 @@ function frame(t) {
   if (ticks) simMs = simMs * 0.9 + 0.1 * (performance.now() - t0) / ticks;
   if (world.charList.length) {           // re-render blackening wood
     const h = world.h, NX = world.NX;
-    for (const c of world.charList) { const x = (c % NX) * h, y = ((c / NX) | 0) * h; renderBG(x - 1, y - 1, x + h + 1, y + h + 1); }
+    for (const c of world.charList) { const x = (c % NX) * h, y = ((c / NX) | 0) * h; renderBG(x - 1, y - 1, x + h + 1, y + h + 1, true); }
     world.charList.length = 0;
   }
   renderer.render(world, t / 1000, dt * CFG.timeScale);
@@ -4572,11 +5733,11 @@ const STREAM_Q = [
   { name: 'High', res: 1280, fps: 30, kbps: 4500, note: 'Sharp picture. Needs good Wi-Fi.' },
   { name: 'Max', res: 1600, fps: 60, kbps: 9000, note: 'Smoothest. Best with 1–2 friends on fast Wi-Fi.' },
 ];
-const NET_MODES = new Set(['pour', 'pipe', 'sewer', 'mill', 'wall', 'wind', 'fish', 'fire', 'bomb', 'object', 'erase']);
+const NET_MODES = new Set(['pour', 'pipe', 'sewer', 'mill', 'wall', 'wind', 'fish', 'fire', 'bomb', 'object', 'erase', 'cannon', 'chain', 'hand']);
 const NET = {
   role: null, peer: null, code: '', name: 'Player', myN: 0,
   // host
-  players: [], conns: new Map(), nextN: 1, max: 4, q: 1, allowClear: true, paused: false,
+  players: [], conns: new Map(), nextN: 1, max: 4, q: 1, allowClear: true, paused: false, split: false,
   scv: null, sctx: null, mstream: null, lastFrame: 0, windView: false,
   // guest
   hostConn: null, call: null, aspect: 0, gptr: new Map(), gmoves: [], list: [], perm: { clear: true, paused: false },
@@ -4656,6 +5817,7 @@ function netHostRecv(conn, m) {
     NET.players.push(p); NET.conns.set(conn.peer, conn);
     conn.send({ t: 'welcome', n: p.n, c: p.c, a: world ? world.MW / world.MH : 1.5, code: NET.code });
     conn.send({ t: 'perm', clear: NET.allowClear, paused: NET.paused });
+    conn.send({ t: 'cfg', v: netCfgPayload() });
     netCallGuest(p);
     netBroadcastPlayers(); hint(p.name + ' joined 👋', 1800);
     return;
@@ -4675,7 +5837,54 @@ function netHostRecv(conn, m) {
       break;
   }
 }
+/* ---- split screen: the picture is cut into one strip per player (along its long side) ---- */
+function netZones() {
+  if (!(NET.role === 'host' && NET.split && NET.players.length > 1 && world)) return null;
+  return NET.hostAll ? NET.players.filter(p => p.n !== 0) : NET.players;   // host-everywhere: only friends get parts
+}
+function zoneRect(i, N) {
+  const W = world.MW, H = world.MH;
+  return W >= H ? { x0: W * i / N, x1: W * (i + 1) / N, y0: 0, y1: H } : { x0: 0, x1: W, y0: H * i / N, y1: H * (i + 1) / N };
+}
+function zoneFor(n) {                           // n = player number (host 0) -> its rectangle, or null when not split
+  const Z = netZones(); if (!Z) return null;
+  const i = Z.findIndex(p => p.n === n); return i < 0 ? null : zoneRect(i, Z.length);
+}
+function zonePartName(i, N) {
+  const horiz = world.MW >= world.MH;
+  if (N === 2) return horiz ? ['left', 'right'][i] : ['top', 'bottom'][i];
+  if (N === 3) return horiz ? ['left', 'middle', 'right'][i] : ['top', 'middle', 'bottom'][i];
+  return (horiz ? 'part ' : 'row ') + (i + 1) + ' of ' + N;
+}
+function netAnnounceZones(toggled) {
+  const Z = netZones();
+  if (!Z) { if (toggled && NET.role === 'host') { const m = NET.split ? 'Split screen starts when a friend joins' : 'Split screen off – the whole picture is for everybody'; hint(m, 2200); for (const p of NET.players) if (p.n) netHintTo(p, m); } return; }
+  Z.forEach((p, i) => { const m = '✂️ Split screen: your part is the ' + zonePartName(i, Z.length) + ' one'; if (p.n) netHintTo(p, m); else hint(m, 2400); });
+}
+function inZone(z, p) { return p.x >= z.x0 && p.x < z.x1 && p.y >= z.y0 && p.y < z.y1; }
+function clampZone(z, p) { return { ...p, x: clamp(p.x, z.x0 + 0.5, z.x1 - 0.5), y: clamp(p.y, z.y0 + 0.5, z.y1 - 0.5) }; }
+function drawZones(ctx) {
+  const Z = netZones(); if (!Z) return;
+  const U = world.U, horiz = world.MW >= world.MH;
+  Z.forEach((p, i) => {
+    const z = zoneRect(i, Z.length), col = NET_COL[p.c] || '#fff';
+    ctx.save();
+    ctx.globalAlpha = 0.07; ctx.fillStyle = col; ctx.fillRect(z.x0, z.y0, z.x1 - z.x0, z.y1 - z.y0);
+    ctx.globalAlpha = 1;
+    if (i > 0) {                                 // border between two players
+      ctx.lineWidth = 2 * U; ctx.setLineDash([10 * U, 8 * U]); ctx.strokeStyle = 'rgba(255,255,255,.4)';
+      ctx.beginPath(); if (horiz) { ctx.moveTo(z.x0, 0); ctx.lineTo(z.x0, world.MH); } else { ctx.moveTo(0, z.y0); ctx.lineTo(world.MW, z.y0); } ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    const fs = 11 * U; ctx.font = `800 ${fs}px system-ui, sans-serif`;
+    const tw = ctx.measureText(p.name).width, bx = (z.x0 + z.x1) / 2 - tw / 2 - 8 * U, by = z.y0 + 8 * U;
+    ctx.globalAlpha = 0.85; ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(bx, by, tw + 16 * U, fs + 8 * U, 8 * U); ctx.fill();
+    ctx.globalAlpha = 1; ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(p.name, bx + 8 * U, by + (fs + 8 * U) / 2 + 0.5);
+    ctx.restore();
+  });
+}
 function netBroadcastPlayers() {
+  if (NET.role === 'host' && NET.split) setTimeout(() => netAnnounceZones(false), 300);
   const list = NET.players.map(p => ({ n: p.n, name: p.name, c: p.c }));
   for (const c of NET.conns.values()) if (c.open) c.send({ t: 'players', list, max: NET.max });
   netUI();
@@ -4839,6 +6048,17 @@ function netSetQuality(q) {
   for (const p of NET.players) if (p.call) netApplyQuality(p);
   netUI();
 }
+// the host's settings are everybody's settings (the picture is simulated on the host anyway)
+const NET_LOCAL_CFG = ['showStats', 'dprCap'];
+function netCfgPayload() { const o = {}; for (const k in DEFAULTS) if (!NET_LOCAL_CFG.includes(k)) o[k] = CFG[k]; return o; }
+function netSendCfg() { const v = netCfgPayload(); for (const c of NET.conns.values()) if (c.open) c.send({ t: 'cfg', v }); }
+function netApplyHostCfg(v) {
+  if (!v || typeof v !== 'object') return;
+  if (!NET.myCfg) NET.myCfg = Object.assign({}, CFG);
+  for (const k in v) if (k in DEFAULTS && !NET_LOCAL_CFG.includes(k) && typeof v[k] === 'number' && isFinite(v[k])) CFG[k] = v[k];
+  applyLive();
+  if (!$('settings').classList.contains('hidden')) buildSettings();
+}
 function netSendPerm() { for (const c of NET.conns.values()) if (c.open) c.send({ t: 'perm', clear: NET.allowClear, paused: NET.paused }); }
 
 /* ---------------- guest ---------------- */
@@ -4896,8 +6116,9 @@ function netGuestRecv(m) {
       break;
     case 'players': NET.list = Array.isArray(m.list) ? m.list : []; NET.max = m.max | 0 || NET.max; netUI(); break;
     case 'perm': NET.perm = { clear: !!m.clear, paused: !!m.paused }; netUI(); break;
+    case 'cfg': netApplyHostCfg(m.v); break;
     case 'aspect': if (+m.a > 0) { NET.aspect = +m.a; layout(); } break;
-    case 'hint': hint(String(m.s || '')); break;
+    case 'hint': break;
     case 'full': netLeave(); netErr('That room is full (max ' + (m.max | 0) + ' players).'); netOpen(); break;
     case 'kick': netLeave(); netErr('The host removed you from the room.'); netOpen(); break;
   }
@@ -4959,6 +6180,7 @@ function netLeave() {
   if (NET.mstream) { for (const tr of NET.mstream.getTracks()) tr.stop(); NET.mstream = null; NET.scv = null; NET.sctx = null; }
   const v = $('netVideo'); v.srcObject = null;
   document.body.classList.remove('guest');
+  if (NET.myCfg) { Object.assign(CFG, NET.myCfg); NET.myCfg = null; applyLive(); }   // back to my own settings
   if (p) { try { p.destroy(); } catch (_) {} }
   last = performance.now();
   layout(); netUI();
@@ -4996,7 +6218,7 @@ function netUI() {
     const ms = $('netMax'); ms.innerHTML = '';
     for (let n = 2; n <= 8; n++) { const b = document.createElement('button'); b.textContent = n; b.classList.toggle('on', n === NET.max);
       b.onclick = () => { NET.max = n; netSavePrefs(); netBroadcastPlayers(); }; ms.appendChild(b); }
-    $('netAllowClear').checked = NET.allowClear; $('netPause').checked = NET.paused;
+    $('netAllowClear').checked = NET.allowClear; $('netPause').checked = NET.paused; $('netSplit').checked = NET.split; $('netHostAll').checked = !!NET.hostAll;
   }
 }
 function netOpen() { $('netName').value = NET.name; netUI(); $('netScr').classList.remove('hidden'); }
@@ -5008,6 +6230,13 @@ $('netJoin').addEventListener('click', () => { NET.name = netClean($('netName').
 $('netCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('netJoin').click(); });
 $('netLeave').addEventListener('click', () => { netLeave(); netErr(''); });
 $('netAllowClear').addEventListener('change', e => { NET.allowClear = e.target.checked; netSavePrefs(); netSendPerm(); });
+$('netHostAll').addEventListener('change', e => { NET.hostAll = e.target.checked; for (const pl of NET.players) if (pl.n) for (const i of [...pl.ptrs.keys()]) netRemoteUp(pl, i); netAnnounceZones(true); });
+$('netSplit').addEventListener('change', e => {
+  NET.split = e.target.checked;
+  for (const id of [...pointers.keys()]) ptrEnd(id);     // finish strokes that may now cross a border
+  for (const pl of NET.players) if (pl.n) for (const i of [...pl.ptrs.keys()]) netRemoteUp(pl, i);
+  netAnnounceZones(true);
+});
 $('netPause').addEventListener('change', e => {
   NET.paused = e.target.checked; netSendPerm(); netUI();
   if (NET.paused) for (const pl of NET.players) if (pl.n) for (const i of [...pl.ptrs.keys()]) netRemoteUp(pl, i);
